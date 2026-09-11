@@ -46,7 +46,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
   const handleValidate = async (targetDomain?: string) => {
     const d = cleanDomain(targetDomain || domainInput);
     if (!d || !d.includes('.')) {
-      alert('Bitte gib einen gültigen Domainnamen ein (z. B. rfc10023.nl oder beispiel.de).');
+      alert('Bitte gib einen gültigen Domainnamen ein (z. B. forsaledns.net oder beispiel.de).');
       return;
     }
 
@@ -270,7 +270,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
             type="text"
             value={domainInput}
             onChange={(e) => setDomainInput(e.target.value)}
-            placeholder="rfc10023.nl"
+            placeholder="beispieldomain.de"
             className="w-full pl-24 pr-28 sm:pr-36 py-3.5 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white focus:outline-none rounded-xl text-slate-900 font-mono text-base transition-all"
           />
           <button
@@ -295,7 +295,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         {/* Quick test buttons */}
         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
           <span className="font-mono">Referenz-Domains:</span>
-          {['rfc10023.nl', 'forsaledns.net'].map((example) => (
+          {['forsaledns.net', 'meinedomain.de'].map((example) => (
             <button
               key={example}
               type="button"
