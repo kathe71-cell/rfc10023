@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Link } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import VercelAnalytics from './components/VercelAnalytics';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -51,6 +52,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <Analytics />
       <VercelAnalytics />
       <Layout>
         <Routes>

@@ -1,21 +1,22 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-declare global {
-  interface Window {
-    va?: (event: string, data?: Record<string, unknown>) => void;
-    vaq?: unknown[][];
-  }
-}
-
+/**
+ * Custom 100% DSGVO-compliant Vercel Web Analytics tracker for React Router & Vite.
+ * Works seamlessly alongside @vercel/analytics.
+ */
 export default function VercelAnalytics() {
   const location = useLocation();
 
   useEffect(() => {
-    window.va = window.va || function () {
-      (window.vaq = window.vaq || []).push(Array.from(arguments));
-    };
+    // 1. Ensure Vercel Insights queue is defined
+    if (!window.va) {
+      window.va = function (...params: unknown[]) {
+        (window.vaq = window.vaq || []).push(params as [string, unknown?]);
+      };
+    }
 
+    // 2. Dynamically inject Vercel Insights script if not already in DOM
     if (!document.getElementById('vercel-insights-script')) {
       const script = document.createElement('script');
       script.id = 'vercel-insights-script';
@@ -24,8 +25,13 @@ export default function VercelAnalytics() {
       document.head.appendChild(script);
     }
 
+    // 3. Send route pageview telemetry to Vercel Insights Edge
     try {
-      window.va?.('pageview', { route: location.pathname + location.search });
+      if (typeof window.va === 'function') {
+        window.va('pageview', { 
+          route: location.pathname + location.search 
+        });
+      }
     } catch {
       window.vaq = window.vaq || [];
       window.vaq.push(['pageview', { route: location.pathname + location.search }]);
