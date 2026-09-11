@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Cpu, Code2, Copy, Check, ArrowRight, ExternalLink, Terminal, CheckCircle2, ArrowUpRight, Zap, Shield, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Cpu, Code2, Copy, Check, ArrowRight, ExternalLink, Terminal, CheckCircle2, ArrowUpRight, Zap, Shield, AlertTriangle, Layers, Sparkles, Scale } from 'lucide-react';
 import RfcValidator from '../components/RfcValidator';
 import RfcGenerator from '../components/RfcGenerator';
 import HosterMatrix from '../components/HosterMatrix';
@@ -10,7 +10,7 @@ export default function HomePage() {
   const [copiedEmbed, setCopiedEmbed] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const embedCode = `<iframe src="https://rfc10023.de/rechner-embed" width="100%" height="540" frameborder="0" style="border-radius:12px; border:1px solid #e2e8f0;"></iframe>\n<p style="font-size:11px; color:#64748b; font-family:sans-serif;">Standard: <a href="https://rfc10023.de" target="_blank">RFC 10023 DACH Portal</a></p>`;
+  const embedCode = `<iframe src="https://rfc10023.de/rechner-embed" width="100%" height="540" frameborder="0" style="border-radius:12px; border:1px solid #e2e8f0;"></iframe>\n<p style="font-size:11px; color:#64748b; font-family:sans-serif;">Standard: <a href="https://rfc10023.de" target="_blank">RFC 10023 DACH Hub</a></p>`;
 
   const copyEmbed = () => {
     navigator.clipboard.writeText(embedCode);
@@ -92,10 +92,11 @@ export default function HomePage() {
                   <span>Record generieren</span>
                 </a>
                 <Link
-                  to="/hoster-matrix"
-                  className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono text-xs font-semibold rounded-xl transition-colors"
+                  to="/bulk-scan"
+                  className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5"
                 >
-                  Hoster-Matrix &rarr;
+                  <Layers className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Bulk-Scan &rarr;</span>
                 </Link>
               </div>
 
@@ -159,6 +160,63 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Feature Teaser Grid: The 4 Hub Modules */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link
+            to="/bulk-scan"
+            className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all group"
+          >
+            <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700 w-fit mb-3 group-hover:scale-110 transition-transform">
+              <Layers className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-base mb-1">Portfolio Bulk-Scanner</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Bis zu 30 Domains gleichzeitig scannen, DNSSEC prüfen und als CSV exportieren.
+            </p>
+          </Link>
+
+          <Link
+            to="/badge-generator"
+            className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all group"
+          >
+            <div className="p-2.5 rounded-xl bg-slate-900 text-emerald-400 w-fit mb-3 group-hover:scale-110 transition-transform">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-base mb-1">Trust-Badge Generator</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Kopierbare HTML- und Markdown-Badges für Parking- &amp; Verkaufsseiten.
+            </p>
+          </Link>
+
+          <Link
+            to="/api-docs"
+            className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all group"
+          >
+            <div className="p-2.5 rounded-xl bg-slate-100 text-slate-800 w-fit mb-3 group-hover:scale-110 transition-transform">
+              <Code2 className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-base mb-1">Öffentliche REST-API</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Kostenlose JSON-Schnittstelle ohne Auth für Devs, CLI-Tools und Scraper.
+            </p>
+          </Link>
+
+          <Link
+            to="/recht-leitfaden"
+            className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all group"
+          >
+            <div className="p-2.5 rounded-xl bg-amber-100 text-amber-900 w-fit mb-3 group-hover:scale-110 transition-transform">
+              <Scale className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-base mb-1">Recht &amp; Steuern Guide</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Impressumspflicht (§ 5 DDG), BGB-Vertragsrecht und PAngV für DACH.
+            </p>
+          </Link>
+        </div>
+      </section>
+
       {/* Position-0 Definitions-Box (Featured Snippet Optimized) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-300/80 shadow-xs relative">
@@ -192,7 +250,7 @@ export default function HomePage() {
         <RfcGenerator />
       </section>
 
-      {/* Asymmetric Bento-Grid: Architektur & Hard Facts (Replaces Uniform AI-Grid) */}
+      {/* Asymmetric Bento-Grid: Architektur & Hard Facts */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
           <span className="text-[11px] font-mono uppercase font-bold tracking-wider text-slate-500">

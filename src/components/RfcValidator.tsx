@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, Copy, Check, Terminal, ExternalLink, RefreshCw, ShieldCheck } from 'lucide-react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, Copy, Check, Terminal, ExternalLink, RefreshCw, ShieldCheck, Server, Sparkles } from 'lucide-react';
+import { cleanDomainInput, detectHosterFromNameservers, HosterProfile } from '../utils/dnsIntelligence';
 
 interface TagItem {
   tag: string;
@@ -20,6 +22,8 @@ interface ValidationResult {
   parsedMap: Record<string, string>;
   warnings: string[];
   dnsProvider: string;
+  nameservers: string[];
+  detectedHoster: HosterProfile | null;
 }
 
 interface RfcValidatorProps {
@@ -28,25 +32,20 @@ interface RfcValidatorProps {
 }
 
 export default function RfcValidator({ initialDomain = '', embedded = false }: RfcValidatorProps) {
-  const [domainInput, setDomainInput] = useState(initialDomain);
+  const [searchParams] = useSearchParams();
+  const urlDomain = searchParams.get('d') || searchParams.get('domain') || '';
+  const effectiveInitial = initialDomain || urlDomain;
+
+  const [domainInput, setDomainInput] = useState(effectiveInitial);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
 
-  const cleanDomain = (raw: string) => {
-    let d = raw.trim().toLowerCase();
-    d = d.replace(/^https?:\/\//, '');
-    d = d.replace(/^www\./, '');
-    d = d.replace(/^_for-sale\./, '');
-    d = d.split('/')[0];
-    return d;
-  };
-
   const handleValidate = async (targetDomain?: string) => {
-    const d = cleanDomain(targetDomain || domainInput);
+    const d = cleanDomainInput(targetDomain || domainInput);
     if (!d || !d.includes('.')) {
-      alert('Bitte gib einen gültigen Domainnamen ein (z. B. forsaledns.net oder beispiel.de).');
+      alert('Bitte gib einen gültigen Domainnamen ein (z. B. forsaledns.net oder beispieldomain.de).');
       return;
     }
 
@@ -57,9 +56,32 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
     let rawTxtRecords: string[] = [];
     let isDnssec = false;
     let providerUsed = 'Cloudflare 1.1.1.1 Anycast DoH';
+    const nameservers: string[] = [];
+    let detectedHoster: HosterProfile | null = null;
 
     try {
-      // 1. Query Cloudflare DoH
+      // 1. Fetch Authoritative Nameservers for Hoster-Fingerprinting
+      try {
+        const nsRes = await fetch(
+          `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(d)}&type=NS`,
+          { headers: { Accept: 'application/dns-json' } }
+        );
+        if (nsRes.ok) {
+          const nsData = await nsRes.json();
+          if (nsData.Answer && Array.isArray(nsData.Answer)) {
+            nsData.Answer.forEach((a: { type: number; data: string }) => {
+              if (a.type === 2 && a.data) {
+                nameservers.push(a.data.replace(/\.$/, '').toLowerCase());
+              }
+            });
+            detectedHoster = detectHosterFromNameservers(nameservers);
+          }
+        }
+      } catch (e) {
+        console.warn('NS query failed', e);
+      }
+
+      // 2. Query Leaf Node TXT via Cloudflare DoH
       const cfUrl = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(nodeName)}&type=TXT`;
       const cfRes = await fetch(cfUrl, {
         headers: { Accept: 'application/dns-json' },
@@ -75,7 +97,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         }
       }
 
-      // 2. Fallback to Google DoH if no records found
+      // 3. Fallback to Google DoH if no records found
       if (rawTxtRecords.length === 0) {
         providerUsed = 'Google 8.8.8.8 Anycast DoH';
         const googleUrl = `https://dns.google/resolve?name=${encodeURIComponent(nodeName)}&type=TXT`;
@@ -99,16 +121,18 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
           status: 'not_found',
           statusMessage: `Kein TXT-Eintrag unter '${nodeName}' hinterlegt.`,
           architecture: 'unknown',
-          architectureLabel: 'Kein Eintrag',
-          dnssec: false,
+          architectureLabel: 'Kein Record',
+          dnssec: isDnssec,
           rawTxt: [],
           tags: [],
           parsedMap: {},
           warnings: [
-            'Im weltweiten DNS existiert derzeit kein RRset für diesen Leaf-Node.',
+            'Im weltweiten DNS existiert derzeit kein Resource Record Set für diesen Leaf-Node.',
             'Neu eingerichtete DNS-Einträge können je nach Nameserver-TTL einige Minuten bis Stunden für die globale Propagierung benötigen.',
           ],
           dnsProvider: providerUsed,
+          nameservers,
+          detectedHoster,
         });
         setLoading(false);
         return;
@@ -119,7 +143,6 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
       const parsedMap: Record<string, string> = {};
       const warnings: string[] = [];
       let foundForsaleVersion = false;
-      let multiRecordCount = 0;
 
       rawTxtRecords.forEach((recordStr, recIdx) => {
         const cleanRec = recordStr.trim();
@@ -131,13 +154,6 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
 
         // Split tags by semicolon
         const segments = cleanRec.split(';').map((s) => s.trim()).filter(Boolean);
-
-        if (segments.length > 2) {
-          // More than version tag + 1 content tag in a single record
-          // (RFC 10023 Section 2.1 recommends max 1 content tag per record)
-        } else if (segments.length > 0) {
-          multiRecordCount++;
-        }
 
         segments.forEach((seg) => {
           const eqIdx = seg.indexOf('=');
@@ -171,7 +187,6 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
       }
 
       if (parsedMap.fval) {
-        // Test currency format: e.g. EUR2500, USD1000 or EUR:2500 or VHB
         const val = parsedMap.fval.toUpperCase();
         if (val !== 'VHB' && !/^[A-Z]{3}:?\d+/.test(val)) {
           warnings.push(`Preisformat "${parsedMap.fval}": IETF RFC 10023 empfiehlt Währungscode + Betrag ohne Leerzeichen (z. B. EUR2500 oder USD1000).`);
@@ -199,6 +214,8 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         parsedMap,
         warnings,
         dnsProvider: providerUsed,
+        nameservers,
+        detectedHoster,
       });
     } catch (err) {
       setResult({
@@ -214,6 +231,8 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         parsedMap: {},
         warnings: [String(err)],
         dnsProvider: providerUsed,
+        nameservers: [],
+        detectedHoster: null,
       });
     } finally {
       setLoading(false);
@@ -221,10 +240,10 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
   };
 
   useEffect(() => {
-    if (initialDomain) {
-      handleValidate(initialDomain);
+    if (effectiveInitial) {
+      handleValidate(effectiveInitial);
     }
-  }, [initialDomain]);
+  }, [effectiveInitial]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -241,7 +260,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
-              Live DNS-over-HTTPS Inspector
+              Live DNS-over-HTTPS Inspector mit Hoster-Erkennung
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
@@ -355,6 +374,44 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
               </button>
             )}
           </div>
+
+          {/* Hoster Intelligence Banner */}
+          {result.detectedHoster ? (
+            <div className="p-4 rounded-xl bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
+                  <Server className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                    Erkannter DNS-Provider
+                  </div>
+                  <div className="text-sm font-bold font-mono text-emerald-400">
+                    {result.detectedHoster.name}
+                  </div>
+                  <div className="text-xs text-slate-300 mt-0.5">
+                    {result.detectedHoster.instructions}
+                  </div>
+                </div>
+              </div>
+              <Link
+                to={`/generator?domain=${encodeURIComponent(result.domain)}`}
+                className="shrink-0 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Passenden Record bauen</span>
+              </Link>
+            </div>
+          ) : result.nameservers.length > 0 ? (
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-600 flex flex-wrap items-center gap-2">
+              <span className="font-bold text-slate-800">Nameserver:</span>
+              {result.nameservers.map((ns, idx) => (
+                <span key={idx} className="bg-white px-2 py-0.5 rounded border border-slate-200">
+                  {ns}
+                </span>
+              ))}
+            </div>
+          ) : null}
 
           {/* Parsed Tag Breakdown Cards */}
           {result.status !== 'not_found' && result.status !== 'error' && (

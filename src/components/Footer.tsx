@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Terminal, Shield, ExternalLink, GitBranch, ArrowUpRight } from 'lucide-react';
+import { Terminal, Shield, ExternalLink, GitBranch, ArrowUpRight, Scale, Code2, Layers, Sparkles } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -25,14 +25,14 @@ export default function Footer() {
             </p>
             <div className="p-3.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs text-slate-400 leading-relaxed">
               <strong className="text-slate-300 block mb-1">Unabhängigkeitshinweis:</strong>
-              rfc10023.de ist ein freies Fach- und Informationsportal. Es besteht kein gesellschaftsrechtliches Verhältnis zur Internet Engineering Task Force (IETF), DENIC eG oder SIDN.
+              rfc10023.de ist ein freies Fach- und Informationsportal. Es besteht kein gesellschaftsrechtliches Verhältnis zur Internet Engineering Task Force (IETF) oder DENIC eG.
             </div>
           </div>
 
           {/* Col 2: Navigation & Tools */}
           <div className="space-y-3">
             <h4 className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-400">
-              Tools &amp; Matrix
+              Tools &amp; Hub
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
@@ -42,12 +42,41 @@ export default function Footer() {
               </li>
               <li>
                 <Link to="/generator" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
-                  1-Click Record Builder <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                  Record Builder &amp; Byte-Guard <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                </Link>
+              </li>
+              <li>
+                <Link to="/bulk-scan" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                  Portfolio Bulk-Scanner <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                </Link>
+              </li>
+              <li>
+                <Link to="/badge-generator" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                  Trust-Badge Generator <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                </Link>
+              </li>
+              <li>
+                <Link to="/api-docs" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                  Öffentliche REST-API <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
               <li>
                 <Link to="/hoster-matrix" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
                   Hoster-Kompatibilität <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Col 3: Recht & Spezifikation */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-400">
+              Recht &amp; Standards
+            </h4>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link to="/recht-leitfaden" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                  Rechtssicherheit &amp; Steuern <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
               <li>
@@ -56,20 +85,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/rechner-embed" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
-                  Webmaster Embed-Widget <ArrowUpRight className="w-3 h-3 text-slate-500" />
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 3: Primärquellen & Recht */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-400">
-              Quellen &amp; Recht
-            </h4>
-            <ul className="space-y-2 text-sm">
-              <li>
                 <a
                   href="https://www.rfc-editor.org/info/rfc10023"
                   target="_blank"
@@ -77,16 +92,6 @@ export default function Footer() {
                   className="text-slate-300 hover:text-white transition-colors flex items-center gap-1"
                 >
                   IETF RFC 10023 Original <ExternalLink className="w-3 h-3 text-slate-500" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.sidn.nl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-slate-300 hover:text-white transition-colors flex items-center gap-1"
-                >
-                  SIDN Registry (.nl) <ExternalLink className="w-3 h-3 text-slate-500" />
                 </a>
               </li>
               <li>

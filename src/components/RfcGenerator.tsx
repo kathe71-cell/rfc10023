@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
-import { Copy, Check, Share2, Layers, AlertCircle, CheckCircle2, Sliders, Info } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Copy, Check, Share2, Layers, AlertCircle, CheckCircle2, Sliders, Info, ShieldAlert, Terminal, Code2 } from 'lucide-react';
+import { calculateUtf8ByteLength, cleanDomainInput } from '../utils/dnsIntelligence';
 
 interface RfcGeneratorProps {
   embedded?: boolean;
 }
 
 export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
-  const [domain, setDomain] = useState('');
+  const [searchParams] = useSearchParams();
+  const urlDomain = searchParams.get('domain') || searchParams.get('d') || '';
+
+  const [domain, setDomain] = useState(urlDomain);
   const [currency, setCurrency] = useState('EUR');
   const [amount, setAmount] = useState('2500');
   const [isVhb, setIsVhb] = useState(false);
@@ -15,18 +20,18 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
   const [fcod, setFcod] = useState('');
   const [ttl, setTtl] = useState('3600');
   const [recordFormat, setRecordFormat] = useState<'multi' | 'single'>('multi');
-  const [activeTab, setActiveTab] = useState<'bind' | 'cloudflare' | 'hetzner' | 'inwx' | 'cli'>('bind');
+  const [activeTab, setActiveTab] = useState<'bind' | 'cloudflare' | 'hetzner' | 'inwx' | 'terraform' | 'dnscontrol' | 'cli'>('bind');
   const [copied, setCopied] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
 
+  useEffect(() => {
+    if (urlDomain) {
+      setDomain(urlDomain);
+    }
+  }, [urlDomain]);
+
   // Clean domain name
-  const cleanDomain = domain
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//, '')
-    .replace(/^www\./, '')
-    .replace(/^_for-sale\./, '')
-    .split('/')[0] || 'beispieldomain.de';
+  const cleanDomain = cleanDomainInput(domain) || 'beispieldomain.de';
 
   // Sanitize numeric amount (remove commas, spaces, letters)
   const cleanAmount = amount.replace(',', '.').replace(/[^0-9.]/g, '');
@@ -35,7 +40,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
   const buildTags = () => {
     const tags: { key: string; val: string }[] = [];
 
-    // fval: Asking price. If VHB, omit fval and place note in ftxt (RFC 10023 Section 2.2 strictly defines fval as [currency][amount])
+    // fval: Asking price. If VHB, omit fval and place note in ftxt
     if (!isVhb && cleanAmount) {
       tags.push({ key: 'fval', val: `${currency}${cleanAmount}` });
     }
@@ -64,8 +69,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
 
   const tags = buildTags();
 
-  // Generate output records according to RFC 10023 Section 2.1:
-  // "Each '_for-sale' TXT record MUST NOT contain more than one tag-value pair, but multiple TXT records MAY be present in a single RRset."
+  // Generate output records according to RFC 10023 Section 2.1
   const getRecordStrings = (): string[] => {
     if (recordFormat === 'multi') {
       if (tags.length === 0) {
@@ -80,6 +84,11 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
   };
 
   const recordStrings = getRecordStrings();
+
+  // Calculate Byte-Length Guard for RFC 1035 (Max 255 Octets per character-string)
+  const byteLengths = recordStrings.map((r) => calculateUtf8ByteLength(r));
+  const maxBytes = Math.max(...byteLengths, 0);
+  const exceeds255Limit = maxBytes > 255;
 
   // Provider-specific output formats
   const getExportCode = () => {
@@ -121,6 +130,28 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           ),
         ].join('\n');
 
+      case 'terraform':
+        return [
+          `# Terraform HCL Definition (Cloudflare Provider)`,
+          ...recordStrings.map((rec, idx) => 
+`resource "cloudflare_record" "forsale_${idx + 1}" {
+  zone_id = var.cloudflare_zone_id
+  name    = "_for-sale"
+  type    = "TXT"
+  content = "${rec}"
+  ttl     = 3600
+}`
+          ),
+        ].join('\n\n');
+
+      case 'dnscontrol':
+        return [
+          `// DNSControl (dnsconfig.js)`,
+          `D("${cleanDomain}", REGISTRAR, DnsProvider(PROVIDER),`,
+          ...recordStrings.map((rec) => `  TXT("_for-sale", "${rec}", TTL(3600)),`),
+          `);`
+        ].join('\n');
+
       case 'cli':
         return [
           `# 1. Lokale Abfrage via dig (DNS Port 53):`,
@@ -128,6 +159,9 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           ``,
           `# 2. DNS-over-HTTPS Validierung (Cloudflare Anycast):`,
           `curl -sH "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?name=_for-sale.${cleanDomain}&type=TXT"`,
+          ``,
+          `# 3. Öffentliche rfc10023.de REST-API:`,
+          `curl -s "https://rfc10023.de/api/lookup?d=${cleanDomain}"`,
         ].join('\n');
 
       default:
@@ -142,13 +176,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
   };
 
   const copyShareLink = () => {
-    const params = new URLSearchParams();
-    if (domain) params.set('d', cleanDomain);
-    if (amount && !isVhb) params.set('val', cleanAmount);
-    if (isVhb) params.set('vhb', '1');
-    if (currency) params.set('cur', currency);
-    if (furi) params.set('uri', furi);
-    const url = `${window.location.origin}/generator?${params.toString()}`;
+    const url = `${window.location.origin}/validator?d=${encodeURIComponent(cleanDomain)}`;
     navigator.clipboard.writeText(url);
     setShareCopied(true);
     setTimeout(() => setShareCopied(false), 2000);
@@ -163,149 +191,140 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
-              IETF RFC 10023 Section 2.1 &bull; Standards Track Compiler
+              Offizieller DNS-Record Generator
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-            _for-sale DNS-Record Generator
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            RFC 10023 Record Builder
           </h2>
         </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={copyShareLink}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-mono font-semibold text-slate-700 transition-colors"
-          >
-            {shareCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5 text-slate-500" />}
-            <span>{shareCopied ? 'Link kopiert!' : 'Konfiguration teilen'}</span>
-          </button>
+        <div className="flex items-center gap-2 text-xs font-mono text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          <span>IETF Section 2.1 Konform</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Left Form: 7 cols */}
+        {/* Left Col: Config Inputs (7 cols) */}
         <div className="lg:col-span-7 space-y-5">
           
           {/* Domain Input */}
           <div>
             <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Domainname <span className="text-emerald-600">*</span>
+              1. Zu verkaufende Domain
             </label>
             <div className="relative">
               <input
                 type="text"
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
-                placeholder="meinedomain.de"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white focus:outline-none rounded-xl font-mono text-slate-900 text-sm"
+                placeholder="beispieldomain.de"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
               />
-            </div>
-            <div className="mt-1 flex items-center justify-between text-[11px] font-mono text-slate-500">
-              <span>DNS Leaf Node: <code className="text-slate-950 font-bold">_for-sale.{cleanDomain}</code></span>
-              <span>Record-Typ: <code className="text-emerald-700 font-bold">TXT (Typ 16, IN)</code></span>
+              <span className="absolute right-3 top-2.5 text-xs font-mono text-slate-400 select-none">
+                Node: _for-sale.{cleanDomain}
+              </span>
             </div>
           </div>
 
-          {/* Price & Currency (fval) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Festpreis (<code className="text-emerald-700 font-bold">fval</code>)
+          {/* Pricing & VHB */}
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
+                2. Preisvorstellung (<code className="text-emerald-700">fval</code>)
               </label>
-              <div className="flex">
-                <select
-                  disabled={isVhb}
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  className="px-3 py-3 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl font-mono text-xs font-bold text-slate-800 disabled:opacity-40"
-                >
-                  <option value="EUR">EUR (€)</option>
-                  <option value="USD">USD ($)</option>
-                  <option value="CHF">CHF</option>
-                  <option value="GBP">GBP (£)</option>
-                </select>
-                <input
-                  type="text"
-                  disabled={isVhb}
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="2500"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white focus:outline-none rounded-r-xl font-mono text-slate-900 text-sm disabled:opacity-40"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col justify-end">
-              <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors h-[46px]">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-mono text-slate-700 font-medium">
                 <input
                   type="checkbox"
                   checked={isVhb}
                   onChange={(e) => setIsVhb(e.target.checked)}
-                  className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-slate-900"
+                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
                 />
-                <span className="text-xs font-semibold text-slate-800">
-                  Verhandlungsbasis (ohne Festpreis)
-                </span>
+                <span>Verhandlungsbasis (VHB)</span>
               </label>
             </div>
+
+            {!isVhb ? (
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <select
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-mono focus:outline-none focus:border-slate-900"
+                  >
+                    <option value="EUR">EUR (€)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="CHF">CHF (CHF)</option>
+                    <option value="GBP">GBP (£)</option>
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <input
+                    type="text"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="2500"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-mono focus:outline-none focus:border-slate-900"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-mono text-emerald-900">
+                ✓ <strong>RFC 10023 Logik:</strong> Bei VHB wird kein numerischer <code>fval</code>-Tag erzeugt, sondern der VHB-Hinweis standardkonform im <code>ftxt</code>-Tag platziert.
+              </div>
+            )}
           </div>
 
-          {isVhb && (
-            <div className="p-3 rounded-lg bg-slate-100 border border-slate-200 text-[11px] text-slate-600 flex items-start gap-2">
-              <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
-              <span>
-                <strong>RFC 10023 Konformität:</strong> Der Tag <code>fval</code> ist nach IETF-Spezifikation strikt für numerische Preise im Format <code>[Währung][Betrag]</code> (z. B. <code>EUR2500</code>) reserviert. Bei Verhandlungsbasis wird <code>fval</code> weggelassen und der VHB-Hinweis normgerecht über <code>ftxt</code> publiziert.
-              </span>
-            </div>
-          )}
-
-          {/* Contact URI (furi) */}
+          {/* Contact URI */}
           <div>
             <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Kontakt-URI (<code className="text-emerald-700 font-bold">furi</code>)
+              3. Kontakt-URI (<code className="text-emerald-700">furi</code>)
             </label>
             <input
               type="text"
               value={furi}
               onChange={(e) => setFuri(e.target.value)}
-              placeholder="https://sedo.com/... oder mailto:kontakt@inhaber.de"
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white focus:outline-none rounded-xl font-mono text-slate-900 text-sm"
+              placeholder="https://sedo.com/search/details/?domain=... oder https://escrow.com/..."
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
             />
             <span className="text-[11px] text-slate-500 mt-1 block">
-              Erlaubte URI-Schemata nach RFC 3986: <code className="font-mono">https://</code>, <code className="font-mono">http://</code>, <code className="font-mono">mailto:</code> oder <code className="font-mono">tel:</code>.
+              Empfehlung: Link zu Treuhandservice, Dan/Sedo oder eigenem SSL-Kontaktformular.
             </span>
           </div>
 
-          {/* Note / Human text (ftxt) */}
+          {/* Free Text Note */}
           <div>
-            <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Freitext / Bedingungen (<code className="text-emerald-700 font-bold">ftxt</code>)
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
+                4. Freitext-Notiz (<code className="text-slate-800">ftxt</code>)
+              </label>
+              <span className="text-[11px] font-mono text-slate-400">
+                {calculateUtf8ByteLength(ftxt)} Bytes
+              </span>
+            </div>
             <input
               type="text"
               value={ftxt}
               onChange={(e) => setFtxt(e.target.value)}
-              placeholder="z. B. Inkl. Treuhandservice, Sofortübertrag"
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white focus:outline-none rounded-xl text-slate-900 text-sm"
+              placeholder="Inklusive Treuhandabwicklung und MwSt.-Rechnung"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
             />
           </div>
 
-          {/* Mode Switcher: Multi-Record vs Single-Line */}
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono font-bold uppercase text-slate-700 flex items-center gap-1.5">
-                <Sliders className="w-3.5 h-3.5 text-slate-500" />
-                Ausgabe-Architektur
-              </span>
-              <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-slate-200 text-xs font-mono">
+          {/* Advanced Accordion / Options */}
+          <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+            
+            {/* Architecture Switcher */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-bold text-slate-600">Format:</span>
+              <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 text-xs font-mono">
                 <button
                   type="button"
                   onClick={() => setRecordFormat('multi')}
-                  className={`px-2.5 py-1 rounded font-bold transition-colors ${
+                  className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
                     recordFormat === 'multi'
-                      ? 'bg-slate-900 text-white'
+                      ? 'bg-slate-900 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -314,9 +333,9 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                 <button
                   type="button"
                   onClick={() => setRecordFormat('single')}
-                  className={`px-2.5 py-1 rounded font-bold transition-colors ${
+                  className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
                     recordFormat === 'single'
-                      ? 'bg-slate-900 text-white'
+                      ? 'bg-slate-900 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -324,78 +343,108 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                 </button>
               </div>
             </div>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              {recordFormat === 'multi' ? (
-                <span>
-                  <strong>IETF-Standard:</strong> Nach RFC 10023 Section 2.1 enthält jeder TXT-Record genau ein Tag-Wert-Paar und beginnt mit <code>v=FORSALE1;</code>. Dies garantiert maximale Parser-Kompatibilität bei Registraren (wie SIDN).
-                </span>
-              ) : (
-                <span>
-                  <strong>Kompaktmodus:</strong> Kombiniert alle Tags in einem einzelnen TXT-Record. Zu verwenden, wenn dein Hoster-Webinterface nur 1 TXT-Eintrag pro Subdomain zulässt.
-                </span>
-              )}
-            </p>
+
+            {/* TTL */}
+            <div className="flex items-center gap-2 text-xs font-mono">
+              <span className="font-bold text-slate-600">TTL:</span>
+              <select
+                value={ttl}
+                onChange={(e) => setTtl(e.target.value)}
+                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-md focus:outline-none"
+              >
+                <option value="300">300 s (5 min)</option>
+                <option value="3600">3600 s (1 h)</option>
+                <option value="86400">86400 s (24 h)</option>
+              </select>
+            </div>
+
           </div>
+
+          {/* 255-Byte Limit Guard Alert */}
+          {exceeds255Limit ? (
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs font-mono text-rose-900 flex items-start gap-2.5">
+              <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+              <div>
+                <strong>Achtung: DNS RFC 1035 Längenüberschreitung ({maxBytes} Bytes)!</strong>
+                <p className="mt-0.5 opacity-90">
+                  Ein einzelner DNS TXT String darf maximal 255 Bytes lang sein. Bitte kürze deinen Freitext (<code className="font-bold">ftxt</code>) oder deine URL (<code className="font-bold">furi</code>).
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="text-[11px] font-mono text-slate-500 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Byte-Length Guard: {maxBytes} / 255 Oktette (RFC 1035 konform)</span>
+            </div>
+          )}
 
         </div>
 
-        {/* Right Output: 5 cols */}
-        <div className="lg:col-span-5 flex flex-col justify-between bg-slate-950 rounded-xl p-5 text-slate-100 shadow-md">
-          <div>
-            {/* Tab navigation */}
-            <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-3 mb-4">
-              <span className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5" />
-                DNS Export
-              </span>
-              <div className="flex flex-wrap gap-1">
-                {(['bind', 'cloudflare', 'hetzner', 'inwx', 'cli'] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setActiveTab(tab)}
-                    className={`px-2 py-1 rounded text-[10px] font-mono font-bold transition-colors ${
-                      activeTab === tab
-                        ? 'bg-emerald-500 text-slate-950'
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                    }`}
-                  >
-                    {tab.toUpperCase()}
-                  </button>
-                ))}
-              </div>
+        {/* Right Col: Code Export & Tabs (5 cols) */}
+        <div className="lg:col-span-5 flex flex-col justify-between space-y-4">
+          
+          <div className="bg-slate-950 rounded-xl border border-slate-800 p-4 font-mono text-xs text-slate-300 flex-grow flex flex-col">
+            
+            {/* Tabs Header */}
+            <div className="flex flex-wrap items-center gap-1 pb-3 mb-3 border-b border-slate-800 text-[11px]">
+              {[
+                { id: 'bind', label: 'BIND / Zone' },
+                { id: 'cloudflare', label: 'Cloudflare' },
+                { id: 'hetzner', label: 'Hetzner' },
+                { id: 'inwx', label: 'INWX' },
+                { id: 'terraform', label: 'Terraform' },
+                { id: 'dnscontrol', label: 'DNSControl' },
+                { id: 'cli', label: 'CLI / Curl' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`px-2 py-1 rounded transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-slate-800 text-emerald-400 font-bold'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
-            {/* Code preview */}
-            <div className="relative">
-              <pre className="font-mono text-xs sm:text-[13px] text-emerald-300 leading-relaxed overflow-x-auto p-3.5 bg-slate-900/90 rounded-lg border border-slate-800 min-h-[220px] whitespace-pre-wrap select-all">
-                {getExportCode()}
-              </pre>
+            {/* Code Output */}
+            <pre className="overflow-x-auto flex-grow text-emerald-300 whitespace-pre leading-relaxed select-all">
+              <code>{getExportCode()}</code>
+            </pre>
+
+            {/* Bottom Actions inside code card */}
+            <div className="pt-3 mt-3 border-t border-slate-800 flex items-center justify-between">
+              <span className="text-[10px] text-slate-500">
+                {recordStrings.length} Record{recordStrings.length > 1 ? 's' : ''} generiert
+              </span>
+              <button
+                type="button"
+                onClick={copyExport}
+                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5 text-white" />}
+                <span>{copied ? 'Kopiert!' : 'Code kopieren'}</span>
+              </button>
             </div>
 
-            {/* Compliance Badge */}
-            <div className="mt-3 flex items-center gap-2 text-xs font-mono text-slate-400">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>
-                {recordFormat === 'multi'
-                  ? '100 % IETF RFC 10023 Standardkonform (Section 2.1)'
-                  : 'Single-Line Fallback (Breite Hoster-Kompatibilität)'}
-              </span>
-            </div>
           </div>
 
-          {/* Action button */}
-          <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
-            <span className="text-[11px] text-slate-400 font-mono">
-              TTL: {ttl}s &bull; TXT Records: {recordStrings.length}
+          {/* Direct Validation Share Link */}
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+            <span className="text-xs font-mono text-slate-600 truncate">
+              Prüflink: rfc10023.de/validator?d={cleanDomain}
             </span>
             <button
               type="button"
-              onClick={copyExport}
-              className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-mono font-black text-xs rounded-lg transition-all flex items-center gap-2 shadow-xs"
+              onClick={copyShareLink}
+              className="shrink-0 px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-200 text-xs font-mono font-medium flex items-center gap-1 text-slate-800"
             >
-              {copied ? <Check className="w-4 h-4 text-slate-950" /> : <Copy className="w-4 h-4" />}
-              <span>{copied ? 'Kopiert!' : 'Code kopieren'}</span>
+              {shareCopied ? <Check className="w-3 h-3 text-emerald-600" /> : <Share2 className="w-3 h-3 text-slate-500" />}
+              <span>{shareCopied ? 'Kopiert' : 'Link teilen'}</span>
             </button>
           </div>
 

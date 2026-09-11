@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Terminal, ShieldCheck, Cpu, Database, Menu, X, BookOpen, Code2 } from 'lucide-react';
+import { Terminal, ShieldCheck, Cpu, Database, Menu, X, BookOpen, Layers, Sparkles, Code2, Scale } from 'lucide-react';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
 
   const navLinks = [
-    { name: 'Live Validator', path: '/validator', icon: ShieldCheck },
+    { name: 'Validator', path: '/validator', icon: ShieldCheck },
     { name: 'Generator', path: '/generator', icon: Cpu },
-    { name: 'Hoster-Matrix', path: '/hoster-matrix', icon: Database },
-    { name: 'Spezifikation', path: '/spezifikation', icon: BookOpen },
-    { name: 'Widget-Embed', path: '/rechner-embed', icon: Code2 },
+    { name: 'Bulk-Scan', path: '/bulk-scan', icon: Layers },
+    { name: 'Trust-Badge', path: '/badge-generator', icon: Sparkles },
+    { name: 'API Docs', path: '/api-docs', icon: Code2 },
+    { name: 'Recht & Steuern', path: '/recht-leitfaden', icon: Scale },
+    { name: 'Matrix', path: '/hoster-matrix', icon: Database },
   ];
 
   return (
@@ -28,13 +30,13 @@ export default function Navbar() {
                 RFC<span className="text-emerald-600">10023</span><span className="text-slate-400 text-sm font-semibold">.de</span>
               </span>
               <span className="hidden sm:block text-[10px] font-mono tracking-wider uppercase text-slate-500">
-                _for-sale DNS Reference Portal
+                _for-sale DACH Reference Hub
               </span>
             </div>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+          <nav className="hidden md:flex items-center gap-1 lg:gap-1.5">
             {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive = location.pathname === link.path;
@@ -42,13 +44,13 @@ export default function Navbar() {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors duration-150 ${
                     isActive
-                      ? 'bg-slate-100 text-slate-900 font-semibold'
+                      ? 'bg-slate-100 text-slate-900 font-bold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-600' : 'text-slate-400'}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-emerald-600' : 'text-slate-400'}`} />
                   {link.name}
                 </Link>
               );
@@ -59,9 +61,9 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center gap-3">
             <Link
               to="/validator"
-              className="inline-flex items-center justify-center px-4 py-2 text-xs font-bold font-mono tracking-wider uppercase rounded-md bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all duration-150 shadow-sm"
+              className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-bold font-mono tracking-wider uppercase rounded-md bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all duration-150 shadow-sm"
             >
-              DoH Test starten
+              DoH Test
             </Link>
           </div>
 
@@ -89,13 +91,13 @@ export default function Navbar() {
                 key={link.path}
                 to={link.path}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-base font-medium ${
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium ${
                   isActive
                     ? 'bg-emerald-50 text-emerald-800 font-bold'
                     : 'text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <Icon className="w-5 h-5 text-emerald-600" />
+                <Icon className="w-4 h-4 text-emerald-600" />
                 {link.name}
               </Link>
             );

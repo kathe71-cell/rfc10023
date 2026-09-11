@@ -10,6 +10,10 @@ import ValidatorPage from './pages/ValidatorPage';
 import GeneratorPage from './pages/GeneratorPage';
 import MatrixPage from './pages/MatrixPage';
 import SpezifikationPage from './pages/SpezifikationPage';
+import BulkPage from './pages/BulkPage';
+import BadgePage from './pages/BadgePage';
+import ApiDocsPage from './pages/ApiDocsPage';
+import RechtLeitfadenPage from './pages/RechtLeitfadenPage';
 import EmbedPage from './pages/EmbedPage';
 import Impressum from './pages/Impressum';
 import Datenschutz from './pages/Datenschutz';
@@ -61,6 +65,10 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/validator" element={<ValidatorPage />} />
           <Route path="/generator" element={<GeneratorPage />} />
+          <Route path="/bulk-scan" element={<BulkPage />} />
+          <Route path="/badge-generator" element={<BadgePage />} />
+          <Route path="/api-docs" element={<ApiDocsPage />} />
+          <Route path="/recht-leitfaden" element={<RechtLeitfadenPage />} />
           <Route path="/hoster-matrix" element={<MatrixPage />} />
           <Route path="/spezifikation" element={<SpezifikationPage />} />
           <Route path="/rechner-embed" element={<EmbedPage />} />
