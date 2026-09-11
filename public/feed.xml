@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>RFC 10023 DACH Referenzportal</title>
+    <link>https://rfc10023.de/</link>
+    <description>Aktuelle Updates, Leitfäden und Tool-Releases zum DNS For-Sale Standard RFC 10023</description>
+    <language>de-DE</language>
+    <lastBuildDate>Fri, 11 Sep 2026 10:00:00 GMT</lastBuildDate>
+    <item>
+      <title>RFC 10023: Der IETF-Standard für dezentrale Domainverkäufe im DNS</title>
+      <link>https://rfc10023.de/spezifikation</link>
+      <guid>https://rfc10023.de/spezifikation</guid>
+      <pubDate>Fri, 11 Sep 2026 08:00:00 GMT</pubDate>
+      <description>Vollständige deutsche Analyse des RFC 10023 Standards, Syntax-Regeln und Anwendungsbeispiele für Webmaster.</description>
+    </item>
+    <item>
+      <title>Hoster-Matrix DACH: Welche DNS-Editoren unterstützen _for-sale?</title>
+      <link>https://rfc10023.de/hoster-matrix</link>
+      <guid>https://rfc10023.de/hoster-matrix</guid>
+      <pubDate>Thu, 10 Sep 2026 12:00:00 GMT</pubDate>
+      <description>Großer Test von Hetzner, INWX, Cloudflare, Netcup, Strato und IONOS bei der Einrichtung von Underscore-Labels.</description>
+    </item>
+  </channel>
+</rss>

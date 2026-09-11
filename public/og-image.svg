@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <rect width="1200" height="630" fill="#0f172a"/>
+  <rect x="60" y="60" width="1080" height="510" rx="24" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+  <circle cx="1020" cy="180" r="160" fill="#10b981" fill-opacity="0.08" filter="blur(60px)"/>
+  <circle cx="200" cy="460" r="140" fill="#38bdf8" fill-opacity="0.08" filter="blur(50px)"/>
+  
+  <text x="120" y="160" fill="#10b981" font-family="-apple-system, sans-serif" font-size="20" font-weight="700" letter-spacing="4">IETF STANDARD · RFC 10023</text>
+  <text x="120" y="240" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="56" font-weight="800" letter-spacing="-1">_for-sale DNS Standard</text>
+  <text x="120" y="300" fill="#94a3b8" font-family="-apple-system, sans-serif" font-size="28">Offizielles DACH-Portal für Domain-Verkaufssignale im DNS</text>
+  
+  <rect x="120" y="350" width="960" height="74" rx="12" fill="#0f172a" stroke="#334155"/>
+  <text x="150" y="396" fill="#38bdf8" font-family="monospace" font-size="22">_for-sale.domain.de. IN TXT "v=FORSALE1; fval=EUR:2500; furi=..."</text>
+  
+  <rect x="120" y="460" width="220" height="46" rx="8" fill="#10b981"/>
+  <text x="150" y="490" fill="#042f2e" font-family="-apple-system, sans-serif" font-size="18" font-weight="800">Live DNS-Validator</text>
+  
+  <rect x="360" y="460" width="220" height="46" rx="8" fill="#334155"/>
+  <text x="390" y="490" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="18" font-weight="700">Record Generator</text>
+  
+  <text x="960" y="490" fill="#64748b" font-family="-apple-system, sans-serif" font-size="18">rfc10023.de</text>
+</svg>

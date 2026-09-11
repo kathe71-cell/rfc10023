@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://rfc10023.de/sitemap.xml
