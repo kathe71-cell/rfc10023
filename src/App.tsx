@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Link } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import VercelAnalytics from './components/VercelAnalytics';
+import ScrollToTop from './components/ScrollToTop';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -27,6 +28,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       <Navbar />
       <main className="flex-grow">{children}</main>
       <Footer />
+      <ScrollToTop />
 
       {/* Sticky Mobile Bottom Bar (Mobile-First Godmode Rule) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 px-4 py-2.5 flex items-center justify-around gap-2 shadow-lg">

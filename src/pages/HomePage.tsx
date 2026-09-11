@@ -25,7 +25,7 @@ export default function HomePage() {
     },
     {
       q: 'Muss jede Tag-Angabe in einen separaten TXT-Eintrag?',
-      a: 'Nach RFC 10023 Section 2.1 lautet die strikte IETF-Vorgabe: Jeder TXT-Record darf maximal ein Tag-Wert-Paar enthalten (z. B. Record 1: "v=FORSALE1;fval=EUR2500", Record 2: "v=FORSALE1;furi=https://..."). Unser Generator unterstützt sowohl dieses offizielle Multi-Record-Verfahren als auch den Single-Line-Fallback für Webhoster mit restriktiven Kontrollpanels.'
+      a: 'Nach RFC 10023 Section 2.1 lautet die strikte IETF-Vorgabe: Jeder TXT-Record darf maximal ein Tag-Wert-Paar enthalten (z. B. Record 1: "v=FORSALE1;fval=USD195000", Record 2: "v=FORSALE1;furi=https://..."). Unser Generator unterstützt sowohl dieses offizielle Multi-Record-Verfahren als auch den Single-Line-Fallback für Webhoster mit restriktiven Kontrollpanels.'
     },
     {
       q: 'Wie erkennen Registrare und Broker, dass eine Domain zum Verkauf steht?',
@@ -132,14 +132,14 @@ export default function HomePage() {
 
               <div className="space-y-2 text-slate-300 overflow-x-auto leading-relaxed">
                 <p className="text-slate-500"># Abfrage eines RFC 10023 Resource Record Sets:</p>
-                <p className="text-emerald-400">$ dig TXT _for-sale.rfc10023.nl +short</p>
+                <p className="text-emerald-400">$ dig TXT _for-sale.forsaledns.net +short</p>
                 <div className="p-3 bg-slate-900/90 rounded-lg border border-slate-800 text-slate-200 space-y-1 my-2">
-                  <p className="text-emerald-300">&quot;v=FORSALE1;fval=EUR2500&quot;</p>
-                  <p className="text-emerald-300">&quot;v=FORSALE1;furi=https://rfc10023.nl/kauf&quot;</p>
-                  <p className="text-slate-400">&quot;v=FORSALE1;ftxt=Inklusive Escrow Treuhand&quot;</p>
+                  <p className="text-emerald-300">&quot;v=FORSALE1;fval=USD195000&quot;</p>
+                  <p className="text-emerald-300">&quot;v=FORSALE1;furi=mailto:sales@sun.com.py&quot;</p>
+                  <p className="text-slate-400">&quot;v=FORSALE1;ftxt=Direct inquiries welcome&quot;</p>
                 </div>
                 <div className="pt-2 text-[11px] text-slate-400 border-t border-slate-800/80 space-y-1">
-                  <p><strong className="text-slate-200">DNS Node:</strong> _for-sale.rfc10023.nl.</p>
+                  <p><strong className="text-slate-200">DNS Node:</strong> _for-sale.forsaledns.net.</p>
                   <p><strong className="text-slate-200">DNSSEC:</strong> Validated (RRSIG Authenticated)</p>
                   <p><strong className="text-slate-200">Standard:</strong> IETF RFC 10023 (Section 2.1)</p>
                 </div>

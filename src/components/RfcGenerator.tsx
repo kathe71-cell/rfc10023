@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Share2, Layers, AlertCircle, CheckCircle2, Sliders } from 'lucide-react';
+import { Copy, Check, Share2, Layers, AlertCircle, CheckCircle2, Sliders, Info } from 'lucide-react';
 
 interface RfcGeneratorProps {
   embedded?: boolean;
@@ -11,7 +11,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
   const [amount, setAmount] = useState('2500');
   const [isVhb, setIsVhb] = useState(false);
   const [furi, setFuri] = useState('');
-  const [ftxt, setFtxt] = useState('Inkl. Treuhandabwicklung');
+  const [ftxt, setFtxt] = useState('Inkl. Treuhandservice, Sofortübertrag');
   const [fcod, setFcod] = useState('');
   const [ttl, setTtl] = useState('3600');
   const [recordFormat, setRecordFormat] = useState<'multi' | 'single'>('multi');
@@ -28,17 +28,15 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
     .replace(/^_for-sale\./, '')
     .split('/')[0] || 'beispieldomain.de';
 
-  // Sanitize numeric amount (remove commas, trim)
+  // Sanitize numeric amount (remove commas, spaces, letters)
   const cleanAmount = amount.replace(',', '.').replace(/[^0-9.]/g, '');
 
-  // Build the tags
+  // Build the tags with strict RFC 10023 Section 2.2 conformity
   const buildTags = () => {
     const tags: { key: string; val: string }[] = [];
 
-    if (isVhb) {
-      tags.push({ key: 'fval', val: 'VHB' });
-    } else if (cleanAmount) {
-      // RFC 10023 Section 2.2: currency code followed directly by amount (e.g. EUR2500 or USD1000)
+    // fval: Asking price. If VHB, omit fval and place note in ftxt (RFC 10023 Section 2.2 strictly defines fval as [currency][amount])
+    if (!isVhb && cleanAmount) {
       tags.push({ key: 'fval', val: `${currency}${cleanAmount}` });
     }
 
@@ -46,7 +44,14 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
       tags.push({ key: 'furi', val: furi.trim() });
     }
 
-    if (ftxt.trim()) {
+    if (isVhb) {
+      const note = ftxt.trim();
+      if (note && !note.toLowerCase().includes('vhb') && !note.toLowerCase().includes('verhandlung')) {
+        tags.push({ key: 'ftxt', val: `${note} (VHB)` });
+      } else {
+        tags.push({ key: 'ftxt', val: note || 'Verhandlungsbasis (VHB)' });
+      }
+    } else if (ftxt.trim()) {
       tags.push({ key: 'ftxt', val: ftxt.trim() });
     }
 
@@ -68,7 +73,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
       }
       return tags.map((t) => `v=FORSALE1;${t.key}=${t.val}`);
     } else {
-      // Fallback single combined string
+      // Fallback single combined string for basic dashboards
       const joined = tags.map((t) => `${t.key}=${t.val}`).join('; ');
       return [`v=FORSALE1; ${joined}`];
     }
@@ -81,36 +86,47 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
     switch (activeTab) {
       case 'bind':
         return [
-          `; RFC 10023 RRset für ${cleanDomain}`,
-          `; DNS Leaf Node: _for-sale.${cleanDomain}.`,
+          `; ==========================================================`,
+          `; RFC 10023 Resource Record Set für: ${cleanDomain}`,
+          `; DNS Leaf Node: _for-sale.${cleanDomain}. (Typ: TXT, IN-Class)`,
+          `; ==========================================================`,
           ...recordStrings.map((rec) => `_for-sale.${cleanDomain}. ${ttl} IN TXT "${rec}"`),
         ].join('\n');
 
       case 'cloudflare':
         return [
-          `# Cloudflare DNS Konfiguration für ${cleanDomain}:`,
-          `# Lege folgende TXT-Records im Dashboard an:`,
-          ...recordStrings.map((rec, idx) => `[Eintrag ${idx + 1}] Typ: TXT | Name: _for-sale | TTL: Auto | Content: "${rec}"`),
-        ].join('\n\n');
+          `# Cloudflare DNS Dashboard (Records einzeln hinzufügen):`,
+          `# Hinweis: Trage den Wert im Dashboard OHNE äußere Anführungszeichen ein.`,
+          ``,
+          ...recordStrings.map((rec, idx) => 
+            `[Eintrag #${idx + 1}]\nTyp:     TXT\nName:    _for-sale\nTTL:     Auto\nContent: ${rec}\n`
+          ),
+        ].join('\n');
 
       case 'hetzner':
         return [
-          `# Hetzner DNS Console für ${cleanDomain}:`,
-          ...recordStrings.map((rec, idx) => `[Record #${idx + 1}] Type: TXT | Name: _for-sale | TTL: ${ttl} | Value: "${rec}"`),
-        ].join('\n\n');
+          `# Hetzner DNS Console (dns.hetzner.com):`,
+          `# Name jeweils als '_for-sale' eintragen:`,
+          ``,
+          ...recordStrings.map((rec, idx) => 
+            `[Eintrag #${idx + 1}]\nTyp:   TXT\nName:  _for-sale\nTTL:   ${ttl}\nWert:  ${rec}\n`
+          ),
+        ].join('\n');
 
       case 'inwx':
         return [
-          `# INWX Domain-Center (DNS-Verwaltung):`,
-          ...recordStrings.map((rec, idx) => `[Eintrag ${idx + 1}] Name: _for-sale | Typ: TXT | Wert: ${rec} | TTL: ${ttl}`),
+          `# INWX Domain-Center / Netcup CCP (DNS-Zonenverwaltung):`,
+          ...recordStrings.map((rec, idx) => 
+            `[Record ${idx + 1}] Name: _for-sale | Typ: TXT | Wert: ${rec} | TTL: ${ttl}`
+          ),
         ].join('\n');
 
       case 'cli':
         return [
-          `# 1. DNS-Status mit dig abfragen:`,
+          `# 1. Lokale Abfrage via dig (DNS Port 53):`,
           `dig TXT _for-sale.${cleanDomain} +short`,
           ``,
-          `# 2. DNS-over-HTTPS Test via curl (Cloudflare Anycast):`,
+          `# 2. DNS-over-HTTPS Validierung (Cloudflare Anycast):`,
           `curl -sH "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?name=_for-sale.${cleanDomain}&type=TXT"`,
         ].join('\n');
 
@@ -147,10 +163,10 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
-              IETF RFC 10023 Section 2.1 Compiler
+              IETF RFC 10023 Section 2.1 &bull; Standards Track Compiler
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
             _for-sale DNS-Record Generator
           </h2>
         </div>
@@ -187,8 +203,8 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               />
             </div>
             <div className="mt-1 flex items-center justify-between text-[11px] font-mono text-slate-500">
-              <span>DNS Leaf Node: <code className="text-slate-800 font-bold">_for-sale.{cleanDomain}</code></span>
-              <span>Record-Typ: <code className="text-emerald-700 font-bold">TXT (Typ 16)</code></span>
+              <span>DNS Leaf Node: <code className="text-slate-950 font-bold">_for-sale.{cleanDomain}</code></span>
+              <span>Record-Typ: <code className="text-emerald-700 font-bold">TXT (Typ 16, IN)</code></span>
             </div>
           </div>
 
@@ -196,7 +212,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Verkaufspreis (<code className="text-emerald-700">fval</code>)
+                Festpreis (<code className="text-emerald-700 font-bold">fval</code>)
               </label>
               <div className="flex">
                 <select
@@ -230,16 +246,25 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                   className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-slate-900"
                 />
                 <span className="text-xs font-semibold text-slate-800">
-                  Verhandlungsbasis (<code className="font-mono text-emerald-700">fval=VHB</code>)
+                  Verhandlungsbasis (ohne Festpreis)
                 </span>
               </label>
             </div>
           </div>
 
+          {isVhb && (
+            <div className="p-3 rounded-lg bg-slate-100 border border-slate-200 text-[11px] text-slate-600 flex items-start gap-2">
+              <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+              <span>
+                <strong>RFC 10023 Konformität:</strong> Der Tag <code>fval</code> ist nach IETF-Spezifikation strikt für numerische Preise im Format <code>[Währung][Betrag]</code> (z. B. <code>EUR2500</code>) reserviert. Bei Verhandlungsbasis wird <code>fval</code> weggelassen und der VHB-Hinweis normgerecht über <code>ftxt</code> publiziert.
+              </span>
+            </div>
+          )}
+
           {/* Contact URI (furi) */}
           <div>
             <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Kontakt-URI (<code className="text-emerald-700">furi</code>)
+              Kontakt-URI (<code className="text-emerald-700 font-bold">furi</code>)
             </label>
             <input
               type="text"
@@ -249,14 +274,14 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white focus:outline-none rounded-xl font-mono text-slate-900 text-sm"
             />
             <span className="text-[11px] text-slate-500 mt-1 block">
-              Erlaubte URI-Schemata: <code className="font-mono">https://</code>, <code className="font-mono">http://</code>, <code className="font-mono">mailto:</code> oder <code className="font-mono">tel:</code>.
+              Erlaubte URI-Schemata nach RFC 3986: <code className="font-mono">https://</code>, <code className="font-mono">http://</code>, <code className="font-mono">mailto:</code> oder <code className="font-mono">tel:</code>.
             </span>
           </div>
 
           {/* Note / Human text (ftxt) */}
           <div>
             <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Zusatznotiz (<code className="text-emerald-700">ftxt</code>)
+              Freitext / Bedingungen (<code className="text-emerald-700 font-bold">ftxt</code>)
             </label>
             <input
               type="text"
@@ -272,7 +297,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono font-bold uppercase text-slate-700 flex items-center gap-1.5">
                 <Sliders className="w-3.5 h-3.5 text-slate-500" />
-                Architektur-Modus
+                Ausgabe-Architektur
               </span>
               <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-slate-200 text-xs font-mono">
                 <button
@@ -284,7 +309,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  IETF Multi-Record (RFC 10023)
+                  IETF Multi-Record (Empfohlen)
                 </button>
                 <button
                   type="button"
@@ -302,11 +327,11 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
             <p className="text-[11px] text-slate-500 leading-relaxed">
               {recordFormat === 'multi' ? (
                 <span>
-                  <strong>IETF-Standard:</strong> Gemäß RFC 10023 Section 2.1 enthält jeder TXT-Record genau ein Tag-Wert-Paar und beginnt mit <code>v=FORSALE1;</code>. Dies garantiert maximale Parser-Kompatibilität bei Registraren (wie SIDN).
+                  <strong>IETF-Standard:</strong> Nach RFC 10023 Section 2.1 enthält jeder TXT-Record genau ein Tag-Wert-Paar und beginnt mit <code>v=FORSALE1;</code>. Dies garantiert maximale Parser-Kompatibilität bei Registraren (wie SIDN).
                 </span>
               ) : (
                 <span>
-                  <strong>Kompaktmodus:</strong> Kombiniert alle Tags in einem einzelnen TXT-Record. Empfohlen, falls dein Hoster nur einen TXT-Eintrag pro Subdomain zulässt.
+                  <strong>Kompaktmodus:</strong> Kombiniert alle Tags in einem einzelnen TXT-Record. Zu verwenden, wenn dein Hoster-Webinterface nur 1 TXT-Eintrag pro Subdomain zulässt.
                 </span>
               )}
             </p>
@@ -353,8 +378,8 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>
                 {recordFormat === 'multi'
-                  ? 'IETF RFC 10023 Standardkonform (Multi-Record RRset)'
-                  : 'Single-Line Fallback (Breite Hoster-Unterstützung)'}
+                  ? '100 % IETF RFC 10023 Standardkonform (Section 2.1)'
+                  : 'Single-Line Fallback (Breite Hoster-Kompatibilität)'}
               </span>
             </div>
           </div>
