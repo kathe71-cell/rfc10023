@@ -289,7 +289,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
             />
             <span className="text-[11px] text-slate-500 mt-1 block">
-              Empfehlung: Link zu Treuhandservice, Dan/Sedo oder eigenem SSL-Kontaktformular.
+              Empfehlung: Link zu Treuhandservice (z. B. Escrow.com), Sedo, Afternic oder eigenem SSL-Kontaktformular.
             </span>
           </div>
 

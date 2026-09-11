@@ -180,7 +180,7 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
         <div className="flex items-center justify-between">
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
             <Code2 className="w-4 h-4 text-emerald-600" />
-            <span>Einbettungs-Code für HTML Landingpages / Sedo / Dan / WordPress</span>
+            <span>Einbettungs-Code für HTML Landingpages / Sedo / Afternic / WordPress</span>
           </span>
           <button
             type="button"

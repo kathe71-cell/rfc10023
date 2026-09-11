@@ -71,6 +71,7 @@ export default function App() {
           <Route path="/recht-leitfaden" element={<RechtLeitfadenPage />} />
           <Route path="/hoster-matrix" element={<MatrixPage />} />
           <Route path="/spezifikation" element={<SpezifikationPage />} />
+          <Route path="/widget-embed" element={<EmbedPage />} />
           <Route path="/rechner-embed" element={<EmbedPage />} />
           <Route path="/validator-embed" element={<EmbedPage />} />
           <Route path="/impressum" element={<Impressum />} />

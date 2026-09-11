@@ -41,7 +41,7 @@
       ]
     },
     {
-      "source": "/rechner-embed",
+      "source": "/widget-embed",
       "headers": [
         {
           "key": "Content-Security-Policy",

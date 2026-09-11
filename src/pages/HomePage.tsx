@@ -10,7 +10,7 @@ export default function HomePage() {
   const [copiedEmbed, setCopiedEmbed] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const embedCode = `<iframe src="https://rfc10023.de/rechner-embed" width="100%" height="540" frameborder="0" style="border-radius:12px; border:1px solid #e2e8f0;"></iframe>\n<p style="font-size:11px; color:#64748b; font-family:sans-serif;">Standard: <a href="https://rfc10023.de" target="_blank">RFC 10023 DACH Hub</a></p>`;
+  const embedCode = `<iframe src="https://rfc10023.de/widget-embed" width="100%" height="540" frameborder="0" style="border-radius:12px; border:1px solid #e2e8f0;"></iframe>\n<p style="font-size:11px; color:#64748b; font-family:sans-serif;">Standard: <a href="https://rfc10023.de" target="_blank">RFC 10023 DACH Hub</a></p>`;
 
   const copyEmbed = () => {
     navigator.clipboard.writeText(embedCode);
@@ -20,7 +20,7 @@ export default function HomePage() {
 
   const faqs = [
     {
-      q: 'Warum RFC 10023 statt klassischem Sedo- oder Dan-Parking?',
+      q: 'Warum RFC 10023 statt klassischem Sedo- oder Afternic-Parking?',
       a: 'Domainparking über externe Werbeseiten birgt massive Nachteile: Browser-Adblocker sperren die Seiten, Google straft geparkte Domains mit Deindexierung ab und bei einem Verkauf fallen 10 bis 15 Prozent Vermittlungsprovision an. Mit RFC 10023 bleibt die Domain auf Ihren regulären Nameservern oder einer eigenen Webpräsenz erreichbar. Das Verkaufsangebot wird transparent im DNS signalisiert – direkt für Registrare und Käufer ohne Zwischenhändler.'
     },
     {

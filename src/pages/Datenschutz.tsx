@@ -64,16 +64,16 @@ export default function Datenschutz() {
           </p>
         </div>
 
-        {/* 4. Live DNS-over-HTTPS (DoH) Validator */}
+        {/* 4. Live DNS-over-HTTPS (DoH) Validator, Bulk-Scanner & API */}
         <div>
           <h2 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
             <Server className="w-4 h-4 text-emerald-600" />
-            4. Funktionsweise des Live DNS-Validators
+            4. Funktionsweise des Live DNS-Validators, Bulk-Scanners und der REST-API
           </h2>
           <p>
-            Wenn Sie eine Domain in unserem Live-Validator prüfen, sendet Ihr Browser eine DNS-Abfrage über HTTPS (DoH) an die öffentlichen Resolver-Dienste von Cloudflare Inc. bzw. Google LLC. 
-            Hierbei wird der öffentlich registrierte Resource Record <code>_for-sale.[eingegebene-domain]</code> abgefragt. 
-            Wir speichern die von Ihnen abgefragten Domains nicht auf unseren Servern.
+            Wenn Sie eine Domain in unserem Live-Validator oder dem Portfolio Bulk-Scanner prüfen, sendet Ihr Browser DNS-Abfragen über HTTPS (DoH) an die öffentlichen Anycast-Resolver von Cloudflare Inc. bzw. Google LLC. 
+            Hierbei wird ausschließlich der öffentlich registrierte Resource Record <code>_for-sale.[eingegebene-domain]</code> abgefragt. 
+            Wir speichern die von Ihnen eingegebenen Domains oder Portfolio-Listen nicht auf unseren Servern und erstellen keine Nutzungsprofile.
           </p>
         </div>
 
