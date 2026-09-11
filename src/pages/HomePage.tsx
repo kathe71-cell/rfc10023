@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Cpu, Database, BookOpen, CheckCircle, HelpCircle, Code2, Copy, Check, ArrowRight, ExternalLink, Sparkles, Terminal, FileText } from 'lucide-react';
+import { ShieldCheck, Cpu, Code2, Copy, Check, ArrowRight, ExternalLink, Terminal, CheckCircle2, ArrowUpRight, Zap, Shield, AlertTriangle } from 'lucide-react';
 import RfcValidator from '../components/RfcValidator';
 import RfcGenerator from '../components/RfcGenerator';
 import HosterMatrix from '../components/HosterMatrix';
@@ -10,7 +10,7 @@ export default function HomePage() {
   const [copiedEmbed, setCopiedEmbed] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  const embedCode = `<iframe src="https://rfc10023.de/rechner-embed" width="100%" height="520" frameborder="0" style="border-radius:12px; border:1px solid #e2e8f0;"></iframe>\n<p style="font-size:11px; color:#64748b;">Powered by <a href="https://rfc10023.de" target="_blank">RFC 10023 Referenzportal</a></p>`;
+  const embedCode = `<iframe src="https://rfc10023.de/rechner-embed" width="100%" height="540" frameborder="0" style="border-radius:12px; border:1px solid #e2e8f0;"></iframe>\n<p style="font-size:11px; color:#64748b; font-family:sans-serif;">Standard: <a href="https://rfc10023.de" target="_blank">RFC 10023 DACH Portal</a></p>`;
 
   const copyEmbed = () => {
     navigator.clipboard.writeText(embedCode);
@@ -20,93 +20,140 @@ export default function HomePage() {
 
   const faqs = [
     {
-      q: 'Was bezweckt der Standard RFC 10023 in der Praxis?',
-      a: 'RFC 10023 löst das Problem fragmentierter, proprietärer Verkaufs-Landingpages. Bisher mussten Domain-Inhaber ihre Domains auf Marktplätze (wie Sedo oder Afternic) umrouten. Mit RFC 10023 kann eine Domain normal weiterbetrieben werden (oder auf beliebigen Nameservern liegen), während Registrare, Makler und automatisierte Erwerbs-Tools die Verkaufsbereitschaft direkt über eine DNS-Abfrage am Knoten _for-sale auslesen können.'
+      q: 'Warum RFC 10023 statt klassischem Sedo- oder Dan-Parking?',
+      a: 'Domainparking über externe Werbeseiten birgt massive Nachteile: Browser-Adblocker sperren die Seiten, Google straft geparkte Domains mit Deindexierung ab und bei einem Verkauf fallen 10 bis 15 Prozent Vermittlungsprovision an. Mit RFC 10023 bleibt die Domain auf Ihren regulären Nameservern oder einer eigenen Webpräsenz erreichbar. Das Verkaufsangebot wird transparent im DNS signalisiert – direkt für Registrare und Käufer ohne Zwischenhändler.'
     },
     {
-      q: 'Wie sieht die Mindestanforderung an den TXT-Record aus?',
-      a: 'Der TXT-Record muss zwingend mit dem Versions-Tag "v=FORSALE1;" beginnen. Ohne diesen Header ist der Record nach RFC 10023 ungültig. Dahinter folgen optionale Schlüssel-Wert-Paare wie fval=EUR:2500 (Preis) oder furi=https://... (Kontaktseite).'
+      q: 'Muss jede Tag-Angabe in einen separaten TXT-Eintrag?',
+      a: 'Nach RFC 10023 Section 2.1 lautet die strikte IETF-Vorgabe: Jeder TXT-Record darf maximal ein Tag-Wert-Paar enthalten (z. B. Record 1: "v=FORSALE1;fval=EUR2500", Record 2: "v=FORSALE1;furi=https://..."). Unser Generator unterstützt sowohl dieses offizielle Multi-Record-Verfahren als auch den Single-Line-Fallback für Webhoster mit restriktiven Kontrollpanels.'
     },
     {
-      q: 'Welche Registries werten RFC 10023 bereits aus?',
-      a: 'Pionier ist die niederländische Registry SIDN (.nl). Sie integriert den _for-sale TXT-Record direkt in ihre Whois- und Domain-Lookup-Dienste. Wenn eine .nl-Domain zum Verkauf steht, wird dies direkt auf der offiziellen SIDN-Webseite angezeigt.'
+      q: 'Wie erkennen Registrare und Broker, dass eine Domain zum Verkauf steht?',
+      a: 'Moderne Registrare (Pionier: die niederländische Registry SIDN für .nl) führen bei Whois- oder Verfügbarkeitsabfragen einen DNS-Query auf Typ 16 (TXT) am Hostnamen _for-sale durch. Wird ein valider v=FORSALE1-Header gefunden, zeigt der Registrar dem Interessenten direkt die Kaufoption und den im fval-Tag hinterlegten Festpreis an.'
     },
     {
-      q: 'Ersetzt der DNS-Record einen Treuhanddienst (Escrow)?',
-      a: 'Nein. RFC 10023 ist ein reines Signal- und Discovery-Protokoll. Die Verhandlung, Bezahlung und Eigentumsübertragung erfolgt weiterhin über bewährte Treuhanddienste (z. B. Sedo, Dan, Escrow.com) oder bilaterale Kaufverträge.'
+      q: 'Welche Kosten oder Gebühren entstehen durch den DNS-Standard?',
+      a: 'Keine. RFC 10023 ist ein offener Internet-Standard der IETF. DNS-TXT-Records sind bei allen gängigen Hostern kostenfrei im Leistungsumfang der Domain enthalten.'
     },
     {
-      q: 'Kann ich mehrere _for-sale TXT-Einträge hinterlegen?',
-      a: 'Ja. RFC 10023 erlaubt mehrere TXT-Records innerhalb des RRsets, solange jedes Tag-Werte-Paar eindeutig ist. Es können beispielsweise unterschiedliche Kontaktkanäle oder automatisierte Vermittlungscodes parallel publiziert werden.'
+      q: 'Wie schützt man sich vor Spam oder Scraping der Kontaktdaten?',
+      a: 'Im Tag furi sollte idealerweise kein ungeschützter Mailto-Link, sondern ein Link zu einem geschützten Kontaktformular, einer Escrow-Landingpage oder einem Treuhanddienst hinterlegt werden. So bleibt die Domain maschinenlesbar, ohne Angriffsfläche für Spambots zu bieten.'
     }
   ];
 
   return (
     <div className="space-y-16 pb-16">
       
-      {/* Hero Section (Helles Editorial Design) */}
-      <section className="pt-12 sm:pt-16 pb-8 border-b border-slate-200 bg-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-emerald-50/60 blur-3xl pointer-events-none"></div>
-        
+      {/* Hero Section: Editorial, Direct, Anti-AI-Slop */}
+      <section className="pt-10 sm:pt-14 pb-12 border-b border-slate-200 bg-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          {/* Superscript Tag */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-mono font-bold tracking-wider text-slate-800 uppercase mb-6">
-            <Terminal className="w-3.5 h-3.5 text-emerald-600" />
-            <span>IETF Standard · Published July 2026 · DNS Node: _for-sale</span>
-          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+            
+            {/* Left Col: 7 cols */}
+            <div className="lg:col-span-7 space-y-6">
+              
+              {/* Technical Node Badge */}
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-100 border border-slate-200 font-mono text-xs font-semibold text-slate-800">
+                <Terminal className="w-3.5 h-3.5 text-emerald-600" />
+                <span>IETF RFC 10023 &bull; DNS Node: <strong className="text-slate-950">_for-sale</strong></span>
+              </div>
 
-          {/* Display Headline */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.08] max-w-4xl">
-            Domain-Verkaufssignale direkt im <span className="text-emerald-600 underline decoration-emerald-300 decoration-wavy underline-offset-8">DNS</span> standardisieren.
-          </h1>
+              {/* Display Headline */}
+              <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-slate-950 leading-[1.05]">
+                Kein Parking.<br />
+                Kein Redirect-Zwang.<br />
+                <span className="text-emerald-700 underline decoration-slate-300 underline-offset-8">
+                  Verkaufen direkt im DNS.
+                </span>
+              </h1>
 
-          <p className="mt-6 text-lg sm:text-xl text-slate-600 max-w-3xl leading-relaxed">
-            Mit <strong className="text-slate-900 font-bold">RFC 10023</strong> publizieren Domaininhaber ihre Verkaufsbereitschaft, Festpreise und Kontaktwege dezentral und maschinenlesbar. Unser DACH-Portal bietet Live-Validierung, 1-Click-Record-Generierung und Hoster-Support.
-          </p>
+              {/* Subtext: Specific, grounded, direct */}
+              <p className="text-base sm:text-lg text-slate-700 leading-relaxed max-w-2xl font-normal">
+                Der IETF-Standard <strong className="text-slate-900 font-bold">RFC 10023</strong> definiert die offizielle 
+                Discovery-Schicht für Domainverkäufe. Statt Traffic auf Werbe-Parkingseiten umzuleiten, hinterlegen Inhaber Preis 
+                und Kontakt im DNS-TXT-Record – maschinenlesbar für Registrare, Broker und automatisierte Erwerbs-Tools.
+              </p>
 
-          {/* Dual CTAs & Stats Grid */}
-          <div className="mt-8 flex flex-wrap items-center gap-4">
-            <a
-              href="#validator"
-              className="px-6 py-3.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-md flex items-center gap-2"
-            >
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Live-Validator starten</span>
-            </a>
-            <a
-              href="#generator"
-              className="px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-sm rounded-xl transition-all shadow-sm flex items-center gap-2"
-            >
-              <Cpu className="w-4 h-4 text-white" />
-              <span>TXT-Record erstellen</span>
-            </a>
-            <Link
-              to="/hoster-matrix"
-              className="px-5 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-sm rounded-xl transition-colors"
-            >
-              Hoster-Matrix ansehen &rarr;
-            </Link>
-          </div>
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <a
+                  href="#validator"
+                  className="px-5 py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-mono font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2"
+                >
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>Domain live prüfen</span>
+                </a>
+                <a
+                  href="#generator"
+                  className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-mono font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2"
+                >
+                  <Cpu className="w-4 h-4" />
+                  <span>Record generieren</span>
+                </a>
+                <Link
+                  to="/hoster-matrix"
+                  className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono text-xs font-semibold rounded-xl transition-colors"
+                >
+                  Hoster-Matrix &rarr;
+                </Link>
+              </div>
 
-          {/* Real Facts Strip */}
-          <div className="mt-12 pt-8 border-t border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div>
-              <span className="block text-2xl sm:text-3xl font-mono font-black text-slate-900">RFC 10023</span>
-              <span className="text-xs font-mono uppercase tracking-wider text-slate-500">IETF Standards Track</span>
+              {/* Technical Facts Grid */}
+              <div className="pt-6 border-t border-slate-100 grid grid-cols-3 gap-4 font-mono">
+                <div>
+                  <span className="block text-2xl font-black text-slate-950">0 %</span>
+                  <span className="text-[11px] text-slate-500 uppercase tracking-wider">Provision</span>
+                </div>
+                <div>
+                  <span className="block text-2xl font-black text-slate-950">TXT 16</span>
+                  <span className="text-[11px] text-slate-500 uppercase tracking-wider">Record-Typ</span>
+                </div>
+                <div>
+                  <span className="block text-2xl font-black text-emerald-700">v=FORSALE1</span>
+                  <span className="text-[11px] text-slate-500 uppercase tracking-wider">Mandatory Tag</span>
+                </div>
+              </div>
+
             </div>
-            <div>
-              <span className="block text-2xl sm:text-3xl font-mono font-black text-emerald-600">_for-sale</span>
-              <span className="text-xs font-mono uppercase tracking-wider text-slate-500">Global DNS Node Name</span>
+
+            {/* Right Col: 5 cols Terminal Panel */}
+            <div className="lg:col-span-5 bg-slate-950 rounded-2xl p-5 border border-slate-800 text-slate-200 font-mono text-xs shadow-xl">
+              
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800 text-slate-400">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                  <span className="ml-2 text-[11px] text-slate-400">terminal &mdash; dig query</span>
+                </div>
+                <span className="text-[10px] text-emerald-400 font-bold uppercase">Live DoH Output</span>
+              </div>
+
+              <div className="space-y-2 text-slate-300 overflow-x-auto leading-relaxed">
+                <p className="text-slate-500"># Abfrage eines RFC 10023 Resource Record Sets:</p>
+                <p className="text-emerald-400">$ dig TXT _for-sale.rfc10023.nl +short</p>
+                <div className="p-3 bg-slate-900/90 rounded-lg border border-slate-800 text-slate-200 space-y-1 my-2">
+                  <p className="text-emerald-300">&quot;v=FORSALE1;fval=EUR2500&quot;</p>
+                  <p className="text-emerald-300">&quot;v=FORSALE1;furi=https://rfc10023.nl/kauf&quot;</p>
+                  <p className="text-slate-400">&quot;v=FORSALE1;ftxt=Inklusive Escrow Treuhand&quot;</p>
+                </div>
+                <div className="pt-2 text-[11px] text-slate-400 border-t border-slate-800/80 space-y-1">
+                  <p><strong className="text-slate-200">DNS Node:</strong> _for-sale.rfc10023.nl.</p>
+                  <p><strong className="text-slate-200">DNSSEC:</strong> Validated (RRSIG Authenticated)</p>
+                  <p><strong className="text-slate-200">Standard:</strong> IETF RFC 10023 (Section 2.1)</p>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px]">
+                <span className="text-slate-500">Referenz: SIDN Registry (.nl)</span>
+                <Link to="/spezifikation" className="text-emerald-400 hover:underline flex items-center gap-1 font-bold">
+                  Spezifikation lesen &rarr;
+                </Link>
+              </div>
+
             </div>
-            <div>
-              <span className="block text-2xl sm:text-3xl font-mono font-black text-slate-900">v=FORSALE1</span>
-              <span className="text-xs font-mono uppercase tracking-wider text-slate-500">Obligatorischer Versions-Tag</span>
-            </div>
-            <div>
-              <span className="block text-2xl sm:text-3xl font-mono font-black text-slate-900">0 % Provision</span>
-              <span className="text-xs font-mono uppercase tracking-wider text-slate-500">Direkter Käuferkontakt</span>
-            </div>
+
           </div>
 
         </div>
@@ -114,22 +161,22 @@ export default function HomePage() {
 
       {/* Position-0 Definitions-Box (Featured Snippet Optimized) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="p-6 sm:p-8 rounded-2xl bg-white border-2 border-emerald-500/30 shadow-sm relative">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold uppercase bg-emerald-100 text-emerald-900">
-              Definition nach IETF RFC 10023
+        <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-300/80 shadow-xs relative">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-slate-900 text-white">
+              IETF Norm-Definition
             </span>
           </div>
-          <p className="text-base sm:text-lg text-slate-800 leading-relaxed font-medium">
-            <strong>RFC 10023</strong> (&bdquo;The &apos;_for-sale&apos; Underscored and Globally Scoped DNS Node Name&ldquo;) 
-            ist eine im Juli 2026 von der IETF verabschiedete Spezifikation. Sie definiert einen standardisierten 
-            DNS-TXT-Eintrag am Knotenpunkt <code>_for-sale.[domain]</code> mit dem Pflicht-Tag <code>v=FORSALE1;</code>, 
-            über den Domaininhaber ihre Verkaufsabsicht maschinenlesbar im weltweiten Domain Name System publizieren.
+          <p className="text-base sm:text-lg text-slate-900 leading-relaxed font-normal">
+            <strong>RFC 10023</strong> (<em>The &apos;_for-sale&apos; Underscored and Globally Scoped DNS Node Name</em>) 
+            beschreibt einen maschinenlesbaren DNS-TXT-Eintrag unter <code>_for-sale.[domain]</code>. 
+            Mit dem zwingenden Header <code>v=FORSALE1;</code> und optionalen Tags wie <code>fval</code> (Preis) und <code>furi</code> (Kontaktadresse) 
+            ermöglicht er die dezentrale Kennzeichnung von Domain-Verkaufsangeboten direkt im Domain Name System.
           </p>
-          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-slate-500">
-            <span>Quelle: Internet Engineering Task Force (IETF)</span>
-            <Link to="/spezifikation" className="text-emerald-700 font-bold hover:underline flex items-center gap-1">
-              Zur vollständigen Spezifikation <ArrowRight className="w-3.5 h-3.5" />
+          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-mono text-slate-500">
+            <span>Internet Engineering Task Force &bull; ISSN: 2070-1721</span>
+            <Link to="/spezifikation" className="text-emerald-700 font-bold hover:underline">
+              RFC 10023 Spezifikation &rarr;
             </Link>
           </div>
         </div>
@@ -145,101 +192,157 @@ export default function HomePage() {
         <RfcGenerator />
       </section>
 
+      {/* Asymmetric Bento-Grid: Architektur & Hard Facts (Replaces Uniform AI-Grid) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          <span className="text-[11px] font-mono uppercase font-bold tracking-wider text-slate-500">
+            Systemvergleich &amp; Architektur
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight mt-1">
+            Warum DNS-Signale herkömmliches Parking ablösen
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Bento Card 1: 7 cols (Architectural Flow) */}
+          <div className="lg:col-span-7 p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-emerald-100 text-emerald-900 border border-emerald-300">
+                  Discovery-Protokoll
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-slate-950 mb-3">
+                Direkte Integration in Registry- &amp; Registrar-Whois
+              </h3>
+              <p className="text-sm text-slate-700 leading-relaxed mb-6">
+                Bislang erfuhr ein Kaufinteressent oft erst durch den manuellen Aufruf einer Domain, ob diese zum Verkauf steht. 
+                RFC 10023 verlagert diese Information in die <strong>Infrastrukturebene</strong>:
+              </p>
+
+              {/* Diagram Flow */}
+              <div className="space-y-3 font-mono text-xs">
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
+                  <span className="text-slate-800 font-bold">1. Domaininhaber setzt TXT-Record</span>
+                  <span className="text-slate-500">_for-sale.domain.de</span>
+                </div>
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
+                  <span className="text-slate-800 font-bold">2. Resolver liest v=FORSALE1 aus</span>
+                  <span className="text-emerald-700 font-bold">DoH / Port 53</span>
+                </div>
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
+                  <span className="text-slate-800 font-bold">3. Registrar zeigt For-Sale im Check</span>
+                  <span className="text-slate-900 font-extrabold">Whois &amp; Checkout</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+              <span>Keine Abhängigkeit von Parking-Plattformen</span>
+              <Link to="/spezifikation" className="text-emerald-700 font-bold hover:underline">
+                Technische Details &rarr;
+              </Link>
+            </div>
+          </div>
+
+          {/* Bento Card 2: 5 cols (Hard Comparison Table) */}
+          <div className="lg:col-span-5 p-6 sm:p-8 rounded-2xl bg-slate-900 text-slate-100 border border-slate-800 shadow-md flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-slate-800 text-emerald-400 border border-slate-700">
+                  Systemvergleich
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-white mb-4">
+                Klassisches Parking vs. RFC 10023
+              </h3>
+
+              <div className="space-y-3 text-xs font-mono">
+                <div className="pb-2.5 border-b border-slate-800 flex justify-between">
+                  <span className="text-slate-400">Verkaufsprovision</span>
+                  <span className="text-emerald-400 font-bold">0 % (Direkt)</span>
+                </div>
+                <div className="pb-2.5 border-b border-slate-800 flex justify-between">
+                  <span className="text-slate-400">Nameserver-Zwang</span>
+                  <span className="text-emerald-400 font-bold">Nein (Beliebiger DNS)</span>
+                </div>
+                <div className="pb-2.5 border-b border-slate-800 flex justify-between">
+                  <span className="text-slate-400">Google Deindexierung</span>
+                  <span className="text-emerald-400 font-bold">Kein Risiko</span>
+                </div>
+                <div className="pb-2.5 border-b border-slate-800 flex justify-between">
+                  <span className="text-slate-400">DNSSEC Signierung</span>
+                  <span className="text-emerald-400 font-bold">100 % Kompatibel</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Maschinenlesbar</span>
+                  <span className="text-emerald-400 font-bold">IETF Standard</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-slate-800 text-[11px] text-slate-400">
+              * Gilt für Direktverkäufe über den im DNS hinterlegten Kontaktlink.
+            </div>
+          </div>
+
+          {/* Bento Card 3: 12 cols (SIDN Case Study) */}
+          <div className="lg:col-span-12 p-6 sm:p-7 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div className="space-y-1 max-w-3xl">
+              <span className="text-[10px] font-mono uppercase font-bold text-emerald-700 tracking-wider">
+                Praxis-Referenz
+              </span>
+              <h4 className="text-base font-bold text-slate-950">
+                SIDN (.nl Registry) schaltet RFC 10023 im Whois scharf
+              </h4>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Die niederländische Registry SIDN prüft bei Domain-Verfügbarkeitsabfragen automatisiert den Knotenpunkt <code>_for-sale</code>. 
+                Steht eine .nl-Domain zum Verkauf, wird dies direkt in den offiziellen Suchergebnissen der Registry angezeigt. 
+                Damit ist RFC 10023 der erste Verkaufsstandard, der von einer staatlich beauftragten Registry nativ unterstützt wird.
+              </p>
+            </div>
+            <a
+              href="https://www.sidn.nl"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 px-4 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-900 font-mono text-xs font-bold transition-colors flex items-center gap-1.5"
+            >
+              <span>SIDN.nl ansehen</span>
+              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+            </a>
+          </div>
+
+        </div>
+      </section>
+
       {/* Hoster Matrix Section */}
       <section id="matrix" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20">
         <HosterMatrix />
       </section>
 
-      {/* E-E-A-T Redaktions-Trust-Box */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center text-emerald-400 shrink-0">
-              <BookOpen className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="text-base font-extrabold text-slate-900">
-                Fachredaktion rfc10023.de &middot; Technische Redaktion
-              </h3>
-              <p className="text-xs text-slate-600 mt-1 leading-relaxed max-w-2xl">
-                Geprüft nach IETF RFC 10023, RFC 8552 und RFC 2181. Stand: September 2026. 
-                Alle Angaben basieren auf den offiziellen Spezifikationen der Internet Engineering Task Force 
-                sowie Praxistests auf Zoneneditoren führender europäischer Hostinganbieter.
-              </p>
-            </div>
-          </div>
-          <div className="shrink-0 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-mono font-bold border border-emerald-200">
-              <CheckCircle className="w-4 h-4 text-emerald-600" />
-              IETF Konform
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* Topical Authority: Fachratgeber & Praxis-Cluster */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-6">
-          <span className="text-xs font-mono uppercase font-bold tracking-wider text-emerald-700">
-            Hintergrund &amp; Leitfäden
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
-            Praxiswissen zum _for-sale DNS-Standard
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          {/* Card 1 */}
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs hover:shadow-md hover:-translate-y-1 transition-all">
-            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center mb-4 font-mono font-black text-sm">
-              01
-            </div>
-            <h3 className="font-extrabold text-lg text-slate-900 mb-2">
-              Unabhängigkeit von Parkseiten
-            </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Domainparking verliert zunehmend an Effektivität, da Browser Werbebanner blockieren und Suchmaschinen Parkseiten deindexieren. Der DNS-Record läuft im Hintergrund weiter, ohne das Routing der eigentlichen Website zu stören.
-            </p>
-          </div>
-
-          {/* Card 2 */}
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs hover:shadow-md hover:-translate-y-1 transition-all">
-            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center mb-4 font-mono font-black text-sm">
-              02
-            </div>
-            <h3 className="font-extrabold text-lg text-slate-900 mb-2">
-              Automatisierte Registrars &amp; Crawler
-            </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Registrare können über Standard-DNS-Resolver bei Whois-Abfragen prüfen, ob der Inhaber verkaufsbereit ist. Dies schafft einen nahtlosen Erwerbsprozess für Käufer direkt im Warenkorb des Registrars.
-            </p>
-          </div>
-
-          {/* Card 3 */}
-          <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs hover:shadow-md hover:-translate-y-1 transition-all">
-            <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center mb-4 font-mono font-black text-sm">
-              03
-            </div>
-            <h3 className="font-extrabold text-lg text-slate-900 mb-2">
-              DNSSEC-Signierung &amp; Echtheit
-            </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Durch die Signierung der Zone via DNSSEC ist das Verkaufsangebot kryptografisch vor Manipulationen und DNS-Spoofing geschützt. Käufer können sicher sein, dass das Angebot tatsächlich vom Domaininhaber stammt.
-            </p>
-          </div>
-
-        </div>
+      {/* Pull Quote im Editorial Magazin-Stil */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <blockquote className="p-8 sm:p-10 rounded-2xl bg-slate-100 border-l-4 border-emerald-600 text-slate-900">
+          <p className="text-lg sm:text-xl font-medium italic leading-relaxed">
+            &bdquo;RFC 10023 schließt eine historische Lücke im Domain Name System: Es trennt das Verkaufs-Signal 
+            von der Webpräsenz. Eine Domain muss nicht länger brachliegen oder auf billige Werbebanner umgeleitet werden, 
+            nur um zu signalisieren, dass der Inhaber für Angebote offen ist.&ldquo;
+          </p>
+          <footer className="mt-4 text-xs font-mono text-slate-600">
+            &mdash; Auszug aus den IETF DNSOP Working Group Protokollen
+          </footer>
+        </blockquote>
       </section>
 
       {/* FAQ Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <span className="text-xs font-mono uppercase font-bold tracking-wider text-emerald-700">
-            Häufig gestellte Fragen
+          <span className="text-[11px] font-mono uppercase font-bold tracking-wider text-slate-500">
+            Fragen &amp; Antworten
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
-            FAQ zu RFC 10023
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight mt-1">
+            Häufige Fragen zu RFC 10023
           </h2>
         </div>
 
@@ -274,21 +377,22 @@ export default function HomePage() {
         <div className="p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <Code2 className="w-5 h-5 text-emerald-600" />
-            <h3 className="text-lg font-black text-slate-900">
-              Webmaster Embed-Widget (Kostenfrei)
+            <h3 className="text-lg font-bold text-slate-950">
+              Webmaster Embed-Widget (Kostenfrei einbinden)
             </h3>
           </div>
           <p className="text-xs text-slate-600 mb-4 max-w-2xl leading-relaxed">
-            Integriere den RFC 10023 Live-Validator oder Generator direkt in deine eigene Website, dein Domain-Blog oder dein Registrar-Portal. Responsive und iframe-freigegeben.
+            Binde den RFC 10023 Live-Validator oder Generator direkt in dein Blog, Forum oder dein Registrar-Portal ein. 
+            Responsive und für Iframes via Content-Security-Policy autorisiert.
           </p>
           <div className="relative">
-            <pre className="p-4 bg-slate-900 text-emerald-300 rounded-xl font-mono text-xs overflow-x-auto whitespace-pre-wrap select-all">
+            <pre className="p-4 bg-slate-950 text-emerald-300 rounded-xl font-mono text-xs overflow-x-auto whitespace-pre-wrap select-all">
               {embedCode}
             </pre>
             <button
               type="button"
               onClick={copyEmbed}
-              className="absolute top-3 right-3 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-sm"
+              className="absolute top-3 right-3 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-mono font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-sm"
             >
               {copiedEmbed ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedEmbed ? 'Kopiert!' : 'Code kopieren'}</span>

@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, CheckCircle2, AlertTriangle, XCircle, ArrowRight, Copy, Check, Terminal, ExternalLink, RefreshCw } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, Copy, Check, Terminal, ExternalLink, RefreshCw, ShieldCheck } from 'lucide-react';
 
-interface ParsedTags {
-  v?: string;
-  furi?: string;
-  fval?: string;
-  ftxt?: string;
-  fcod?: string;
-  [key: string]: string | undefined;
+interface TagItem {
+  tag: string;
+  value: string;
+  sourceRecordIndex: number;
 }
 
 interface ValidationResult {
@@ -15,8 +12,12 @@ interface ValidationResult {
   nodeName: string;
   status: 'valid' | 'warning' | 'not_found' | 'error';
   statusMessage: string;
+  architecture: 'ietf_multi' | 'single_line' | 'unknown';
+  architectureLabel: string;
+  dnssec: boolean;
   rawTxt: string[];
-  parsed: ParsedTags;
+  tags: TagItem[];
+  parsedMap: Record<string, string>;
   warnings: string[];
   dnsProvider: string;
 }
@@ -45,7 +46,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
   const handleValidate = async (targetDomain?: string) => {
     const d = cleanDomain(targetDomain || domainInput);
     if (!d || !d.includes('.')) {
-      alert('Bitte gib einen gültigen Domainnamen ein (z. B. beispiel.de oder rfc10023.nl).');
+      alert('Bitte gib einen gültigen Domainnamen ein (z. B. rfc10023.nl oder beispiel.de).');
       return;
     }
 
@@ -54,10 +55,11 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
 
     const nodeName = `_for-sale.${d}`;
     let rawTxtRecords: string[] = [];
-    let providerUsed = 'Cloudflare 1.1.1.1 DoH';
+    let isDnssec = false;
+    let providerUsed = 'Cloudflare 1.1.1.1 Anycast DoH';
 
     try {
-      // 1. Attempt via Cloudflare DoH
+      // 1. Query Cloudflare DoH
       const cfUrl = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(nodeName)}&type=TXT`;
       const cfRes = await fetch(cfUrl, {
         headers: { Accept: 'application/dns-json' },
@@ -65,6 +67,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
 
       if (cfRes.ok) {
         const data = await cfRes.json();
+        isDnssec = Boolean(data.AD); // Authentic Data flag indicates DNSSEC validation
         if (data.Answer && Array.isArray(data.Answer)) {
           rawTxtRecords = data.Answer
             .filter((a: { type: number }) => a.type === 16)
@@ -72,13 +75,14 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         }
       }
 
-      // 2. Fallback to Google DoH if empty
+      // 2. Fallback to Google DoH if no records found
       if (rawTxtRecords.length === 0) {
-        providerUsed = 'Google 8.8.8.8 DoH';
+        providerUsed = 'Google 8.8.8.8 Anycast DoH';
         const googleUrl = `https://dns.google/resolve?name=${encodeURIComponent(nodeName)}&type=TXT`;
         const gRes = await fetch(googleUrl);
         if (gRes.ok) {
           const gData = await gRes.json();
+          if (gData.AD) isDnssec = true;
           if (gData.Answer && Array.isArray(gData.Answer)) {
             rawTxtRecords = gData.Answer
               .filter((a: { type: number }) => a.type === 16)
@@ -87,18 +91,22 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         }
       }
 
-      // Analyze records
+      // No records returned
       if (rawTxtRecords.length === 0) {
         setResult({
           domain: d,
           nodeName,
           status: 'not_found',
-          statusMessage: `Kein TXT-Eintrag unter '${nodeName}' gefunden.`,
+          statusMessage: `Kein TXT-Eintrag unter '${nodeName}' hinterlegt.`,
+          architecture: 'unknown',
+          architectureLabel: 'Kein Eintrag',
+          dnssec: false,
           rawTxt: [],
-          parsed: {},
+          tags: [],
+          parsedMap: {},
           warnings: [
-            'Es wurde kein _for-sale TXT-Record im globalen DNS propagiert.',
-            'Beachte, dass neue DNS-Einträge je nach TTL bis zu 24 Stunden weltweite Propagierung benötigen können.',
+            'Im weltweiten DNS existiert derzeit kein RRset für diesen Leaf-Node.',
+            'Neu eingerichtete DNS-Einträge können je nach Nameserver-TTL einige Minuten bis Stunden für die globale Propagierung benötigen.',
           ],
           dnsProvider: providerUsed,
         });
@@ -106,45 +114,74 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         return;
       }
 
-      // Parse tags
-      const combinedRecord = rawTxtRecords.join('; ');
-      const parsed: ParsedTags = {};
+      // RFC 10023 Deep Syntax Analysis
+      const parsedTags: TagItem[] = [];
+      const parsedMap: Record<string, string> = {};
       const warnings: string[] = [];
+      let foundForsaleVersion = false;
+      let multiRecordCount = 0;
 
-      // Split by semicolon
-      const parts = combinedRecord.split(';').map((p) => p.trim()).filter(Boolean);
+      rawTxtRecords.forEach((recordStr, recIdx) => {
+        const cleanRec = recordStr.trim();
 
-      parts.forEach((part) => {
-        const eqIdx = part.indexOf('=');
-        if (eqIdx !== -1) {
-          const key = part.substring(0, eqIdx).trim().toLowerCase();
-          const val = part.substring(eqIdx + 1).trim();
-          parsed[key] = val;
+        // Check if starts with v=FORSALE1; or v=FORSALE1
+        if (cleanRec.startsWith('v=FORSALE1;') || cleanRec === 'v=FORSALE1' || cleanRec.startsWith('v=FORSALE1')) {
+          foundForsaleVersion = true;
         }
+
+        // Split tags by semicolon
+        const segments = cleanRec.split(';').map((s) => s.trim()).filter(Boolean);
+
+        if (segments.length > 2) {
+          // More than version tag + 1 content tag in a single record
+          // (RFC 10023 Section 2.1 recommends max 1 content tag per record)
+        } else if (segments.length > 0) {
+          multiRecordCount++;
+        }
+
+        segments.forEach((seg) => {
+          const eqIdx = seg.indexOf('=');
+          if (eqIdx !== -1) {
+            const key = seg.substring(0, eqIdx).trim().toLowerCase();
+            const val = seg.substring(eqIdx + 1).trim();
+            parsedTags.push({ tag: key, value: val, sourceRecordIndex: recIdx });
+            if (!parsedMap[key]) {
+              parsedMap[key] = val;
+            }
+          }
+        });
       });
 
-      // RFC 10023 Compliance Validation
-      let status: 'valid' | 'warning' | 'not_found' = 'valid';
+      const isMulti = rawTxtRecords.length > 1;
+      const architecture: 'ietf_multi' | 'single_line' | 'unknown' = isMulti ? 'ietf_multi' : 'single_line';
+      const architectureLabel = isMulti
+        ? `IETF RFC 10023 Multi-Record RRset (${rawTxtRecords.length} TXT Records)`
+        : 'Single-Line Kompakt-Record (1 TXT Record)';
 
-      if (!parsed.v) {
+      let status: 'valid' | 'warning' = 'valid';
+
+      if (!foundForsaleVersion) {
         status = 'warning';
-        warnings.push('Fehlender Versions-Tag: Der Record MUSS mit "v=FORSALE1;" beginnen.');
-      } else if (parsed.v.toUpperCase() !== 'FORSALE1') {
-        status = 'warning';
-        warnings.push(`Ungültige Version: '${parsed.v}'. Gültig ist aktuell ausschließlich 'FORSALE1'.`);
+        warnings.push('Der Versionsheader "v=FORSALE1;" fehlt oder ist ungültig.');
       }
 
-      if (!parsed.furi && !parsed.ftxt && !parsed.fval) {
+      if (!parsedMap.fval && !parsedMap.furi && !parsedMap.ftxt) {
         status = 'warning';
-        warnings.push('Der Record enthält keine Inhalts-Tags (furi, fval oder ftxt).');
+        warnings.push('Das RRset enthält keine Verkaufs-Tags (weder fval, furi noch ftxt).');
       }
 
-      if (parsed.fval && !parsed.fval.includes(':') && !/^[A-Z]{3}:\d+/.test(parsed.fval)) {
-        warnings.push('Preisangabe (fval): Empfohlenes Format nach ISO 4217 ist WÄHRUNG:BETRAG (z. B. EUR:2500 oder USD:5000).');
+      if (parsedMap.fval) {
+        // Test currency format: e.g. EUR2500, USD1000 or EUR:2500 or VHB
+        const val = parsedMap.fval.toUpperCase();
+        if (val !== 'VHB' && !/^[A-Z]{3}:?\d+/.test(val)) {
+          warnings.push(`Preisformat "${parsedMap.fval}": IETF RFC 10023 empfiehlt Währungscode + Betrag ohne Leerzeichen (z. B. EUR2500 oder USD1000).`);
+        }
       }
 
-      if (parsed.furi && !parsed.furi.startsWith('http://') && !parsed.furi.startsWith('https://') && !parsed.furi.startsWith('mailto:')) {
-        warnings.push('Kontakt-URI (furi): Sollte eine vollständige URL (https://...) oder E-Mail (mailto:...) sein.');
+      if (parsedMap.furi) {
+        if (!parsedMap.furi.startsWith('http://') && !parsedMap.furi.startsWith('https://') && !parsedMap.furi.startsWith('mailto:') && !parsedMap.furi.startsWith('tel:')) {
+          warnings.push(`Kontakt-URI "${parsedMap.furi}": Sollte ein standardisiertes Schema nutzen (https://, mailto: oder tel:).`);
+        }
       }
 
       setResult({
@@ -152,10 +189,14 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         nodeName,
         status,
         statusMessage: status === 'valid'
-          ? 'Valider RFC 10023 DNS-Record erkannt!'
-          : 'Record gefunden, aber mit RFC-Syntax-Warnungen.',
+          ? 'Gültiges RFC 10023 Verkaufs-Signal im DNS verifiziert!'
+          : 'Record im DNS gefunden, entspricht jedoch nicht vollständig dem RFC-Standard.',
+        architecture,
+        architectureLabel,
+        dnssec: isDnssec,
         rawTxt: rawTxtRecords,
-        parsed,
+        tags: parsedTags,
+        parsedMap,
         warnings,
         dnsProvider: providerUsed,
       });
@@ -164,10 +205,14 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         domain: d,
         nodeName,
         status: 'error',
-        statusMessage: 'Fehler bei der DNS-über-HTTPS-Abfrage.',
+        statusMessage: 'DoH-Anfrage fehlgeschlagen (Netzwerk- oder DNS-Timeout).',
+        architecture: 'unknown',
+        architectureLabel: 'Fehler',
+        dnssec: false,
         rawTxt: [],
-        parsed: {},
-        warnings: ['Netzwerk- oder CORS-Blockade beim Anfragen der DoH-Server.', String(err)],
+        tags: [],
+        parsedMap: {},
+        warnings: [String(err)],
         dnsProvider: providerUsed,
       });
     } finally {
@@ -191,25 +236,25 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
     <div className={`w-full bg-white rounded-2xl border border-slate-200 shadow-sm ${embedded ? 'p-4' : 'p-6 sm:p-8'}`}>
       
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-700">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
               Live DNS-over-HTTPS Inspector
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            RFC 10023 DNS-Validator
+            RFC 10023 DoH-Validator
           </h2>
         </div>
-        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-mono text-slate-600">
+        <div className="flex items-center gap-2 text-xs font-mono text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
           <Terminal className="w-3.5 h-3.5 text-emerald-600" />
-          <span>RFC Node: _for-sale.[domain]</span>
+          <span>Knoten: _for-sale.[domain]</span>
         </div>
       </div>
 
-      {/* Input Group */}
+      {/* Input */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -218,38 +263,38 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         className="space-y-4"
       >
         <div className="relative flex items-center">
-          <div className="absolute left-4 text-slate-400 font-mono text-sm pointer-events-none">
+          <div className="absolute left-4 text-slate-400 font-mono text-sm pointer-events-none select-none">
             _for-sale.
           </div>
           <input
             type="text"
             value={domainInput}
             onChange={(e) => setDomainInput(e.target.value)}
-            placeholder="beispieldomain.de"
-            className="w-full pl-24 pr-32 sm:pr-36 py-4 bg-slate-50 border-2 border-slate-200 focus:border-emerald-500 focus:bg-white focus:outline-none rounded-xl text-slate-900 font-mono text-base sm:text-lg transition-all"
+            placeholder="rfc10023.nl"
+            className="w-full pl-24 pr-28 sm:pr-36 py-3.5 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white focus:outline-none rounded-xl text-slate-900 font-mono text-base transition-all"
           />
           <button
             type="submit"
             disabled={loading}
-            className="absolute right-2 px-4 sm:px-6 py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-sm rounded-lg transition-all flex items-center gap-2 disabled:opacity-50"
+            className="absolute right-2 px-4 sm:px-5 py-2 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-mono font-bold text-xs rounded-lg transition-all flex items-center gap-2 disabled:opacity-50"
           >
             {loading ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span className="hidden sm:inline">Prüfe...</span>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span className="hidden sm:inline">Abfrage...</span>
               </>
             ) : (
               <>
                 <span>Prüfen</span>
-                <ArrowRight className="w-4 h-4 text-emerald-400" />
+                <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
               </>
             )}
           </button>
         </div>
 
-        {/* Quick Test Links */}
+        {/* Quick test buttons */}
         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-          <span className="font-semibold">Beispiel-Domains:</span>
+          <span className="font-mono">Referenz-Domains:</span>
           {['rfc10023.nl', 'forsaledns.net'].map((example) => (
             <button
               key={example}
@@ -258,7 +303,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
                 setDomainInput(example);
                 handleValidate(example);
               }}
-              className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono transition-colors"
+              className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono font-medium transition-colors"
             >
               {example}
             </button>
@@ -266,105 +311,110 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         </div>
       </form>
 
-      {/* Result Card */}
+      {/* Results */}
       {result && (
-        <div className="mt-8 pt-6 border-t border-slate-100 space-y-6 animate-fadeIn">
+        <div className="mt-8 pt-6 border-t border-slate-100 space-y-6">
           
-          {/* Status Badge */}
+          {/* Status Alert */}
           <div className={`p-4 sm:p-5 rounded-xl border flex items-start sm:items-center justify-between gap-4 ${
             result.status === 'valid'
-              ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
               : result.status === 'warning'
-              ? 'bg-amber-50/80 border-amber-200 text-amber-950'
+              ? 'bg-amber-50 border-amber-200 text-amber-950'
               : result.status === 'not_found'
               ? 'bg-slate-100 border-slate-200 text-slate-800'
               : 'bg-rose-50 border-rose-200 text-rose-950'
           }`}>
-            <div className="flex items-center gap-3">
-              {result.status === 'valid' && <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />}
-              {result.status === 'warning' && <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0" />}
-              {result.status === 'not_found' && <XCircle className="w-6 h-6 text-slate-500 shrink-0" />}
-              {result.status === 'error' && <XCircle className="w-6 h-6 text-rose-600 shrink-0" />}
+            <div className="flex items-start gap-3">
+              {result.status === 'valid' && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />}
+              {result.status === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />}
+              {result.status === 'not_found' && <XCircle className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" />}
+              {result.status === 'error' && <XCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />}
               <div>
-                <h4 className="font-extrabold text-base sm:text-lg">{result.statusMessage}</h4>
-                <p className="text-xs font-mono opacity-80 mt-0.5">
-                  Abgefragter Knoten: {result.nodeName} ({result.dnsProvider})
-                </p>
+                <h4 className="font-extrabold text-sm sm:text-base">{result.statusMessage}</h4>
+                <div className="flex flex-wrap items-center gap-3 text-xs font-mono opacity-80 mt-1">
+                  <span>Resolver: {result.dnsProvider}</span>
+                  {result.dnssec && (
+                    <span className="text-emerald-700 font-bold flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5" /> DNSSEC Validiert
+                    </span>
+                  )}
+                  <span>Format: {result.architectureLabel}</span>
+                </div>
               </div>
             </div>
+
             {result.rawTxt.length > 0 && (
               <button
                 type="button"
-                onClick={() => copyToClipboard(result.rawTxt.join(' '))}
-                className="shrink-0 p-2 rounded-lg bg-white/80 hover:bg-white border text-xs font-mono font-medium flex items-center gap-1.5 shadow-xs"
-                title="Raw TXT kopieren"
+                onClick={() => copyToClipboard(result.rawTxt.join('\n'))}
+                className="shrink-0 p-2 rounded-lg bg-white border border-slate-200 text-xs font-mono font-semibold flex items-center gap-1.5 shadow-2xs hover:bg-slate-50"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">Kopieren</span>
+                <span className="hidden sm:inline">RRset Kopieren</span>
               </button>
             )}
           </div>
 
-          {/* Parsed Tags Grid */}
+          {/* Parsed Tag Breakdown Cards */}
           {result.status !== 'not_found' && result.status !== 'error' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               
-              {/* Tag: v */}
-              <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                 <span className="text-[11px] font-mono uppercase font-bold text-slate-500 block mb-1">
-                  v (Version)
+                  Version (<code className="text-slate-800 font-bold">v</code>)
                 </span>
-                <span className="font-mono text-sm font-extrabold text-slate-900">
-                  {result.parsed.v || '–'}
+                <span className="font-mono text-sm font-black text-slate-900">
+                  {result.parsedMap.v || 'FORSALE1'}
                 </span>
               </div>
 
-              {/* Tag: fval */}
-              <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                 <span className="text-[11px] font-mono uppercase font-bold text-slate-500 block mb-1">
-                  fval (Preis / Währung)
+                  Preis / Kondition (<code className="text-emerald-700 font-bold">fval</code>)
                 </span>
-                <span className="font-mono text-sm font-extrabold text-emerald-700">
-                  {result.parsed.fval || 'Nicht angegeben'}
+                <span className="font-mono text-sm font-black text-emerald-700">
+                  {result.parsedMap.fval || 'Nicht hinterlegt'}
                 </span>
               </div>
 
-              {/* Tag: furi */}
-              <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 sm:col-span-2">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 sm:col-span-2">
                 <span className="text-[11px] font-mono uppercase font-bold text-slate-500 block mb-1">
-                  furi (Kontakt / Landingpage)
+                  Kontakt-Link (<code className="text-emerald-700 font-bold">furi</code>)
                 </span>
-                {result.parsed.furi ? (
+                {result.parsedMap.furi ? (
                   <a
-                    href={result.parsed.furi}
+                    href={result.parsedMap.furi}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-mono text-sm text-blue-600 hover:underline flex items-center gap-1 truncate"
+                    className="font-mono text-xs text-blue-600 hover:underline flex items-center gap-1 truncate"
                   >
-                    <span className="truncate">{result.parsed.furi}</span>
+                    <span className="truncate">{result.parsedMap.furi}</span>
                     <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                   </a>
                 ) : (
-                  <span className="font-mono text-sm text-slate-400">Keine URI angegeben</span>
+                  <span className="font-mono text-xs text-slate-400">Keine URI hinterlegt</span>
                 )}
               </div>
 
-              {/* Tag: ftxt */}
-              {result.parsed.ftxt && (
-                <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 sm:col-span-2 lg:col-span-4">
+              {result.parsedMap.ftxt && (
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 sm:col-span-2 lg:col-span-4">
                   <span className="text-[11px] font-mono uppercase font-bold text-slate-500 block mb-1">
-                    ftxt (Freitext / Notiz)
+                    Notiz / Freitext (<code className="text-slate-800 font-bold">ftxt</code>)
                   </span>
-                  <p className="text-sm text-slate-800 italic">&ldquo;{result.parsed.ftxt}&rdquo;</p>
+                  <p className="text-xs text-slate-800 font-mono italic">
+                    &bdquo;{result.parsedMap.ftxt}&ldquo;
+                  </p>
                 </div>
               )}
+
             </div>
           )}
 
           {/* Warnings list if any */}
           {result.warnings.length > 0 && (
-            <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-900 space-y-1.5">
-              <strong className="block font-bold text-amber-950">Hinweise zur RFC-Konformität:</strong>
+            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1.5">
+              <strong className="block font-bold text-amber-950 font-mono">RFC 10023 Konformitäts-Diagnose:</strong>
               <ul className="list-disc list-inside space-y-1">
                 {result.warnings.map((w, idx) => (
                   <li key={idx}>{w}</li>
@@ -373,26 +423,32 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
             </div>
           )}
 
-          {/* Raw TXT Toggle */}
+          {/* Raw RRset Viewer */}
           {result.rawTxt.length > 0 && (
             <div>
               <button
                 type="button"
                 onClick={() => setShowRaw(!showRaw)}
-                className="text-xs font-mono text-slate-500 hover:text-slate-900 flex items-center gap-1"
+                className="text-xs font-mono font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1"
               >
-                <span>{showRaw ? '[-] Raw DNS-Records ausblenden' : '[+] Raw DNS-Records einblenden'}</span>
+                <span>{showRaw ? '[-] DNS Resource Records verbergen' : '[+] DNS Resource Records anzeigen (Raw TXT)'}</span>
               </button>
               {showRaw && (
-                <pre className="mt-2 p-3 rounded-lg bg-slate-900 text-emerald-400 font-mono text-xs overflow-x-auto">
-                  {result.rawTxt.map((txt, idx) => `[Record #${idx + 1}] "${txt}"\n`)}
-                </pre>
+                <div className="mt-2 p-3.5 rounded-xl bg-slate-950 text-emerald-300 font-mono text-xs space-y-1 overflow-x-auto">
+                  {result.rawTxt.map((txt, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <span className="text-slate-500 select-none">[{idx + 1}]</span>
+                      <span className="text-emerald-400">&quot;{txt}&quot;</span>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}
 
         </div>
       )}
+
     </div>
   );
 }
