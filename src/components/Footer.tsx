@@ -110,8 +110,8 @@ export default function Footer() {
         </div>
 
         {/* Social Share Strip (100% DSGVO-konform ohne externe Tracker) */}
-        <div className="mt-8 pt-4 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="text-xs text-slate-400 font-mono">
+        <div className="mt-8 pt-4 border-t border-slate-800/60 flex flex-wrap items-center gap-3">
+          <div className="text-xs text-slate-400 font-mono shrink-0">
             Fachportal weiterempfehlen:
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
