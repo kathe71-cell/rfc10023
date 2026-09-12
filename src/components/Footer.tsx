@@ -109,8 +109,49 @@ export default function Footer() {
 
         </div>
 
+        {/* Social Share Strip (100% DSGVO-konform ohne externe Tracker) */}
+        <div className="mt-10 pt-6 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-xs text-slate-400 font-mono">
+            Fachportal weiterempfehlen:
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+            <a
+              href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Frfc10023.de"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1 rounded bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-colors"
+            >
+              LinkedIn
+            </a>
+            <a
+              href="https://twitter.com/intent/tweet?text=RFC%2010023%20DACH%20Portal%20%E2%80%93%20Domain-Verk%C3%A4ufe%20direkt%20im%20DNS%20signalisieren%3A%20https%3A%2F%2Frfc10023.de"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1 rounded bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-colors"
+            >
+              X (Twitter)
+            </a>
+            <a
+              href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Frfc10023.de"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1 rounded bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-colors"
+            >
+              Facebook
+            </a>
+            <a
+              href="https://api.whatsapp.com/send?text=RFC%2010023%20DACH%20Portal%20%E2%80%93%20Domain-Verk%C3%A4ufe%20direkt%20im%20DNS%3A%20https%3A%2F%2Frfc10023.de"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1 rounded bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500 transition-colors"
+            >
+              WhatsApp
+            </a>
+          </div>
+        </div>
+
         {/* Bottom Facts Strip */}
-        <div className="mt-12 pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-500">
+        <div className="mt-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-500">
           <div className="flex items-center gap-3">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
             <span>IETF RFC 10023 · Status: Informational · Stand: Sept. 2026</span>

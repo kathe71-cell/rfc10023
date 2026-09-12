@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, Copy, Check, Terminal, ExternalLink, RefreshCw, ShieldCheck, Server, Sparkles } from 'lucide-react';
 import { cleanDomainInput, detectHosterFromNameservers, HosterProfile } from '../utils/dnsIntelligence';
+import SocialShare from './SocialShare';
 
 interface TagItem {
   tag: string;
@@ -501,6 +502,16 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
             </div>
           )}
 
+          {/* Social Share Result */}
+          <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3.5 rounded-xl">
+            <span className="text-xs text-slate-600 font-mono">
+              Prüfergebnis für <strong>{result.domain}</strong> teilen:
+            </span>
+            <SocialShare
+              url={`https://rfc10023.de/validator?d=${encodeURIComponent(result.domain)}`}
+              title={`RFC 10023 Prüfbericht für ${result.domain} – DNS-Status: ${result.status === 'valid' ? 'Valide hinterlegt' : 'Geprüft'}`}
+            />
+          </div>
         </div>
       )}
 
