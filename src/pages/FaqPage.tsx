@@ -198,6 +198,26 @@ export default function FaqPage() {
         url={`https://rfc10023.de${langPrefix}/faq`}
       />
 
+      {/* Schema.org FAQPage Structured Data for Google Rich Snippets */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            '@id': `https://rfc10023.de${langPrefix}/faq#faqpage`,
+            'mainEntity': faqs.map(faq => ({
+              '@type': 'Question',
+              'name': faq.q,
+              'acceptedAnswer': {
+                '@type': 'Answer',
+                'text': faq.a,
+              },
+            })),
+          }),
+        }}
+      />
+
     </div>
   );
 }
