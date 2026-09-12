@@ -18,6 +18,7 @@ import RechtLeitfadenPage from './pages/RechtLeitfadenPage';
 import EmbedPage from './pages/EmbedPage';
 import Impressum from './pages/Impressum';
 import Datenschutz from './pages/Datenschutz';
+import FaqPage from './pages/FaqPage';
 import { ShieldCheck, Cpu } from 'lucide-react';
 
 function RouteWatcher() {
@@ -99,6 +100,7 @@ export default function App() {
             <Route path="/validator-embed" element={<EmbedPage />} />
             <Route path="/impressum" element={<Impressum />} />
             <Route path="/datenschutz" element={<Datenschutz />} />
+            <Route path="/faq" element={<FaqPage />} />
 
             {/* English Routes (/en prefix for global SEO and international reach) */}
             <Route path="/en" element={<HomePage />} />
@@ -112,6 +114,7 @@ export default function App() {
             <Route path="/en/hoster-matrix" element={<MatrixPage />} />
             <Route path="/en/spezifikation" element={<SpezifikationPage />} />
             <Route path="/en/specification" element={<SpezifikationPage />} />
+            <Route path="/en/faq" element={<FaqPage />} />
             <Route path="/en/widget-embed" element={<EmbedPage />} />
             <Route path="/en/rechner-embed" element={<EmbedPage />} />
             <Route path="/en/validator-embed" element={<EmbedPage />} />

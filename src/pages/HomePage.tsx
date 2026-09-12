@@ -394,14 +394,22 @@ export default function HomePage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-6">
-          <span className="text-[11px] font-mono uppercase font-bold tracking-wider text-slate-500">
-            {t('faq.badge')}
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight mt-1">
-            {t('faq.title')}
-          </h2>
+      <section id="faq" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+          <div>
+            <span className="text-[11px] font-mono uppercase font-bold tracking-wider text-slate-500">
+              {t('faq.badge')}
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight mt-1">
+              {t('faq.title')}
+            </h2>
+          </div>
+          <Link
+            to={`${langPrefix}/faq`}
+            className="text-xs font-mono font-bold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1 shrink-0"
+          >
+            <span>{t('faq.view_all')}</span>
+          </Link>
         </div>
 
         <div className="space-y-3">

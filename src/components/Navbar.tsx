@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Terminal, ShieldCheck, Cpu, Database, Menu, X, BookOpen, Layers, Sparkles, Code2, Scale } from 'lucide-react';
+import { Terminal, ShieldCheck, Cpu, Database, Menu, X, BookOpen, Layers, Sparkles, Code2, Scale, HelpCircle } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageToggle from './LanguageToggle';
 
@@ -121,6 +121,18 @@ export default function Navbar() {
               </Link>
             );
           })}
+          <Link
+            to={`${langPrefix}/faq`}
+            onClick={() => setIsOpen(false)}
+            className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium ${
+              location.pathname === `${langPrefix}/faq`
+                ? 'bg-emerald-50 text-emerald-800 font-bold'
+                : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <HelpCircle className="w-4 h-4 text-emerald-600" />
+            FAQ
+          </Link>
         </div>
       )}
     </header>

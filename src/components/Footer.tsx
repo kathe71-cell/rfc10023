@@ -99,6 +99,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to={`${langPrefix}/faq`} className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                  {t('footer.link_faq')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                </Link>
+              </li>
+              <li>
                 <a
                   href="https://www.rfc-editor.org/info/rfc10023"
                   target="_blank"

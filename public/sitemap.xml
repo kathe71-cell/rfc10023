@@ -182,6 +182,26 @@
     <priority>0.8</priority>
   </url>
 
+  <!-- FAQ Hub -->
+  <url>
+    <loc>https://rfc10023.de/faq</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/faq" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/faq" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/faq" />
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://rfc10023.de/en/faq</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/faq" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/faq" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/faq" />
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- Embed Widget -->
   <url>
     <loc>https://rfc10023.de/widget-embed</loc>
