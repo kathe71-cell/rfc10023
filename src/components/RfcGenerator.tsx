@@ -96,42 +96,42 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
     switch (activeTab) {
       case 'bind':
         return [
-          `; DNS-Einträge für Zonefile: ${cleanDomain}`,
-          `; Knoten: _for-sale.${cleanDomain}. (Typ TXT, IN-Klasse)`,
+          `${t('gen.comment_bind_zone')} ${cleanDomain}`,
+          `${t('gen.comment_bind_node')}${cleanDomain}. ${t('gen.comment_bind_type')}`,
           ...recordStrings.map((rec) => `_for-sale.${cleanDomain}. ${ttl} IN TXT "${rec}"`),
         ].join('\n');
 
       case 'cloudflare':
         return [
-          `# Cloudflare DNS Dashboard (Einträge einzeln anlegen):`,
-          `# Hinweis: Den Inhalt im Dashboard ohne Anführungszeichen einfügen.`,
+          t('gen.comment_cf_dash'),
+          t('gen.comment_cf_hint'),
           ``,
           ...recordStrings.map((rec, idx) => 
-            `[Eintrag #${idx + 1}]\nTyp:     TXT\nName:    _for-sale\nTTL:     Auto\nInhalt:  ${rec}\n`
+            `[${t('gen.entry_label')} #${idx + 1}]\n${t('gen.type_label')}:     TXT\n${t('gen.name_label')}:    _for-sale\nTTL:     Auto\n${t('gen.content_label')}:  ${rec}\n`
           ),
         ].join('\n');
 
       case 'hetzner':
         return [
-          `# Hetzner DNS Console (dns.hetzner.com):`,
-          `# Name jeweils als '_for-sale' eintragen:`,
+          t('gen.comment_hetzner_dash'),
+          t('gen.comment_hetzner_hint'),
           ``,
           ...recordStrings.map((rec, idx) => 
-            `[Eintrag #${idx + 1}]\nTyp:   TXT\nName:  _for-sale\nTTL:   ${ttl}\nWert:  ${rec}\n`
+            `[${t('gen.entry_label')} #${idx + 1}]\n${t('gen.type_label')}:   TXT\n${t('gen.name_label')}:  _for-sale\nTTL:   ${ttl}\n${t('gen.value_label')}:  ${rec}\n`
           ),
         ].join('\n');
 
       case 'inwx':
         return [
-          `# INWX oder Netcup DNS-Verwaltung:`,
+          t('gen.comment_inwx_dash'),
           ...recordStrings.map((rec, idx) => 
-            `[Eintrag ${idx + 1}] Name: _for-sale | Typ: TXT | Wert: ${rec} | TTL: ${ttl}`
+            `[${t('gen.entry_label')} ${idx + 1}] ${t('gen.name_label')}: _for-sale | ${t('gen.type_label')}: TXT | ${t('gen.value_label')}: ${rec} | TTL: ${ttl}`
           ),
         ].join('\n');
 
       case 'terraform':
         return [
-          `# Terraform Definition (Cloudflare Provider)`,
+          t('gen.comment_tf_def'),
           ...recordStrings.map((rec, idx) => 
 `resource "cloudflare_record" "forsale_${idx + 1}" {
   zone_id = var.cloudflare_zone_id
@@ -153,13 +153,13 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
 
       case 'cli':
         return [
-          `# 1. Lokale Abfrage mit dig:`,
+          t('gen.comment_cli_dig'),
           `dig TXT _for-sale.${cleanDomain} +short`,
           ``,
-          `# 2. Abfrage über DNS over HTTPS (Cloudflare):`,
+          t('gen.comment_cli_doh'),
           `curl -sH "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?name=_for-sale.${cleanDomain}&type=TXT"`,
           ``,
-          `# 3. Direkte Abfrage über rfc10023.de API:`,
+          t('gen.comment_cli_api'),
           `curl -s "https://rfc10023.de/api/lookup?d=${cleanDomain}"`,
         ].join('\n');
 
@@ -222,7 +222,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
               />
               <span className="absolute right-3 top-2.5 text-xs font-mono text-slate-400 select-none">
-                Knoten: _for-sale.{cleanDomain}
+                {t('gen.node_label')}{cleanDomain}
               </span>
             </div>
           </div>
@@ -270,7 +270,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               </div>
             ) : (
               <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-mono text-emerald-900">
-                ✓ <strong>Standard-Logik:</strong> Bei VHB wird kein <code>fval</code>-Feld gesetzt, sondern der Hinweis landet im Textfeld <code>ftxt</code>.
+                ✓ {t('gen.vhb_note')}
               </div>
             )}
           </div>
@@ -284,7 +284,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               type="text"
               value={furi}
               onChange={(e) => setFuri(e.target.value)}
-              placeholder="https://escrow.com/... oder https://ihre-seite.de/kontakt"
+              placeholder={t('gen.furi_placeholder')}
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
             />
             <span className="text-[11px] text-slate-500 mt-1 block">
@@ -306,7 +306,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               type="text"
               value={ftxt}
               onChange={(e) => setFtxt(e.target.value)}
-              placeholder="Inklusive Treuhandabwicklung und Rechnung"
+              placeholder={t('gen.ftxt_placeholder')}
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
             />
           </div>
@@ -363,16 +363,16 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
             <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs font-mono text-rose-900 flex items-start gap-2.5">
               <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
               <div>
-                <strong>Achtung: String zu lang ({maxBytes} Bytes)!</strong>
+                <strong>{t('gen.byte_warn_title')} ({maxBytes} Bytes)!</strong>
                 <p className="mt-0.5 opacity-90">
-                  Ein einzelner DNS-TXT-String darf höchstens 255 Bytes lang sein. Bitte kürzen Sie den Text (<code className="font-bold">ftxt</code>) oder die Webadresse (<code className="font-bold">furi</code>).
+                  {t('gen.byte_warn_text')}
                 </p>
               </div>
             </div>
           ) : (
             <div className="text-[11px] font-mono text-slate-500 flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Größe: {maxBytes} / 255 Bytes (RFC 1035 konform)</span>
+              <span>{t('gen.size_label')} {maxBytes} / 255 {t('gen.size_rfc')}</span>
             </div>
           )}
 
@@ -386,13 +386,13 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
             {/* Tabs Header */}
             <div className="flex flex-wrap items-center gap-1 pb-3 mb-3 border-b border-slate-800 text-[11px]">
               {[
-                { id: 'bind', label: 'Zonefile' },
-                { id: 'cloudflare', label: 'Cloudflare' },
-                { id: 'hetzner', label: 'Hetzner' },
-                { id: 'inwx', label: 'INWX' },
-                { id: 'terraform', label: 'Terraform' },
-                { id: 'dnscontrol', label: 'DNSControl' },
-                { id: 'cli', label: 'dig / curl' },
+                { id: 'bind', label: t('gen.tab_zonefile') },
+                { id: 'cloudflare', label: t('gen.tab_cf') },
+                { id: 'hetzner', label: t('gen.tab_hetzner') },
+                { id: 'inwx', label: t('gen.tab_inwx') },
+                { id: 'terraform', label: t('gen.tab_tf') },
+                { id: 'dnscontrol', label: t('gen.tab_dnscontrol') },
+                { id: 'cli', label: t('gen.tab_cli') },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -434,7 +434,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           {/* Share Link */}
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
             <span className="text-xs font-mono text-slate-600 truncate">
-              Prüflink: rfc10023.de/validator?d={cleanDomain}
+              {t('gen.share_label')} rfc10023.de/validator?d={cleanDomain}
             </span>
             <button
               type="button"
