@@ -23,7 +23,6 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
 
   const lookupUrl = `https://rfc10023.de/validator?d=${encodeURIComponent(clean)}`;
 
-  // SVG Badge URL (self-contained SVG data URI or hosted badge)
   const badgeHtml = `<a href="${lookupUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:8px; padding:6px 12px; background:${
     theme === 'dark' ? '#0f172a' : theme === 'emerald' ? '#065f46' : '#ffffff'
   }; color:${
@@ -57,15 +56,15 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
-              Vertrauens-Signal für Parking- & Portfolio-Seiten
+              Prüfsiegel für Websites und Portfolios
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            RFC 10023 Trust-Badge Generator
+            Badge Generator
           </h2>
         </div>
         <div className="text-xs font-mono text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
-          ✓ DNS-Verifizierbar
+          ✓ DNS geprüft
         </div>
       </div>
 
@@ -88,22 +87,22 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Design-Theme
+                Farbvariante
               </label>
               <select
                 value={theme}
                 onChange={(e) => setTheme(e.target.value as any)}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono focus:bg-white focus:outline-none"
               >
-                <option value="dark">Deep Slate (Dunkel)</option>
-                <option value="emerald">Tech Emerald (Grün)</option>
-                <option value="light">Alabaster (Hell)</option>
+                <option value="dark">Dunkel (Slate)</option>
+                <option value="emerald">Grün (Emerald)</option>
+                <option value="light">Hell (Weiß)</option>
               </select>
             </div>
 
             <div>
               <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Preis anzeigen
+                Preis zeigen
               </label>
               <div className="flex items-center gap-2 pt-1.5">
                 <input
@@ -123,7 +122,7 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
           {showPrice && (
             <div>
               <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Preis / Konditions-Hinweis
+                Preis oder Notiz
               </label>
               <input
                 type="text"
@@ -139,7 +138,7 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
         {/* Live Preview Box */}
         <div className="p-6 rounded-xl bg-slate-100 border border-slate-200 space-y-4">
           <span className="text-[10px] font-mono uppercase font-bold text-slate-500 tracking-wider block">
-            Live Vorschau (Klickbar zur Verifikation):
+            Vorschau (Klickbar zur Prüfung):
           </span>
           
           <div className="py-6 flex items-center justify-center bg-slate-50/50 rounded-lg border border-dashed border-slate-300">
@@ -169,8 +168,8 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
           </div>
 
           <p className="text-[11px] text-slate-500 leading-relaxed">
-            Interessenten gelangen per Klick direkt auf den neutralen Anycast-Prüfbericht auf <strong>rfc10023.de</strong>, 
-            der das hinterlegte DNS-Angebot und DNSSEC-Signatur unabhängig bestätigt.
+            Interessenten gelangen per Klick direkt zum Prüfergebnis auf <strong>rfc10023.de</strong>, 
+            das den DNS-Eintrag unabhängig bestätigt.
           </p>
         </div>
       </div>
@@ -180,7 +179,7 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
         <div className="flex items-center justify-between">
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
             <Code2 className="w-4 h-4 text-emerald-600" />
-            <span>Einbettungs-Code für HTML Landingpages / Sedo / Afternic / WordPress</span>
+            <span>Code für eigene Websites und Portale</span>
           </span>
           <button
             type="button"
@@ -188,7 +187,7 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
             className="px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 text-xs font-mono font-bold flex items-center gap-1.5"
           >
             {copiedHtml ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>HTML Kopieren</span>
+            <span>HTML kopieren</span>
           </button>
         </div>
         <div className="p-3 bg-slate-950 rounded-xl text-emerald-300 font-mono text-xs overflow-x-auto">
@@ -197,7 +196,7 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
 
         <div className="flex items-center justify-between pt-2">
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
-            GitHub / Markdown Badge
+            Markdown für GitHub oder Readme
           </span>
           <button
             type="button"
@@ -205,7 +204,7 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
             className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-mono font-semibold flex items-center gap-1.5"
           >
             {copiedMd ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>Markdown Kopieren</span>
+            <span>Markdown kopieren</span>
           </button>
         </div>
         <div className="p-3 bg-slate-950 rounded-xl text-slate-300 font-mono text-xs overflow-x-auto">

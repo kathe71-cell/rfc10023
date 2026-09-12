@@ -33,10 +33,10 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
   // Clean domain name
   const cleanDomain = cleanDomainInput(domain) || 'beispieldomain.de';
 
-  // Sanitize numeric amount (remove commas, spaces, letters)
+  // Sanitize numeric amount
   const cleanAmount = amount.replace(',', '.').replace(/[^0-9.]/g, '');
 
-  // Build the tags with strict RFC 10023 Section 2.2 conformity
+  // Build the tags
   const buildTags = () => {
     const tags: { key: string; val: string }[] = [];
 
@@ -69,7 +69,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
 
   const tags = buildTags();
 
-  // Generate output records according to RFC 10023 Section 2.1
+  // Generate records
   const getRecordStrings = (): string[] => {
     if (recordFormat === 'multi') {
       if (tags.length === 0) {
@@ -77,7 +77,6 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
       }
       return tags.map((t) => `v=FORSALE1;${t.key}=${t.val}`);
     } else {
-      // Fallback single combined string for basic dashboards
       const joined = tags.map((t) => `${t.key}=${t.val}`).join('; ');
       return [`v=FORSALE1; ${joined}`];
     }
@@ -95,20 +94,18 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
     switch (activeTab) {
       case 'bind':
         return [
-          `; ==========================================================`,
-          `; RFC 10023 Resource Record Set für: ${cleanDomain}`,
-          `; DNS Leaf Node: _for-sale.${cleanDomain}. (Typ: TXT, IN-Class)`,
-          `; ==========================================================`,
+          `; DNS-Einträge für Zonefile: ${cleanDomain}`,
+          `; Knoten: _for-sale.${cleanDomain}. (Typ TXT, IN-Klasse)`,
           ...recordStrings.map((rec) => `_for-sale.${cleanDomain}. ${ttl} IN TXT "${rec}"`),
         ].join('\n');
 
       case 'cloudflare':
         return [
-          `# Cloudflare DNS Dashboard (Records einzeln hinzufügen):`,
-          `# Hinweis: Trage den Wert im Dashboard OHNE äußere Anführungszeichen ein.`,
+          `# Cloudflare DNS Dashboard (Einträge einzeln anlegen):`,
+          `# Hinweis: Den Inhalt im Dashboard ohne Anführungszeichen einfügen.`,
           ``,
           ...recordStrings.map((rec, idx) => 
-            `[Eintrag #${idx + 1}]\nTyp:     TXT\nName:    _for-sale\nTTL:     Auto\nContent: ${rec}\n`
+            `[Eintrag #${idx + 1}]\nTyp:     TXT\nName:    _for-sale\nTTL:     Auto\nInhalt:  ${rec}\n`
           ),
         ].join('\n');
 
@@ -124,15 +121,15 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
 
       case 'inwx':
         return [
-          `# INWX Domain-Center / Netcup CCP (DNS-Zonenverwaltung):`,
+          `# INWX oder Netcup DNS-Verwaltung:`,
           ...recordStrings.map((rec, idx) => 
-            `[Record ${idx + 1}] Name: _for-sale | Typ: TXT | Wert: ${rec} | TTL: ${ttl}`
+            `[Eintrag ${idx + 1}] Name: _for-sale | Typ: TXT | Wert: ${rec} | TTL: ${ttl}`
           ),
         ].join('\n');
 
       case 'terraform':
         return [
-          `# Terraform HCL Definition (Cloudflare Provider)`,
+          `# Terraform Definition (Cloudflare Provider)`,
           ...recordStrings.map((rec, idx) => 
 `resource "cloudflare_record" "forsale_${idx + 1}" {
   zone_id = var.cloudflare_zone_id
@@ -154,13 +151,13 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
 
       case 'cli':
         return [
-          `# 1. Lokale Abfrage via dig (DNS Port 53):`,
+          `# 1. Lokale Abfrage mit dig:`,
           `dig TXT _for-sale.${cleanDomain} +short`,
           ``,
-          `# 2. DNS-over-HTTPS Validierung (Cloudflare Anycast):`,
+          `# 2. Abfrage über DNS over HTTPS (Cloudflare):`,
           `curl -sH "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?name=_for-sale.${cleanDomain}&type=TXT"`,
           ``,
-          `# 3. Öffentliche rfc10023.de REST-API:`,
+          `# 3. Direkte Abfrage über rfc10023.de API:`,
           `curl -s "https://rfc10023.de/api/lookup?d=${cleanDomain}"`,
         ].join('\n');
 
@@ -191,28 +188,28 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
-              Offizieller DNS-Record Generator
+              DNS-Eintrag erstellen
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            RFC 10023 Record Builder
+            RFC 10023 Generator
           </h2>
         </div>
         <div className="flex items-center gap-2 text-xs font-mono text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
           <CheckCircle2 className="w-3.5 h-3.5" />
-          <span>IETF Section 2.1 Konform</span>
+          <span>RFC 10023 konform</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Left Col: Config Inputs (7 cols) */}
+        {/* Left Col: Config Inputs */}
         <div className="lg:col-span-7 space-y-5">
           
           {/* Domain Input */}
           <div>
             <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              1. Zu verkaufende Domain
+              1. Domainname
             </label>
             <div className="relative">
               <input
@@ -223,7 +220,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
               />
               <span className="absolute right-3 top-2.5 text-xs font-mono text-slate-400 select-none">
-                Node: _for-sale.{cleanDomain}
+                Knoten: _for-sale.{cleanDomain}
               </span>
             </div>
           </div>
@@ -271,7 +268,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               </div>
             ) : (
               <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-mono text-emerald-900">
-                ✓ <strong>RFC 10023 Logik:</strong> Bei VHB wird kein numerischer <code>fval</code>-Tag erzeugt, sondern der VHB-Hinweis standardkonform im <code>ftxt</code>-Tag platziert.
+                ✓ <strong>Standard-Logik:</strong> Bei VHB wird kein <code>fval</code>-Feld gesetzt, sondern der Hinweis landet im Textfeld <code>ftxt</code>.
               </div>
             )}
           </div>
@@ -279,17 +276,17 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           {/* Contact URI */}
           <div>
             <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              3. Kontakt-URI (<code className="text-emerald-700">furi</code>)
+              3. Kontaktadresse oder Link (<code className="text-emerald-700">furi</code>)
             </label>
             <input
               type="text"
               value={furi}
               onChange={(e) => setFuri(e.target.value)}
-              placeholder="https://sedo.com/search/details/?domain=... oder https://escrow.com/..."
+              placeholder="https://escrow.com/... oder https://ihre-seite.de/kontakt"
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
             />
             <span className="text-[11px] text-slate-500 mt-1 block">
-              Empfehlung: Link zu Treuhandservice (z. B. Escrow.com), Sedo, Afternic oder eigenem SSL-Kontaktformular.
+              Empfehlung: Link zu einem Treuhanddienst (z. B. Escrow.com), Sedo, Afternic oder einem geschützten Kontaktformular.
             </span>
           </div>
 
@@ -297,7 +294,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
-                4. Freitext-Notiz (<code className="text-slate-800">ftxt</code>)
+                4. Notiz oder Zusatz (<code className="text-slate-800">ftxt</code>)
               </label>
               <span className="text-[11px] font-mono text-slate-400">
                 {calculateUtf8ByteLength(ftxt)} Bytes
@@ -307,15 +304,14 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               type="text"
               value={ftxt}
               onChange={(e) => setFtxt(e.target.value)}
-              placeholder="Inklusive Treuhandabwicklung und MwSt.-Rechnung"
+              placeholder="Inklusive Treuhandabwicklung und Rechnung"
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
             />
           </div>
 
-          {/* Advanced Accordion / Options */}
+          {/* Format Switcher */}
           <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
             
-            {/* Architecture Switcher */}
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-bold text-slate-600">Format:</span>
               <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 text-xs font-mono">
@@ -328,7 +324,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  IETF Multi-Record (Empfohlen)
+                  Mehrere Zeilen (IETF Standard)
                 </button>
                 <button
                   type="button"
@@ -339,7 +335,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Single-Line Fallback
+                  Einzeilig (Fallback)
                 </button>
               </div>
             </div>
@@ -360,27 +356,27 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
 
           </div>
 
-          {/* 255-Byte Limit Guard Alert */}
+          {/* Byte Limit Guard */}
           {exceeds255Limit ? (
             <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs font-mono text-rose-900 flex items-start gap-2.5">
               <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
               <div>
-                <strong>Achtung: DNS RFC 1035 Längenüberschreitung ({maxBytes} Bytes)!</strong>
+                <strong>Achtung: String zu lang ({maxBytes} Bytes)!</strong>
                 <p className="mt-0.5 opacity-90">
-                  Ein einzelner DNS TXT String darf maximal 255 Bytes lang sein. Bitte kürze deinen Freitext (<code className="font-bold">ftxt</code>) oder deine URL (<code className="font-bold">furi</code>).
+                  Ein einzelner DNS-TXT-String darf höchstens 255 Bytes lang sein. Bitte kürzen Sie den Text (<code className="font-bold">ftxt</code>) oder die Webadresse (<code className="font-bold">furi</code>).
                 </p>
               </div>
             </div>
           ) : (
             <div className="text-[11px] font-mono text-slate-500 flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Byte-Length Guard: {maxBytes} / 255 Oktette (RFC 1035 konform)</span>
+              <span>Größe: {maxBytes} / 255 Bytes (RFC 1035 konform)</span>
             </div>
           )}
 
         </div>
 
-        {/* Right Col: Code Export & Tabs (5 cols) */}
+        {/* Right Col: Code Export */}
         <div className="lg:col-span-5 flex flex-col justify-between space-y-4">
           
           <div className="bg-slate-950 rounded-xl border border-slate-800 p-4 font-mono text-xs text-slate-300 flex-grow flex flex-col">
@@ -388,13 +384,13 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
             {/* Tabs Header */}
             <div className="flex flex-wrap items-center gap-1 pb-3 mb-3 border-b border-slate-800 text-[11px]">
               {[
-                { id: 'bind', label: 'BIND / Zone' },
+                { id: 'bind', label: 'Zonefile' },
                 { id: 'cloudflare', label: 'Cloudflare' },
                 { id: 'hetzner', label: 'Hetzner' },
                 { id: 'inwx', label: 'INWX' },
                 { id: 'terraform', label: 'Terraform' },
                 { id: 'dnscontrol', label: 'DNSControl' },
-                { id: 'cli', label: 'CLI / Curl' },
+                { id: 'cli', label: 'dig / curl' },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -419,7 +415,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
             {/* Bottom Actions inside code card */}
             <div className="pt-3 mt-3 border-t border-slate-800 flex items-center justify-between">
               <span className="text-[10px] text-slate-500">
-                {recordStrings.length} Record{recordStrings.length > 1 ? 's' : ''} generiert
+                {recordStrings.length} {recordStrings.length === 1 ? 'Eintrag' : 'Einträge'}
               </span>
               <button
                 type="button"
@@ -433,7 +429,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
 
           </div>
 
-          {/* Direct Validation Share Link */}
+          {/* Share Link */}
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
             <span className="text-xs font-mono text-slate-600 truncate">
               Prüflink: rfc10023.de/validator?d={cleanDomain}

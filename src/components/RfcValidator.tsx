@@ -45,7 +45,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
   const handleValidate = async (targetDomain?: string) => {
     const d = cleanDomainInput(targetDomain || domainInput);
     if (!d || !d.includes('.')) {
-      alert('Bitte gib einen gültigen Domainnamen ein (z. B. forsaledns.net oder beispieldomain.de).');
+      alert('Bitte geben Sie einen gültigen Domainnamen ein (zum Beispiel forsaledns.net oder beispieldomain.de).');
       return;
     }
 
@@ -55,12 +55,12 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
     const nodeName = `_for-sale.${d}`;
     let rawTxtRecords: string[] = [];
     let isDnssec = false;
-    let providerUsed = 'Cloudflare 1.1.1.1 Anycast DoH';
+    let providerUsed = 'Cloudflare 1.1.1.1 Anycast';
     const nameservers: string[] = [];
     let detectedHoster: HosterProfile | null = null;
 
     try {
-      // 1. Fetch Authoritative Nameservers for Hoster-Fingerprinting
+      // 1. Fetch Authoritative Nameservers
       try {
         const nsRes = await fetch(
           `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(d)}&type=NS`,
@@ -89,7 +89,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
 
       if (cfRes.ok) {
         const data = await cfRes.json();
-        isDnssec = Boolean(data.AD); // Authentic Data flag indicates DNSSEC validation
+        isDnssec = Boolean(data.AD);
         if (data.Answer && Array.isArray(data.Answer)) {
           rawTxtRecords = data.Answer
             .filter((a: { type: number }) => a.type === 16)
@@ -99,7 +99,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
 
       // 3. Fallback to Google DoH if no records found
       if (rawTxtRecords.length === 0) {
-        providerUsed = 'Google 8.8.8.8 Anycast DoH';
+        providerUsed = 'Google 8.8.8.8 Anycast';
         const googleUrl = `https://dns.google/resolve?name=${encodeURIComponent(nodeName)}&type=TXT`;
         const gRes = await fetch(googleUrl);
         if (gRes.ok) {
@@ -119,16 +119,16 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
           domain: d,
           nodeName,
           status: 'not_found',
-          statusMessage: `Kein TXT-Eintrag unter '${nodeName}' hinterlegt.`,
+          statusMessage: `Kein TXT-Eintrag unter '${nodeName}' gefunden.`,
           architecture: 'unknown',
-          architectureLabel: 'Kein Record',
+          architectureLabel: 'Kein Eintrag',
           dnssec: isDnssec,
           rawTxt: [],
           tags: [],
           parsedMap: {},
           warnings: [
-            'Im weltweiten DNS existiert derzeit kein Resource Record Set für diesen Leaf-Node.',
-            'Neu eingerichtete DNS-Einträge können je nach Nameserver-TTL einige Minuten bis Stunden für die globale Propagierung benötigen.',
+            'Im weltweiten DNS existiert derzeit kein Eintrag für diesen Knoten.',
+            'Neu angelegte DNS-Einträge können je nach Nameserver einige Minuten bis Stunden für die weltweite Verbreitung benötigen.',
           ],
           dnsProvider: providerUsed,
           nameservers,
@@ -138,7 +138,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         return;
       }
 
-      // RFC 10023 Deep Syntax Analysis
+      // Syntax Analysis
       const parsedTags: TagItem[] = [];
       const parsedMap: Record<string, string> = {};
       const warnings: string[] = [];
@@ -147,12 +147,10 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
       rawTxtRecords.forEach((recordStr, recIdx) => {
         const cleanRec = recordStr.trim();
 
-        // Check if starts with v=FORSALE1; or v=FORSALE1
         if (cleanRec.startsWith('v=FORSALE1;') || cleanRec === 'v=FORSALE1' || cleanRec.startsWith('v=FORSALE1')) {
           foundForsaleVersion = true;
         }
 
-        // Split tags by semicolon
         const segments = cleanRec.split(';').map((s) => s.trim()).filter(Boolean);
 
         segments.forEach((seg) => {
@@ -171,31 +169,31 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
       const isMulti = rawTxtRecords.length > 1;
       const architecture: 'ietf_multi' | 'single_line' | 'unknown' = isMulti ? 'ietf_multi' : 'single_line';
       const architectureLabel = isMulti
-        ? `IETF RFC 10023 Multi-Record RRset (${rawTxtRecords.length} TXT Records)`
-        : 'Single-Line Kompakt-Record (1 TXT Record)';
+        ? `Mehrzeiliger Standard-Eintrag (${rawTxtRecords.length} TXT-Zeilen)`
+        : 'Einzeiliger Eintrag (1 TXT-Zeile)';
 
       let status: 'valid' | 'warning' = 'valid';
 
       if (!foundForsaleVersion) {
         status = 'warning';
-        warnings.push('Der Versionsheader "v=FORSALE1;" fehlt oder ist ungültig.');
+        warnings.push('Der Pflicht-Header "v=FORSALE1;" fehlt oder ist fehlerhaft geschrieben.');
       }
 
       if (!parsedMap.fval && !parsedMap.furi && !parsedMap.ftxt) {
         status = 'warning';
-        warnings.push('Das RRset enthält keine Verkaufs-Tags (weder fval, furi noch ftxt).');
+        warnings.push('Der Eintrag enthält weder Preis (fval), Kontakt (furi) noch Notiz (ftxt).');
       }
 
       if (parsedMap.fval) {
         const val = parsedMap.fval.toUpperCase();
         if (val !== 'VHB' && !/^[A-Z]{3}:?\d+/.test(val)) {
-          warnings.push(`Preisformat "${parsedMap.fval}": IETF RFC 10023 empfiehlt Währungscode + Betrag ohne Leerzeichen (z. B. EUR2500 oder USD1000).`);
+          warnings.push(`Format beim Preis "${parsedMap.fval}": RFC 10023 empfiehlt Währungscode gefolgt vom Betrag ohne Leerzeichen (zum Beispiel EUR2500 oder USD1000).`);
         }
       }
 
       if (parsedMap.furi) {
         if (!parsedMap.furi.startsWith('http://') && !parsedMap.furi.startsWith('https://') && !parsedMap.furi.startsWith('mailto:') && !parsedMap.furi.startsWith('tel:')) {
-          warnings.push(`Kontakt-URI "${parsedMap.furi}": Sollte ein standardisiertes Schema nutzen (https://, mailto: oder tel:).`);
+          warnings.push(`Kontaktadresse "${parsedMap.furi}": Bitte ein gängiges Schema wie https://, mailto: oder tel: verwenden.`);
         }
       }
 
@@ -204,8 +202,8 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         nodeName,
         status,
         statusMessage: status === 'valid'
-          ? 'Gültiges RFC 10023 Verkaufs-Signal im DNS verifiziert!'
-          : 'Record im DNS gefunden, entspricht jedoch nicht vollständig dem RFC-Standard.',
+          ? 'Gültiges RFC 10023 Angebot im DNS gefunden.'
+          : 'Eintrag im DNS gefunden, weicht aber teilweise vom Standard ab.',
         architecture,
         architectureLabel,
         dnssec: isDnssec,
@@ -222,7 +220,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         domain: d,
         nodeName,
         status: 'error',
-        statusMessage: 'DoH-Anfrage fehlgeschlagen (Netzwerk- oder DNS-Timeout).',
+        statusMessage: 'Abfrage fehlgeschlagen (Netzwerk- oder DNS-Zeitüberschreitung).',
         architecture: 'unknown',
         architectureLabel: 'Fehler',
         dnssec: false,
@@ -260,11 +258,11 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
-              Live DNS-over-HTTPS Inspector mit Hoster-Erkennung
+              Live DNS-Abfrage mit Hostprüfung
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            RFC 10023 DoH-Validator
+            RFC 10023 Prüftool
           </h2>
         </div>
         <div className="flex items-center gap-2 text-xs font-mono text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
@@ -300,7 +298,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
             {loading ? (
               <>
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span className="hidden sm:inline">Abfrage...</span>
+                <span className="hidden sm:inline">Prüfe...</span>
               </>
             ) : (
               <>
@@ -313,7 +311,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
 
         {/* Quick test buttons */}
         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-          <span className="font-mono">Referenz-Domains:</span>
+          <span className="font-mono">Beispiele:</span>
           {['forsaledns.net', 'meinedomain.de'].map((example) => (
             <button
               key={example}
@@ -355,10 +353,10 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
                   <span>Resolver: {result.dnsProvider}</span>
                   {result.dnssec && (
                     <span className="text-emerald-700 font-bold flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5" /> DNSSEC Validiert
+                      <ShieldCheck className="w-3.5 h-3.5" /> DNSSEC bestätigt
                     </span>
                   )}
-                  <span>Format: {result.architectureLabel}</span>
+                  <span>Aufbau: {result.architectureLabel}</span>
                 </div>
               </div>
             </div>
@@ -370,12 +368,12 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
                 className="shrink-0 p-2 rounded-lg bg-white border border-slate-200 text-xs font-mono font-semibold flex items-center gap-1.5 shadow-2xs hover:bg-slate-50"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">RRset Kopieren</span>
+                <span className="hidden sm:inline">Eintrag kopieren</span>
               </button>
             )}
           </div>
 
-          {/* Hoster Intelligence Banner */}
+          {/* Hoster Info Banner */}
           {result.detectedHoster ? (
             <div className="p-4 rounded-xl bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -384,7 +382,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
                 </div>
                 <div>
                   <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
-                    Erkannter DNS-Provider
+                    Erkannter Nameserver
                   </div>
                   <div className="text-sm font-bold font-mono text-emerald-400">
                     {result.detectedHoster.name}
@@ -399,7 +397,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
                 className="shrink-0 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Passenden Record bauen</span>
+                <span>Eintrag für diesen Hoster erstellen</span>
               </Link>
             </div>
           ) : result.nameservers.length > 0 ? (
@@ -413,7 +411,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
             </div>
           ) : null}
 
-          {/* Parsed Tag Breakdown Cards */}
+          {/* Parsed Tag Cards */}
           {result.status !== 'not_found' && result.status !== 'error' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               
@@ -428,7 +426,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
 
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                 <span className="text-[11px] font-mono uppercase font-bold text-slate-500 block mb-1">
-                  Preis / Kondition (<code className="text-emerald-700 font-bold">fval</code>)
+                  Preis (<code className="text-emerald-700 font-bold">fval</code>)
                 </span>
                 <span className="font-mono text-sm font-black text-emerald-700">
                   {result.parsedMap.fval || 'Nicht hinterlegt'}
@@ -437,7 +435,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
 
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 sm:col-span-2">
                 <span className="text-[11px] font-mono uppercase font-bold text-slate-500 block mb-1">
-                  Kontakt-Link (<code className="text-emerald-700 font-bold">furi</code>)
+                  Kontaktadresse (<code className="text-emerald-700 font-bold">furi</code>)
                 </span>
                 {result.parsedMap.furi ? (
                   <a
@@ -450,14 +448,14 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
                     <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                   </a>
                 ) : (
-                  <span className="font-mono text-xs text-slate-400">Keine URI hinterlegt</span>
+                  <span className="font-mono text-xs text-slate-400">Keine Adresse hinterlegt</span>
                 )}
               </div>
 
               {result.parsedMap.ftxt && (
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 sm:col-span-2 lg:col-span-4">
                   <span className="text-[11px] font-mono uppercase font-bold text-slate-500 block mb-1">
-                    Notiz / Freitext (<code className="text-slate-800 font-bold">ftxt</code>)
+                    Notiz (<code className="text-slate-800 font-bold">ftxt</code>)
                   </span>
                   <p className="text-xs text-slate-800 font-mono italic">
                     &bdquo;{result.parsedMap.ftxt}&ldquo;
@@ -468,10 +466,10 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
             </div>
           )}
 
-          {/* Warnings list if any */}
+          {/* Warnings */}
           {result.warnings.length > 0 && (
             <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1.5">
-              <strong className="block font-bold text-amber-950 font-mono">RFC 10023 Konformitäts-Diagnose:</strong>
+              <strong className="block font-bold text-amber-950 font-mono">Hinweise zum Eintrag:</strong>
               <ul className="list-disc list-inside space-y-1">
                 {result.warnings.map((w, idx) => (
                   <li key={idx}>{w}</li>
@@ -488,7 +486,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
                 onClick={() => setShowRaw(!showRaw)}
                 className="text-xs font-mono font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1"
               >
-                <span>{showRaw ? '[-] DNS Resource Records verbergen' : '[+] DNS Resource Records anzeigen (Raw TXT)'}</span>
+                <span>{showRaw ? '[-] DNS-Einträge ausblenden' : '[+] DNS-Einträge im Original anzeigen (Raw TXT)'}</span>
               </button>
               {showRaw && (
                 <div className="mt-2 p-3.5 rounded-xl bg-slate-950 text-emerald-300 font-mono text-xs space-y-1 overflow-x-auto">
