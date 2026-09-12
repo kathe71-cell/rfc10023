@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, Copy, Check, Terminal, ExternalLink, RefreshCw, ShieldCheck, Server, Sparkles } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, Copy, Check, Terminal, ExternalLink, RefreshCw, ShieldCheck, Server, Sparkles, Activity, Cpu, ChevronDown, ChevronUp } from 'lucide-react';
 import { cleanDomainInput, detectHosterFromNameservers, HosterProfile } from '../utils/dnsIntelligence';
 import SocialShare from './SocialShare';
 
@@ -25,6 +25,14 @@ interface ValidationResult {
   dnsProvider: string;
   nameservers: string[];
   detectedHoster: HosterProfile | null;
+  latencyMs: number;
+  queryFlags: {
+    ad: boolean;
+    ra: boolean;
+    rd: boolean;
+    cd: boolean;
+  };
+  ttl: number | null;
 }
 
 interface RfcValidatorProps {
@@ -41,7 +49,25 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const [digCopied, setDigCopied] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
+  const [showDevDetails, setShowDevDetails] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Autofocus input on standalone / full view
+  useEffect(() => {
+    if (!embedded && inputRef.current && !effectiveInitial) {
+      inputRef.current.focus();
+    }
+  }, [embedded, effectiveInitial]);
+
+  // Sync if URL search params or initialDomain change
+  useEffect(() => {
+    if (effectiveInitial && effectiveInitial !== domainInput) {
+      setDomainInput(effectiveInitial);
+      handleValidate(effectiveInitial);
+    }
+  }, [effectiveInitial]);
 
   const handleValidate = async (targetDomain?: string) => {
     const d = cleanDomainInput(targetDomain || domainInput);
@@ -53,12 +79,15 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
     setLoading(true);
     setResult(null);
 
+    const startTime = performance.now();
     const nodeName = `_for-sale.${d}`;
     let rawTxtRecords: string[] = [];
     let isDnssec = false;
     let providerUsed = 'Cloudflare 1.1.1.1 Anycast';
     const nameservers: string[] = [];
     let detectedHoster: HosterProfile | null = null;
+    let ttl: number | null = null;
+    let flags = { ad: false, ra: true, rd: true, cd: false };
 
     try {
       // 1. Fetch Authoritative Nameservers
@@ -91,10 +120,18 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
       if (cfRes.ok) {
         const data = await cfRes.json();
         isDnssec = Boolean(data.AD);
+        flags = {
+          ad: Boolean(data.AD),
+          ra: Boolean(data.RA ?? true),
+          rd: Boolean(data.RD ?? true),
+          cd: Boolean(data.CD ?? false),
+        };
         if (data.Answer && Array.isArray(data.Answer)) {
-          rawTxtRecords = data.Answer
-            .filter((a: { type: number }) => a.type === 16)
-            .map((a: { data: string }) => a.data.replace(/^"|"$/g, ''));
+          const txtAnswers = data.Answer.filter((a: { type: number }) => a.type === 16);
+          if (txtAnswers.length > 0 && txtAnswers[0].TTL !== undefined) {
+            ttl = txtAnswers[0].TTL;
+          }
+          rawTxtRecords = txtAnswers.map((a: { data: string }) => a.data.replace(/^"|"$/g, ''));
         }
       }
 
@@ -106,13 +143,23 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         if (gRes.ok) {
           const gData = await gRes.json();
           if (gData.AD) isDnssec = true;
+          flags = {
+            ad: Boolean(gData.AD),
+            ra: Boolean(gData.RA ?? true),
+            rd: Boolean(gData.RD ?? true),
+            cd: Boolean(gData.CD ?? false),
+          };
           if (gData.Answer && Array.isArray(gData.Answer)) {
-            rawTxtRecords = gData.Answer
-              .filter((a: { type: number }) => a.type === 16)
-              .map((a: { data: string }) => a.data.replace(/^"|"$/g, ''));
+            const txtAnswers = gData.Answer.filter((a: { type: number }) => a.type === 16);
+            if (txtAnswers.length > 0 && txtAnswers[0].TTL !== undefined) {
+              ttl = txtAnswers[0].TTL;
+            }
+            rawTxtRecords = txtAnswers.map((a: { data: string }) => a.data.replace(/^"|"$/g, ''));
           }
         }
       }
+
+      const latencyMs = Math.round(performance.now() - startTime);
 
       // No records returned
       if (rawTxtRecords.length === 0) {
@@ -134,6 +181,9 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
           dnsProvider: providerUsed,
           nameservers,
           detectedHoster,
+          latencyMs,
+          queryFlags: flags,
+          ttl,
         });
         setLoading(false);
         return;
@@ -215,8 +265,12 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         dnsProvider: providerUsed,
         nameservers,
         detectedHoster,
+        latencyMs,
+        queryFlags: flags,
+        ttl,
       });
     } catch (err) {
+      const latencyMs = Math.round(performance.now() - startTime);
       setResult({
         domain: d,
         nodeName,
@@ -232,22 +286,27 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
         dnsProvider: providerUsed,
         nameservers: [],
         detectedHoster: null,
+        latencyMs,
+        queryFlags: flags,
+        ttl: null,
       });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (effectiveInitial) {
-      handleValidate(effectiveInitial);
-    }
-  }, [effectiveInitial]);
-
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const copyDigCommand = (targetDomain?: string) => {
+    const d = cleanDomainInput(targetDomain || domainInput || 'beispieldomain.de');
+    const cmd = `dig TXT _for-sale.${d} +short`;
+    navigator.clipboard.writeText(cmd);
+    setDigCopied(true);
+    setTimeout(() => setDigCopied(false), 2000);
   };
 
   return (
@@ -285,11 +344,18 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
             _for-sale.
           </div>
           <input
+            ref={inputRef}
             type="text"
             value={domainInput}
             onChange={(e) => setDomainInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setDomainInput('');
+                setResult(null);
+              }
+            }}
             placeholder="beispieldomain.de"
-            className="w-full pl-24 pr-28 sm:pr-36 py-3.5 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white focus:outline-none rounded-xl text-slate-900 font-mono text-base transition-all"
+            className="w-full pl-24 pr-28 sm:pr-40 py-3.5 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white focus:outline-none rounded-xl text-slate-900 font-mono text-base transition-all"
           />
           <button
             type="submit"
@@ -304,28 +370,46 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
             ) : (
               <>
                 <span>Prüfen</span>
+                <span className="hidden sm:inline text-[10px] text-slate-400 font-normal">↵</span>
                 <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
               </>
             )}
           </button>
         </div>
 
-        {/* Quick test buttons */}
-        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-          <span className="font-mono">Beispiele:</span>
-          {['forsaledns.net', 'meinedomain.de'].map((example) => (
+        {/* Quick test buttons & CLI dig shortcut */}
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-slate-400">Beispiele:</span>
+            {['forsaledns.net', 'meinedomain.de'].map((example) => (
+              <button
+                key={example}
+                type="button"
+                onClick={() => {
+                  setDomainInput(example);
+                  handleValidate(example);
+                }}
+                className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono font-medium transition-colors"
+              >
+                {example}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
-              key={example}
               type="button"
-              onClick={() => {
-                setDomainInput(example);
-                handleValidate(example);
-              }}
-              className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono font-medium transition-colors"
+              onClick={() => copyDigCommand()}
+              title="Kopiert den passenden Terminal-Befehl"
+              className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono text-[11px] font-semibold flex items-center gap-1.5 transition-colors border border-slate-200"
             >
-              {example}
+              <Terminal className="w-3 h-3 text-emerald-600" />
+              <span>{digCopied ? 'dig kopiert!' : 'dig Befehl'}</span>
             </button>
-          ))}
+            <span className="hidden md:inline-block text-[10px] text-slate-400 font-mono">
+              [Esc zum Leeren]
+            </span>
+          </div>
         </div>
       </form>
 
@@ -479,28 +563,100 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
             </div>
           )}
 
-          {/* Raw RRset Viewer */}
-          {result.rawTxt.length > 0 && (
-            <div>
+          {/* Raw RRset & Dev Inspector */}
+          <div className="space-y-3 pt-2">
+            
+            <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
+              {result.rawTxt.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowRaw(!showRaw)}
+                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center gap-1.5 transition-colors"
+                >
+                  <span>{showRaw ? '[-] Raw TXT verbergen' : '[+] Raw TXT anzeigen'}</span>
+                </button>
+              )}
+
               <button
                 type="button"
-                onClick={() => setShowRaw(!showRaw)}
-                className="text-xs font-mono font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1"
+                onClick={() => setShowDevDetails(!showDevDetails)}
+                className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center gap-1.5 transition-colors"
               >
-                <span>{showRaw ? '[-] DNS-Einträge ausblenden' : '[+] DNS-Einträge im Original anzeigen (Raw TXT)'}</span>
+                <Activity className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{showDevDetails ? '[-] DNS-Inspektor ausblenden' : `[+] DNS-Inspektor (${result.latencyMs} ms)`}</span>
+                {showDevDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
-              {showRaw && (
-                <div className="mt-2 p-3.5 rounded-xl bg-slate-950 text-emerald-300 font-mono text-xs space-y-1 overflow-x-auto">
-                  {result.rawTxt.map((txt, idx) => (
-                    <div key={idx} className="flex gap-2">
-                      <span className="text-slate-500 select-none">[{idx + 1}]</span>
-                      <span className="text-emerald-400">&quot;{txt}&quot;</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+
+              <button
+                type="button"
+                onClick={() => copyDigCommand(result.domain)}
+                className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center gap-1.5 transition-colors ml-auto"
+              >
+                <Terminal className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{digCopied ? 'dig kopiert!' : 'dig Befehl kopieren'}</span>
+              </button>
             </div>
-          )}
+
+            {/* Collapsible Dev Details */}
+            {showDevDetails && (
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-mono text-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2 text-[11px] text-slate-400 uppercase tracking-wider">
+                  <span className="flex items-center gap-1.5">
+                    <Cpu className="w-3.5 h-3.5 text-emerald-400" />
+                    DoH Query Inspector & Response Metrics
+                  </span>
+                  <span className="text-emerald-400 font-bold">{result.latencyMs} ms RTT</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
+                  <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
+                    <span className="text-slate-500 block text-[10px]">Resolver:</span>
+                    <span className="text-emerald-400 font-bold truncate block">{result.dnsProvider}</span>
+                  </div>
+                  <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
+                    <span className="text-slate-500 block text-[10px]">DNSSEC (AD Flag):</span>
+                    <span className={result.queryFlags.ad ? 'text-emerald-400 font-bold' : 'text-slate-400'}>
+                      {result.queryFlags.ad ? 'true (validiert)' : 'false (unsigniert)'}
+                    </span>
+                  </div>
+                  <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
+                    <span className="text-slate-500 block text-[10px]">Flags (RD / RA):</span>
+                    <span className="text-slate-300 font-bold">
+                      RD={result.queryFlags.rd ? '1' : '0'} RA={result.queryFlags.ra ? '1' : '0'}
+                    </span>
+                  </div>
+                  <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
+                    <span className="text-slate-500 block text-[10px]">Record TTL:</span>
+                    <span className="text-slate-300 font-bold">
+                      {result.ttl !== null ? `${result.ttl} Sekunden` : 'n/a'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 text-[11px] text-slate-400 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-slate-800/60">
+                  <span className="text-slate-400">Terminal Quick-Check:</span>
+                  <code className="bg-slate-900 px-2 py-1 rounded text-emerald-300 select-all overflow-x-auto">
+                    dig TXT {result.nodeName} +short
+                  </code>
+                </div>
+              </div>
+            )}
+
+            {/* Raw TXT Box */}
+            {showRaw && result.rawTxt.length > 0 && (
+              <div className="p-3.5 rounded-xl bg-slate-950 text-emerald-300 font-mono text-xs space-y-1 overflow-x-auto">
+                <div className="text-[10px] text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-800 mb-2">
+                  Unformatierte DNS TXT Antworten ({result.rawTxt.length} Records)
+                </div>
+                {result.rawTxt.map((txt, idx) => (
+                  <div key={idx} className="flex gap-2">
+                    <span className="text-slate-500 select-none">[{idx + 1}]</span>
+                    <span className="text-emerald-400">&quot;{txt}&quot;</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Social Share Result */}
           <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3.5 rounded-xl">

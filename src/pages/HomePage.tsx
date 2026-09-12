@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ShieldCheck, Cpu, Code2, Copy, Check, ArrowRight, ExternalLink, Terminal, CheckCircle2, ArrowUpRight, Zap, Shield, AlertTriangle, Layers, Sparkles, Scale } from 'lucide-react';
 import RfcValidator from '../components/RfcValidator';
 import RfcGenerator from '../components/RfcGenerator';
@@ -7,8 +7,21 @@ import HosterMatrix from '../components/HosterMatrix';
 import CitationBox from '../components/CitationBox';
 
 export default function HomePage() {
+  const [searchParams] = useSearchParams();
   const [copiedEmbed, setCopiedEmbed] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  useEffect(() => {
+    const domainQuery = searchParams.get('d') || searchParams.get('domain');
+    if (domainQuery) {
+      const el = document.getElementById('validator');
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+      }
+    }
+  }, [searchParams]);
 
   const embedCode = `<iframe src="https://rfc10023.de/widget-embed" width="100%" height="540" frameborder="0" style="border-radius:12px; border:1px solid #e2e8f0;"></iframe>\n<p style="font-size:11px; color:#64748b; font-family:sans-serif;">Standard: <a href="https://rfc10023.de" target="_blank">RFC 10023 DACH Portal</a></p>`;
 
