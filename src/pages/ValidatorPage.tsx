@@ -42,7 +42,7 @@ export default function ValidatorPage() {
       </div>
 
       {/* Citation Box */}
-      <CitationBox title="RFC 10023 DNS Live-Validator & Inspector" url="https://rfc10023.de/validator" />
+      <CitationBox title={t('citation.val_title')} url="https://rfc10023.de/validator" />
 
     </div>
   );

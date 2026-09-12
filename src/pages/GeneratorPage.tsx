@@ -50,7 +50,7 @@ export default function GeneratorPage() {
       </div>
 
       {/* Citation Box */}
-      <CitationBox title="RFC 10023 Record Generator & Multi-Format Exporter" url="https://rfc10023.de/generator" />
+      <CitationBox title={t('citation.gen_title')} url="https://rfc10023.de/generator" />
 
     </div>
   );

@@ -389,6 +389,9 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Citation Box
     'citation.title': 'Zitierhinweis für Fachmedien & Publikationen',
+    'citation.default_title': 'RFC 10023: Der IETF-Standard für Domain-Verkaufssignale im DNS',
+    'citation.val_title': 'RFC 10023 DNS Live-Validator & Inspektor',
+    'citation.gen_title': 'RFC 10023 Record Generator & Multi-Format Exporter',
     'citation.copy': 'Zitierung kopieren',
     'citation.copied': 'Zitierung kopiert',
     'citation.status': 'Stand: September 2026 · IETF Standards Track',
@@ -773,6 +776,9 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Citation Box
     'citation.title': 'Citation Reference for Publications & Media',
+    'citation.default_title': 'RFC 10023: The IETF Standard for Domain Sale Signals in the DNS',
+    'citation.val_title': 'RFC 10023 DNS Live Validator & Inspector',
+    'citation.gen_title': 'RFC 10023 Record Generator & Multi-Format Exporter',
     'citation.copy': 'Copy Citation',
     'citation.copied': 'Citation Copied',
     'citation.status': 'Published: September 2026 · IETF Standards Track',

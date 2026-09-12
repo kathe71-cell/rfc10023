@@ -8,13 +8,14 @@ interface CitationBoxProps {
 }
 
 export default function CitationBox({
-  title = 'RFC 10023: Der IETF-Standard für Domain-Verkaufssignale im DNS',
+  title,
   url = 'https://rfc10023.de/',
 }: CitationBoxProps) {
   const { t, language } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [format, setFormat] = useState<'apa' | 'harvard' | 'bibtex'>('apa');
 
+  const effectiveTitle = title || t('citation.default_title');
   const currentYear = 2026;
   const currentMonth = language === 'en' ? 'September' : 'September';
 
@@ -25,11 +26,11 @@ export default function CitationBox({
 
     switch (format) {
       case 'apa':
-        return `${author} (${currentYear}). ${title}. rfc10023.de. ${retrieved}`;
+        return `${author} (${currentYear}). ${effectiveTitle}. rfc10023.de. ${retrieved}`;
       case 'harvard':
-        return `${author}, ${currentYear}. ${title}. [online] rfc10023.de. ${available}`;
+        return `${author}, ${currentYear}. ${effectiveTitle}. [online] rfc10023.de. ${available}`;
       case 'bibtex':
-        return `@online{rfc10023_${currentYear},\n  author = {${author}},\n  title = {${title}},\n  year = {${currentYear}},\n  url = {${url}},\n  urldate = {${currentYear}-09-11}\n}`;
+        return `@online{rfc10023_${currentYear},\n  author = {${author}},\n  title = {${effectiveTitle}},\n  year = {${currentYear}},\n  url = {${url}},\n  urldate = {${currentYear}-09-11}\n}`;
       default:
         return '';
     }
