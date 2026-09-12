@@ -12,8 +12,13 @@ export default function Footer() {
           <div className="md:col-span-2 space-y-4">
             <Link
               to="/"
-              onClick={() => {
+              onClick={(e) => {
+                if (window.location.pathname === '/') {
+                  e.preventDefault();
+                }
                 window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                document.documentElement.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                document.body.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
               }}
               className="inline-flex items-center gap-3 group"
             >

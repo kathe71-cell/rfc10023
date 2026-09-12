@@ -23,8 +23,13 @@ export default function Navbar() {
           {/* Logo */}
           <Link
             to="/"
-            onClick={() => {
+            onClick={(e) => {
+              if (location.pathname === '/') {
+                e.preventDefault();
+              }
               window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+              document.documentElement.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+              document.body.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
             }}
             className="flex items-center gap-3 group"
           >
