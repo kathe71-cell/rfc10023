@@ -5,6 +5,7 @@ import VercelAnalytics from './components/VercelAnalytics';
 import ScrollToTop from './components/ScrollToTop';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import HomePage from './pages/HomePage';
 import ValidatorPage from './pages/ValidatorPage';
 import GeneratorPage from './pages/GeneratorPage';
@@ -21,6 +22,7 @@ import { ShieldCheck, Cpu } from 'lucide-react';
 
 function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const { t } = useLanguage();
   const isEmbed = location.pathname.includes('-embed');
 
   if (isEmbed) {
@@ -41,14 +43,14 @@ function Layout({ children }: { children: React.ReactNode }) {
           className="flex-1 py-2.5 px-3 rounded-lg bg-slate-900 text-white font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
         >
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>DNS Prüfen</span>
+          <span>{t('nav.mobile_validate')}</span>
         </Link>
         <Link
           to="/generator"
           className="flex-1 py-2.5 px-3 rounded-lg bg-emerald-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
         >
           <Cpu className="w-4 h-4 text-white" />
-          <span>Record Bauen</span>
+          <span>{t('nav.mobile_generate')}</span>
         </Link>
       </div>
     </div>
@@ -60,8 +62,9 @@ export default function App() {
     <BrowserRouter>
       <Analytics />
       <VercelAnalytics />
-      <Layout>
-        <Routes>
+      <LanguageProvider>
+        <Layout>
+          <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/validator" element={<ValidatorPage />} />
           <Route path="/generator" element={<GeneratorPage />} />
@@ -79,6 +82,7 @@ export default function App() {
           <Route path="*" element={<HomePage />} />
         </Routes>
       </Layout>
+      </LanguageProvider>
     </BrowserRouter>
   );
 }

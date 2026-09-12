@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Terminal, Shield, ExternalLink, GitBranch, ArrowUpRight, Scale, Code2, Layers, Sparkles } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Footer() {
+  const { t } = useLanguage();
+
   return (
     <footer className="bg-slate-950 text-slate-300 border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -30,20 +33,18 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed max-w-lg">
-              Das unabhängige DACH-Referenzportal und Entwickler-Toolkit zum IETF-Standard 
-              <strong className="text-slate-200"> RFC 10023</strong> (<em>The &apos;_for-sale&apos; Underscored and Globally Scoped DNS Node Name</em>). 
-              Dezentrale, standardisierte Kennzeichnung von Domain-Verkaufsabsichten ohne proprietäre Plattform-Abhängigkeit.
+              {t('footer.claim')}
             </p>
             <div className="p-3.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs text-slate-400 leading-relaxed">
-              <strong className="text-slate-300 block mb-1">Unabhängigkeitshinweis:</strong>
-              rfc10023.de ist ein freies Fach- und Informationsportal. Es besteht kein gesellschaftsrechtliches Verhältnis zur Internet Engineering Task Force (IETF) oder DENIC eG.
+              <strong className="text-slate-300 block mb-1">{t('footer.disclaimer_title')}</strong>
+              {t('footer.disclaimer')}
             </div>
           </div>
 
           {/* Col 2: Navigation & Tools */}
           <div className="space-y-3">
             <h4 className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-400">
-              Tools &amp; Hub
+              {t('footer.tools_title')}
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
@@ -82,7 +83,7 @@ export default function Footer() {
           {/* Col 3: Recht & Spezifikation */}
           <div className="space-y-3">
             <h4 className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-400">
-              Recht &amp; Standards
+              {t('footer.standards_title')}
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
@@ -123,7 +124,7 @@ export default function Footer() {
         {/* Social Share Strip (100% DSGVO-konform ohne externe Tracker) */}
         <div className="mt-8 pt-4 border-t border-slate-800/60 flex flex-wrap items-center gap-3">
           <div className="text-xs text-slate-400 font-mono shrink-0">
-            Fachportal weiterempfehlen:
+            {t('footer.share_label')}
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
             <a

@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Terminal, ShieldCheck, Cpu, Database, Menu, X, BookOpen, Layers, Sparkles, Code2, Scale } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageToggle from './LanguageToggle';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { t } = useLanguage();
 
   const navLinks = [
-    { name: 'Validator', path: '/validator', icon: ShieldCheck },
-    { name: 'Generator', path: '/generator', icon: Cpu },
-    { name: 'Bulk-Scan', path: '/bulk-scan', icon: Layers },
-    { name: 'Trust-Badge', path: '/badge-generator', icon: Sparkles },
-    { name: 'API Docs', path: '/api-docs', icon: Code2 },
-    { name: 'Recht & Steuern', path: '/recht-leitfaden', icon: Scale },
-    { name: 'Matrix', path: '/hoster-matrix', icon: Database },
+    { name: t('nav.validator'), path: '/validator', icon: ShieldCheck },
+    { name: t('nav.generator'), path: '/generator', icon: Cpu },
+    { name: t('nav.bulk'), path: '/bulk-scan', icon: Layers },
+    { name: t('nav.badge'), path: '/badge-generator', icon: Sparkles },
+    { name: t('nav.api'), path: '/api-docs', icon: Code2 },
+    { name: t('nav.legal'), path: '/recht-leitfaden', icon: Scale },
+    { name: t('nav.matrix'), path: '/hoster-matrix', icon: Database },
   ];
 
   return (
@@ -68,18 +71,20 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Quick Action Button */}
-          <div className="hidden lg:flex items-center gap-3">
+          {/* Quick Action Button & Language Toggle */}
+          <div className="hidden md:flex items-center gap-2.5">
+            <LanguageToggle />
             <Link
               to="/validator"
-              className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-bold font-mono tracking-wider uppercase rounded-md bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all duration-150 shadow-sm"
+              className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-bold font-mono tracking-wider uppercase rounded-md bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all duration-150 shadow-sm"
             >
-              DoH Test
+              {t('nav.doh_test')}
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex md:hidden">
+          {/* Mobile Right Controls */}
+          <div className="flex items-center gap-2 md:hidden">
+            <LanguageToggle />
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="p-2 rounded-md text-slate-700 hover:bg-slate-100"

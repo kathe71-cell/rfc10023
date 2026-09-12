@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Copy, Check, Share2, Layers, AlertCircle, CheckCircle2, Sliders, Info, ShieldAlert, Terminal, Code2 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 import { calculateUtf8ByteLength, cleanDomainInput } from '../utils/dnsIntelligence';
 
 interface RfcGeneratorProps {
@@ -8,6 +9,7 @@ interface RfcGeneratorProps {
 }
 
 export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const urlDomain = searchParams.get('domain') || searchParams.get('d') || '';
 
@@ -188,16 +190,16 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
-              DNS-Eintrag erstellen
+              {t('gen.badge')}
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            RFC 10023 Generator
+            {t('gen.title')}
           </h2>
         </div>
         <div className="flex items-center gap-2 text-xs font-mono text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
           <CheckCircle2 className="w-3.5 h-3.5" />
-          <span>RFC 10023 konform</span>
+          <span>{t('gen.rfc_conform')}</span>
         </div>
       </div>
 
@@ -209,7 +211,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           {/* Domain Input */}
           <div>
             <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              1. Domainname
+              {t('gen.step1')}
             </label>
             <div className="relative">
               <input
@@ -229,7 +231,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
-                2. Preisvorstellung (<code className="text-emerald-700">fval</code>)
+                {t('gen.step2')}
               </label>
               <label className="flex items-center gap-2 cursor-pointer text-xs font-mono text-slate-700 font-medium">
                 <input
@@ -238,7 +240,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                   onChange={(e) => setIsVhb(e.target.checked)}
                   className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
                 />
-                <span>Verhandlungsbasis (VHB)</span>
+                <span>{t('gen.vhb')}</span>
               </label>
             </div>
 
@@ -276,7 +278,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           {/* Contact URI */}
           <div>
             <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              3. Kontaktadresse oder Link (<code className="text-emerald-700">furi</code>)
+              {t('gen.step3')}
             </label>
             <input
               type="text"
@@ -286,7 +288,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
             />
             <span className="text-[11px] text-slate-500 mt-1 block">
-              Empfehlung: Link zu einem Treuhanddienst (z. B. Escrow.com), Sedo, Afternic oder einem geschützten Kontaktformular.
+              {t('gen.step3_hint')}
             </span>
           </div>
 
@@ -294,7 +296,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
-                4. Notiz oder Zusatz (<code className="text-slate-800">ftxt</code>)
+                {t('gen.step4')}
               </label>
               <span className="text-[11px] font-mono text-slate-400">
                 {calculateUtf8ByteLength(ftxt)} Bytes
@@ -313,7 +315,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
             
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold text-slate-600">Format:</span>
+              <span className="text-xs font-mono font-bold text-slate-600">{t('gen.format')}</span>
               <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 text-xs font-mono">
                 <button
                   type="button"
@@ -324,7 +326,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Mehrere Zeilen (IETF Standard)
+                  {t('gen.format_multi')}
                 </button>
                 <button
                   type="button"
@@ -335,7 +337,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Einzeilig (Fallback)
+                  {t('gen.format_single')}
                 </button>
               </div>
             </div>
@@ -415,7 +417,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
             {/* Bottom Actions inside code card */}
             <div className="pt-3 mt-3 border-t border-slate-800 flex items-center justify-between">
               <span className="text-[10px] text-slate-500">
-                {recordStrings.length} {recordStrings.length === 1 ? 'Eintrag' : 'Einträge'}
+                {recordStrings.length} {recordStrings.length === 1 ? 'Record' : 'Records'}
               </span>
               <button
                 type="button"
@@ -423,7 +425,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                 className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5 text-white" />}
-                <span>{copied ? 'Kopiert!' : 'Code kopieren'}</span>
+                <span>{copied ? t('gen.copied') : t('gen.copy_code')}</span>
               </button>
             </div>
 
@@ -440,7 +442,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               className="shrink-0 px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-200 text-xs font-mono font-medium flex items-center gap-1 text-slate-800"
             >
               {shareCopied ? <Check className="w-3 h-3 text-emerald-600" /> : <Share2 className="w-3 h-3 text-slate-500" />}
-              <span>{shareCopied ? 'Kopiert' : 'Link teilen'}</span>
+              <span>{shareCopied ? t('gen.copied') : t('gen.share_link')}</span>
             </button>
           </div>
 
