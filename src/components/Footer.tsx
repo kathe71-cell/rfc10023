@@ -49,32 +49,32 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link to="/validator" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
-                  Live DNS-Validator <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                  {t('footer.link_validator')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
               <li>
                 <Link to="/generator" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
-                  Record Builder &amp; Byte-Guard <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                  {t('footer.link_generator')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
               <li>
                 <Link to="/bulk-scan" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
-                  Portfolio Bulk-Scanner <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                  {t('footer.link_bulk')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
               <li>
                 <Link to="/badge-generator" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
-                  Trust-Badge Generator <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                  {t('footer.link_badge')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
               <li>
                 <Link to="/api-docs" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
-                  Öffentliche REST-API <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                  {t('footer.link_api')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
               <li>
                 <Link to="/hoster-matrix" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
-                  Hoster-Kompatibilität <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                  {t('footer.link_matrix')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
             </ul>
@@ -88,12 +88,12 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link to="/recht-leitfaden" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
-                  Rechtssicherheit &amp; Steuern <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                  {t('footer.link_legal')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
               <li>
                 <Link to="/spezifikation" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
-                  IETF Spezifikations-Guide <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                  {t('footer.link_spec')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
               <li>
@@ -103,17 +103,17 @@ export default function Footer() {
                   rel="noopener noreferrer"
                   className="text-slate-300 hover:text-white transition-colors flex items-center gap-1"
                 >
-                  IETF RFC 10023 Original <ExternalLink className="w-3 h-3 text-slate-500" />
+                  {t('footer.link_orig_rfc')} <ExternalLink className="w-3 h-3 text-slate-500" />
                 </a>
               </li>
               <li>
                 <Link to="/impressum" className="text-slate-300 hover:text-white transition-colors">
-                  &rarr; Impressum (§ 5 DDG)
+                  {t('footer.link_imprint')}
                 </Link>
               </li>
               <li>
                 <Link to="/datenschutz" className="text-slate-300 hover:text-white transition-colors">
-                  Datenschutzerklärung (DSGVO)
+                  {t('footer.link_privacy')}
                 </Link>
               </li>
             </ul>

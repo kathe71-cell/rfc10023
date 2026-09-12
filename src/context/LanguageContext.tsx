@@ -174,12 +174,23 @@ const translations: Record<Language, Record<string, string>> = {
     'gen.copied': 'Kopiert!',
     'gen.share_link': 'Link teilen',
 
-    // Footer
+    // Footer Links
     'footer.claim': 'Das unabhängige DACH-Referenzportal und Entwickler-Toolkit zum IETF-Standard RFC 10023. Dezentrale, standardisierte Kennzeichnung von Domain-Verkaufsabsichten ohne proprietäre Plattform-Abhängigkeit.',
     'footer.disclaimer_title': 'Unabhängigkeitshinweis:',
     'footer.disclaimer': 'rfc10023.de ist ein freies Fach- und Informationsportal. Es besteht kein gesellschaftsrechtliches Verhältnis zur Internet Engineering Task Force (IETF) oder DENIC eG.',
     'footer.tools_title': 'Tools & Hub',
+    'footer.link_validator': 'Live DNS-Validator',
+    'footer.link_generator': 'Record Builder & Byte-Guard',
+    'footer.link_bulk': 'Portfolio Bulk-Scanner',
+    'footer.link_badge': 'Trust-Badge Generator',
+    'footer.link_api': 'Öffentliche REST-API',
+    'footer.link_matrix': 'Hoster-Kompatibilität',
     'footer.standards_title': 'Recht & Standards',
+    'footer.link_legal': 'Rechtssicherheit & Steuern',
+    'footer.link_spec': 'IETF Spezifikations-Guide',
+    'footer.link_orig_rfc': 'IETF RFC 10023 Original',
+    'footer.link_imprint': '→ Impressum (§ 5 DDG)',
+    'footer.link_privacy': 'Datenschutzerklärung (DSGVO)',
     'footer.share_label': 'Fachportal weiterempfehlen:',
   },
   en: {
@@ -347,12 +358,23 @@ const translations: Record<Language, Record<string, string>> = {
     'gen.copied': 'Copied!',
     'gen.share_link': 'Share Link',
 
-    // Footer
+    // Footer Links
     'footer.claim': 'The independent reference portal and developer toolkit for the IETF standard RFC 10023. Decentralized, standardized signaling of domain sale intentions without proprietary platform lock-in.',
     'footer.disclaimer_title': 'Independence Notice:',
     'footer.disclaimer': 'rfc10023.de is an independent educational and technical portal. There is no corporate affiliation with the Internet Engineering Task Force (IETF) or DENIC eG.',
     'footer.tools_title': 'Tools & Hub',
+    'footer.link_validator': 'Live DNS Validator',
+    'footer.link_generator': 'Record Builder & Byte Guard',
+    'footer.link_bulk': 'Portfolio Bulk Scanner',
+    'footer.link_badge': 'Trust Badge Generator',
+    'footer.link_api': 'Public REST API',
+    'footer.link_matrix': 'DNS Providers',
     'footer.standards_title': 'Standards & Legal',
+    'footer.link_legal': 'Legal & Taxes Guide',
+    'footer.link_spec': 'IETF Specification Guide',
+    'footer.link_orig_rfc': 'IETF RFC 10023 Original',
+    'footer.link_imprint': '→ Imprint / Legal Notice',
+    'footer.link_privacy': 'Privacy Policy (GDPR)',
     'footer.share_label': 'Share this portal:',
   }
 };
