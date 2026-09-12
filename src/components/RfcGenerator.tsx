@@ -9,16 +9,20 @@ interface RfcGeneratorProps {
 }
 
 export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [searchParams] = useSearchParams();
   const urlDomain = searchParams.get('domain') || searchParams.get('d') || '';
 
+  const defaultDomain = t('gen.default_domain');
+  const defaultFtxt = t('gen.default_ftxt');
+
   const [domain, setDomain] = useState(urlDomain);
-  const [currency, setCurrency] = useState('EUR');
+  const [currency, setCurrency] = useState(language === 'en' ? 'USD' : 'EUR');
   const [amount, setAmount] = useState('2500');
   const [isVhb, setIsVhb] = useState(false);
   const [furi, setFuri] = useState('');
-  const [ftxt, setFtxt] = useState('Inkl. Treuhandservice, Sofortübertrag');
+  const [ftxt, setFtxt] = useState(defaultFtxt);
+  const [hasUserEditedFtxt, setHasUserEditedFtxt] = useState(false);
   const [fcod, setFcod] = useState('');
   const [ttl, setTtl] = useState('3600');
   const [recordFormat, setRecordFormat] = useState<'multi' | 'single'>('multi');
@@ -32,8 +36,15 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
     }
   }, [urlDomain]);
 
+  // Update default ftxt when language changes if user hasn't typed their own text
+  useEffect(() => {
+    if (!hasUserEditedFtxt) {
+      setFtxt(t('gen.default_ftxt'));
+    }
+  }, [language, hasUserEditedFtxt, t]);
+
   // Clean domain name
-  const cleanDomain = cleanDomainInput(domain) || 'beispieldomain.de';
+  const cleanDomain = cleanDomainInput(domain) || defaultDomain;
 
   // Sanitize numeric amount
   const cleanAmount = amount.replace(',', '.').replace(/[^0-9.]/g, '');
@@ -53,10 +64,11 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
 
     if (isVhb) {
       const note = ftxt.trim();
-      if (note && !note.toLowerCase().includes('vhb') && !note.toLowerCase().includes('verhandlung')) {
-        tags.push({ key: 'ftxt', val: `${note} (VHB)` });
+      const vhbTag = t('gen.vhb_tag');
+      if (note && !note.toLowerCase().includes('vhb') && !note.toLowerCase().includes('verhandlung') && !note.toLowerCase().includes('obo') && !note.toLowerCase().includes('negotiable')) {
+        tags.push({ key: 'ftxt', val: `${note} (${language === 'en' ? 'OBO' : 'VHB'})` });
       } else {
-        tags.push({ key: 'ftxt', val: note || 'Verhandlungsbasis (VHB)' });
+        tags.push({ key: 'ftxt', val: note || vhbTag });
       }
     } else if (ftxt.trim()) {
       tags.push({ key: 'ftxt', val: ftxt.trim() });
@@ -218,7 +230,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                 type="text"
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
-                placeholder="beispieldomain.de"
+                placeholder={defaultDomain}
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
               />
               <span className="absolute right-3 top-2.5 text-xs font-mono text-slate-400 select-none">
@@ -305,7 +317,10 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
             <input
               type="text"
               value={ftxt}
-              onChange={(e) => setFtxt(e.target.value)}
+              onChange={(e) => {
+                setFtxt(e.target.value);
+                setHasUserEditedFtxt(true);
+              }}
               placeholder={t('gen.ftxt_placeholder')}
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
             />

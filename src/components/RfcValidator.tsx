@@ -75,7 +75,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
   const handleValidate = async (targetDomain?: string) => {
     const d = cleanDomainInput(targetDomain || domainInput);
     if (!d || !d.includes('.')) {
-      alert('Bitte geben Sie einen gültigen Domainnamen ein (zum Beispiel forsaledns.net oder beispieldomain.de).');
+      alert(t('val.invalid_domain'));
       return;
     }
 
@@ -326,7 +326,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
   };
 
   const copyDigCommand = (targetDomain?: string) => {
-    const d = cleanDomainInput(targetDomain || domainInput || 'beispieldomain.de');
+    const d = cleanDomainInput(targetDomain || domainInput || t('val.placeholder'));
     const cmd = `dig TXT _for-sale.${d} +short`;
     navigator.clipboard.writeText(cmd);
     setDigCopied(true);
