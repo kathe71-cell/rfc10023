@@ -166,17 +166,17 @@ export default function Footer() {
         <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-slate-500">
           <div className="flex items-center gap-3">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>IETF RFC 10023 · Status: Informational · Stand: Sept. 2026</span>
+            <span>{t('footer.status_info')}</span>
           </div>
           <div className="flex flex-wrap items-center gap-4 text-slate-400">
             <span>Zero-CDN</span>
             <span>•</span>
-            <span>100 % DSGVO-konform</span>
+            <span>{t('footer.gdpr')}</span>
             <span>•</span>
-            <span>Cookielose Vercel Analytics</span>
+            <span>{t('footer.analytics')}</span>
             <span>•</span>
             <Link to="/impressum" className="text-slate-300 hover:underline">
-              Impressum
+              {t('footer.imprint_bottom')}
             </Link>
           </div>
         </div>

@@ -229,6 +229,10 @@ const translations: Record<Language, Record<string, string>> = {
     'footer.link_imprint': '→ Impressum (§ 5 DDG)',
     'footer.link_privacy': 'Datenschutzerklärung (DSGVO)',
     'footer.share_label': 'Fachportal weiterempfehlen:',
+    'footer.status_info': 'IETF RFC 10023 · Status: Informational · Stand: Sept. 2026',
+    'footer.gdpr': '100 % DSGVO-konform',
+    'footer.analytics': 'Cookielose Vercel Analytics',
+    'footer.imprint_bottom': 'Impressum',
 
     // Matrix Page & HosterMatrix
     'matrix.badge': 'DACH Provider Evaluation',
@@ -616,6 +620,10 @@ const translations: Record<Language, Record<string, string>> = {
     'footer.link_imprint': '→ Imprint / Legal Notice',
     'footer.link_privacy': 'Privacy Policy (GDPR)',
     'footer.share_label': 'Share this portal:',
+    'footer.status_info': 'IETF RFC 10023 · Status: Informational · Published: Sept. 2026',
+    'footer.gdpr': '100% GDPR Compliant',
+    'footer.analytics': 'Cookieless Vercel Analytics',
+    'footer.imprint_bottom': 'Imprint',
 
     // Matrix Page & HosterMatrix
     'matrix.badge': 'DACH Provider Evaluation',
