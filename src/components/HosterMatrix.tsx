@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { HOSTERS_DATA, HosterSupport } from '../data/hosters';
-import { CheckCircle2, AlertTriangle, HelpCircle, Search, Database, ExternalLink } from 'lucide-react';
+import { HOSTERS_DATA } from '../data/hosters';
+import { CheckCircle2, AlertTriangle, HelpCircle, Search, Database } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function HosterMatrix() {
+  const { t, language } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'supported' | 'partial'>('all');
 
   const filteredHosters = HOSTERS_DATA.filter((h) => {
+    const notesText = language === 'en' && h.notesEn ? h.notesEn : h.notes;
     const matchesSearch = h.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          h.notes.toLowerCase().includes(searchTerm.toLowerCase());
+                          notesText.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || h.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -22,11 +25,11 @@ export default function HosterMatrix() {
           <div className="flex items-center gap-2 mb-1">
             <Database className="w-4 h-4 text-emerald-600" />
             <span className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-700">
-              Kompatibilitäts-Matrix DACH
+              {t('matrix.subbadge')}
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            DNS-Zoneneditoren &amp; Hoster im RFC 10023 Test
+            {t('matrix.subtitle')}
           </h2>
         </div>
 
@@ -38,7 +41,7 @@ export default function HosterMatrix() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Hoster suchen..."
+              placeholder={t('matrix.search_placeholder')}
               className="pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 focus:outline-none focus:border-emerald-500"
             />
           </div>
@@ -47,9 +50,9 @@ export default function HosterMatrix() {
             onChange={(e) => setFilterStatus(e.target.value as 'all' | 'supported' | 'partial')}
             className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700"
           >
-            <option value="all">Alle Status</option>
-            <option value="supported">🟢 Voll unterstützt</option>
-            <option value="partial">🟡 Eingeschränkt</option>
+            <option value="all">{t('matrix.filter_all')}</option>
+            <option value="supported">{t('matrix.filter_supported')}</option>
+            <option value="partial">{t('matrix.filter_partial')}</option>
           </select>
         </div>
       </div>
@@ -59,56 +62,61 @@ export default function HosterMatrix() {
         <table className="w-full text-left text-sm border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-xs font-mono uppercase text-slate-500">
-              <th className="py-3 px-4 font-bold">Anbieter / Dienst</th>
-              <th className="py-3 px-4 font-bold">Herkunft</th>
-              <th className="py-3 px-4 font-bold">RFC 10023 Status</th>
-              <th className="py-3 px-4 font-bold">Zoneneditor-Syntax</th>
-              <th className="py-3 px-4 font-bold">Praxis-Hinweise &amp; Workaround</th>
+              <th className="py-3 px-4 font-bold">{t('matrix.col_provider')}</th>
+              <th className="py-3 px-4 font-bold">{t('matrix.col_origin')}</th>
+              <th className="py-3 px-4 font-bold">{t('matrix.col_status')}</th>
+              <th className="py-3 px-4 font-bold">{t('matrix.col_syntax')}</th>
+              <th className="py-3 px-4 font-bold">{t('matrix.col_notes')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {filteredHosters.map((hoster) => (
-              <tr key={hoster.id} className="hover:bg-slate-50/80 transition-colors">
-                
-                {/* Name */}
-                <td className="py-3.5 px-4 font-extrabold text-slate-900 whitespace-nowrap">
-                  {hoster.name}
-                </td>
+            {filteredHosters.map((hoster) => {
+              const country = language === 'en' && hoster.countryEn ? hoster.countryEn : hoster.country;
+              const notes = language === 'en' && hoster.notesEn ? hoster.notesEn : hoster.notes;
 
-                {/* Country */}
-                <td className="py-3.5 px-4 text-slate-600 text-xs whitespace-nowrap">
-                  {hoster.country}
-                </td>
+              return (
+                <tr key={hoster.id} className="hover:bg-slate-50/80 transition-colors">
+                  
+                  {/* Name */}
+                  <td className="py-3.5 px-4 font-extrabold text-slate-900 whitespace-nowrap">
+                    {hoster.name}
+                  </td>
 
-                {/* Status Badge */}
-                <td className="py-3.5 px-4 whitespace-nowrap">
-                  {hoster.status === 'supported' ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-emerald-100 text-emerald-900 border border-emerald-300">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                      Voll unterstützt
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-amber-100 text-amber-950 border border-amber-300">
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
-                      Eingeschränkt
-                    </span>
-                  )}
-                </td>
+                  {/* Country */}
+                  <td className="py-3.5 px-4 text-slate-600 text-xs whitespace-nowrap">
+                    {country}
+                  </td>
 
-                {/* UI Field */}
-                <td className="py-3.5 px-4 font-mono text-xs text-slate-700">
-                  <code className="px-2 py-1 bg-slate-100 rounded border border-slate-200 block max-w-xs truncate">
-                    {hoster.uiField}
-                  </code>
-                </td>
+                  {/* Status Badge */}
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    {hoster.status === 'supported' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-emerald-100 text-emerald-900 border border-emerald-300">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                        {t('matrix.status_supported')}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-amber-100 text-amber-950 border border-amber-300">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
+                        {t('matrix.status_partial')}
+                      </span>
+                    )}
+                  </td>
 
-                {/* Notes */}
-                <td className="py-3.5 px-4 text-xs text-slate-600 leading-relaxed max-w-sm">
-                  {hoster.notes}
-                </td>
+                  {/* UI Field */}
+                  <td className="py-3.5 px-4 font-mono text-xs text-slate-700">
+                    <code className="px-2 py-1 bg-slate-100 rounded border border-slate-200 block max-w-xs truncate">
+                      {hoster.uiField}
+                    </code>
+                  </td>
 
-              </tr>
-            ))}
+                  {/* Notes */}
+                  <td className="py-3.5 px-4 text-xs text-slate-600 leading-relaxed max-w-sm">
+                    {notes}
+                  </td>
+
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -117,13 +125,10 @@ export default function HosterMatrix() {
       <div className="mt-6 p-5 rounded-xl bg-slate-50 border border-slate-200">
         <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-800 mb-2 flex items-center gap-1.5">
           <HelpCircle className="w-4 h-4 text-emerald-600" />
-          Technischer Hintergrund: Warum lehnen manche Hoster Unterstriche ab?
+          {t('matrix.tech_bg_title')}
         </h4>
         <p className="text-xs text-slate-600 leading-relaxed">
-          Historisch verlangt der Standard für Hostnamen (<strong>RFC 1035</strong> / <strong>RFC 1123</strong>) das Format <code>[a-z0-9-]</code>. 
-          Das Domain Name System als Protokoll erlaubt jedoch nach <strong>RFC 2181</strong> beliebige Oktette. 
-          Für Service-Records und globale Attribute definierte die IETF in <strong>RFC 8552</strong> den Standard für sogenannte <em>Underscored Leaf Nodes</em> (wie <code>_dmarc</code>, <code>_domainkey</code> oder nun <code>_for-sale</code>). 
-          Moderne DNS-Provider unterstützen diesen Standard uneingeschränkt; ältere Kontrollpanels prüfen Eingaben jedoch fälschlicherweise noch gegen die strikte Hostnamen-Syntax.
+          {t('matrix.tech_bg_text')}
         </p>
       </div>
 

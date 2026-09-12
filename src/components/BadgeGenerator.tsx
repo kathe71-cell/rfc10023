@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Copy, Check, ShieldCheck, Sparkles, ExternalLink, Code2 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface BadgeGeneratorProps {
   initialDomain?: string;
 }
 
 export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: BadgeGeneratorProps) {
+  const { t } = useLanguage();
   const [domain, setDomain] = useState(initialDomain);
   const [theme, setTheme] = useState<'dark' | 'light' | 'emerald'>('dark');
   const [showPrice, setShowPrice] = useState(true);
@@ -56,15 +58,15 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
-              Prüfsiegel für Websites und Portfolios
+              {t('badge.subbadge')}
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Badge Generator
+            {t('badge.title')}
           </h2>
         </div>
         <div className="text-xs font-mono text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
-          ✓ DNS geprüft
+          {t('badge.verified_pill')}
         </div>
       </div>
 
@@ -73,7 +75,7 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-              Domainname
+              {t('badge.domain_label')}
             </label>
             <input
               type="text"
@@ -87,22 +89,22 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Farbvariante
+                {t('badge.theme_label')}
               </label>
               <select
                 value={theme}
                 onChange={(e) => setTheme(e.target.value as any)}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono focus:bg-white focus:outline-none"
               >
-                <option value="dark">Dunkel (Slate)</option>
-                <option value="emerald">Grün (Emerald)</option>
-                <option value="light">Hell (Weiß)</option>
+                <option value="dark">{t('badge.theme_dark')}</option>
+                <option value="emerald">{t('badge.theme_emerald')}</option>
+                <option value="light">{t('badge.theme_light')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Preis zeigen
+                {t('badge.show_price')}
               </label>
               <div className="flex items-center gap-2 pt-1.5">
                 <input
@@ -113,7 +115,7 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
                   className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
                 />
                 <label htmlFor="showPriceCheck" className="text-xs text-slate-700 font-medium cursor-pointer">
-                  Preis im Badge
+                  {t('badge.show_price_box')}
                 </label>
               </div>
             </div>
@@ -122,7 +124,7 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
           {showPrice && (
             <div>
               <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Preis oder Notiz
+                {t('badge.price_label')}
               </label>
               <input
                 type="text"
@@ -138,7 +140,7 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
         {/* Live Preview Box */}
         <div className="p-6 rounded-xl bg-slate-100 border border-slate-200 space-y-4">
           <span className="text-[10px] font-mono uppercase font-bold text-slate-500 tracking-wider block">
-            Vorschau (Klickbar zur Prüfung):
+            {t('badge.preview_label')}
           </span>
           
           <div className="py-6 flex items-center justify-center bg-slate-50/50 rounded-lg border border-dashed border-slate-300">
@@ -168,8 +170,7 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
           </div>
 
           <p className="text-[11px] text-slate-500 leading-relaxed">
-            Interessenten gelangen per Klick direkt zum Prüfergebnis auf <strong>rfc10023.de</strong>, 
-            das den DNS-Eintrag unabhängig bestätigt.
+            {t('badge.preview_text')}
           </p>
         </div>
       </div>
@@ -179,15 +180,15 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
         <div className="flex items-center justify-between">
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
             <Code2 className="w-4 h-4 text-emerald-600" />
-            <span>Code für eigene Websites und Portale</span>
+            <span>{t('badge.code_web_title')}</span>
           </span>
           <button
             type="button"
             onClick={copyHtml}
             className="px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 text-xs font-mono font-bold flex items-center gap-1.5"
           >
-            {copiedHtml ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>HTML kopieren</span>
+            {copiedHtml ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
+            <span>{t('badge.copy_html')}</span>
           </button>
         </div>
         <div className="p-3 bg-slate-950 rounded-xl text-emerald-300 font-mono text-xs overflow-x-auto">
@@ -196,15 +197,15 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
 
         <div className="flex items-center justify-between pt-2">
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
-            Markdown für GitHub oder Readme
+            {t('badge.code_md_title')}
           </span>
           <button
             type="button"
             onClick={copyMd}
             className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-mono font-semibold flex items-center gap-1.5"
           >
-            {copiedMd ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>Markdown kopieren</span>
+            {copiedMd ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
+            <span>{t('badge.copy_md')}</span>
           </button>
         </div>
         <div className="p-3 bg-slate-950 rounded-xl text-slate-300 font-mono text-xs overflow-x-auto">

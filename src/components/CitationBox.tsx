@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Quote, Copy, Check } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface CitationBoxProps {
   title?: string;
@@ -10,20 +11,25 @@ export default function CitationBox({
   title = 'RFC 10023: Der IETF-Standard für Domain-Verkaufssignale im DNS',
   url = 'https://rfc10023.de/',
 }: CitationBoxProps) {
+  const { t, language } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [format, setFormat] = useState<'apa' | 'harvard' | 'bibtex'>('apa');
 
   const currentYear = 2026;
-  const currentMonth = 'September';
+  const currentMonth = language === 'en' ? 'September' : 'September';
 
   const getCitationText = () => {
+    const author = language === 'en' ? 'RFC 10023 Editorial Board' : 'RFC 10023 Fachredaktion';
+    const retrieved = language === 'en' ? `Retrieved on September 11, ${currentYear}, from ${url}` : `Abgerufen am 11. ${currentMonth} ${currentYear}, von ${url}`;
+    const available = language === 'en' ? `Available at: <${url}> [Accessed 11 September ${currentYear}].` : `Verfügbar unter: <${url}> [Zugriff am 11. ${currentMonth} ${currentYear}].`;
+
     switch (format) {
       case 'apa':
-        return `RFC 10023 Fachredaktion (${currentYear}). ${title}. rfc10023.de. Abgerufen am 11. ${currentMonth} ${currentYear}, von ${url}`;
+        return `${author} (${currentYear}). ${title}. rfc10023.de. ${retrieved}`;
       case 'harvard':
-        return `RFC 10023 Fachredaktion, ${currentYear}. ${title}. [online] rfc10023.de. Verfügbar unter: <${url}> [Zugriff am 11. ${currentMonth} ${currentYear}].`;
+        return `${author}, ${currentYear}. ${title}. [online] rfc10023.de. ${available}`;
       case 'bibtex':
-        return `@online{rfc10023_${currentYear},\n  author = {RFC 10023 Fachredaktion},\n  title = {${title}},\n  year = {${currentYear}},\n  url = {${url}},\n  urldate = {${currentYear}-09-11}\n}`;
+        return `@online{rfc10023_${currentYear},\n  author = {${author}},\n  title = {${title}},\n  year = {${currentYear}},\n  url = {${url}},\n  urldate = {${currentYear}-09-11}\n}`;
       default:
         return '';
     }
@@ -41,7 +47,7 @@ export default function CitationBox({
         <div className="flex items-center gap-2">
           <Quote className="w-4 h-4 text-emerald-600" />
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
-            Zitierhinweis für Fachmedien &amp; Publikationen
+            {t('citation.title')}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -67,14 +73,14 @@ export default function CitationBox({
       </div>
 
       <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-        <span>Stand: September 2026 · IETF Standards Track</span>
+        <span>{t('citation.status')}</span>
         <button
           type="button"
           onClick={copyCitation}
           className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded font-semibold text-slate-800 transition-colors shadow-2xs"
         >
           {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-          <span>{copied ? 'Zitierung kopiert' : 'Zitierung kopieren'}</span>
+          <span>{copied ? t('citation.copied') : t('citation.copy')}</span>
         </button>
       </div>
     </div>
