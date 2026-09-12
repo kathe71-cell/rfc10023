@@ -134,13 +134,13 @@ export default function HomePage() {
                   <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
-                  <span className="ml-2 text-[11px] text-slate-400">Terminal &mdash; DNS-Abfrage</span>
+                  <span className="ml-2 text-[11px] text-slate-400">{t('hero.terminal_header')}</span>
                 </div>
                 <span className="text-[10px] text-emerald-400 font-bold uppercase">Live DoH</span>
               </div>
 
               <div className="space-y-2 text-slate-300 overflow-x-auto leading-relaxed">
-                <p className="text-slate-500"># Abfrage der Verkaufsdaten einer Domain:</p>
+                <p className="text-slate-500">{t('hero.terminal_comment')}</p>
                 <p className="text-emerald-400">$ dig TXT _for-sale.forsaledns.net +short</p>
                 <div className="p-3 bg-slate-900/90 rounded-lg border border-slate-800 text-slate-200 space-y-1 my-2">
                   <p className="text-emerald-300">&quot;v=FORSALE1;fval=USD195000&quot;</p>
@@ -148,16 +148,16 @@ export default function HomePage() {
                   <p className="text-slate-400">&quot;v=FORSALE1;ftxt=Direct inquiries welcome&quot;</p>
                 </div>
                 <div className="pt-2 text-[11px] text-slate-400 border-t border-slate-800/80 space-y-1">
-                  <p><strong className="text-slate-200">DNS-Knoten:</strong> _for-sale.forsaledns.net.</p>
-                  <p><strong className="text-slate-200">DNSSEC:</strong> Signiert und authentifiziert</p>
-                  <p><strong className="text-slate-200">Standard:</strong> IETF RFC 10023</p>
+                  <p><strong className="text-slate-200">{t('hero.terminal_node')}</strong> _for-sale.forsaledns.net.</p>
+                  <p><strong className="text-slate-200">{t('hero.terminal_dnssec')}</strong> {t('hero.terminal_dnssec_val')}</p>
+                  <p><strong className="text-slate-200">{t('hero.terminal_standard')}</strong> IETF RFC 10023</p>
                 </div>
               </div>
 
               <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px]">
-                <span className="text-slate-500">Praxisbeispiel: Registry SIDN (.nl)</span>
+                <span className="text-slate-500">{t('hero.terminal_example')}</span>
                 <Link to="/spezifikation" className="text-emerald-400 hover:underline flex items-center gap-1 font-bold">
-                  Spezifikation lesen &rarr;
+                  {t('hero.terminal_spec_link')}
                 </Link>
               </div>
 
@@ -178,9 +178,9 @@ export default function HomePage() {
             <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700 w-fit mb-3 group-hover:scale-110 transition-transform">
               <Layers className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-slate-900 text-base mb-1">Portfolio Bulk-Scanner</h3>
+            <h3 className="font-bold text-slate-900 text-base mb-1">{t('feat.bulk_title')}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Bis zu 30 Domains parallel prüfen, DNSSEC abfragen und als CSV exportieren.
+              {t('feat.bulk_desc')}
             </p>
           </Link>
 
@@ -191,9 +191,9 @@ export default function HomePage() {
             <div className="p-2.5 rounded-xl bg-slate-900 text-emerald-400 w-fit mb-3 group-hover:scale-110 transition-transform">
               <Sparkles className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-slate-900 text-base mb-1">Verifikations-Badge</h3>
+            <h3 className="font-bold text-slate-900 text-base mb-1">{t('feat.badge_title')}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Kopierbare Badges für Verkaufsseiten mit Direktlink zur Prüfung.
+              {t('feat.badge_desc')}
             </p>
           </Link>
 
@@ -204,9 +204,9 @@ export default function HomePage() {
             <div className="p-2.5 rounded-xl bg-slate-100 text-slate-800 w-fit mb-3 group-hover:scale-110 transition-transform">
               <Code2 className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-slate-900 text-base mb-1">Öffentliche REST-API</h3>
+            <h3 className="font-bold text-slate-900 text-base mb-1">{t('feat.api_title')}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Kostenfreie Schnittstelle für Entwickler, Skripte und Abfrage-Tools.
+              {t('feat.api_desc')}
             </p>
           </Link>
 
@@ -217,9 +217,9 @@ export default function HomePage() {
             <div className="p-2.5 rounded-xl bg-amber-100 text-amber-900 w-fit mb-3 group-hover:scale-110 transition-transform">
               <Scale className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-slate-900 text-base mb-1">Recht und Steuern</h3>
+            <h3 className="font-bold text-slate-900 text-base mb-1">{t('feat.legal_title')}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Impressumspflicht nach § 5 DDG, Vertragsrecht und Preisangaben im DACH-Raum.
+              {t('feat.legal_desc')}
             </p>
           </Link>
         </div>
@@ -230,18 +230,16 @@ export default function HomePage() {
         <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-300/80 shadow-xs relative">
           <div className="flex items-center gap-2 mb-2">
             <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-slate-900 text-white">
-              Definition
+              {t('def.badge')}
             </span>
           </div>
           <p className="text-base sm:text-lg text-slate-900 leading-relaxed font-normal">
-            <strong>RFC 10023</strong> beschreibt einen DNS-TXT-Eintrag unter <code>_for-sale.[domain]</code>. 
-            Mit dem Pflichtfeld <code>v=FORSALE1;</code> sowie optionalen Angaben wie <code>fval</code> (Preis) und <code>furi</code> (Kontaktadresse) 
-            hinterlegen Inhaber ihre Verkaufsbereitschaft direkt in der DNS-Zone der Domain.
+            {t('def.text')}
           </p>
           <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-mono text-slate-500">
             <span>IETF Standard &bull; ISSN: 2070-1721</span>
             <Link to="/spezifikation" className="text-emerald-700 font-bold hover:underline">
-              RFC 10023 Spezifikation &rarr;
+              {t('def.spec_link')}
             </Link>
           </div>
         </div>
@@ -261,10 +259,10 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
           <span className="text-[11px] font-mono uppercase font-bold tracking-wider text-slate-500">
-            Hintergrund
+            {t('bento.bg_badge')}
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight mt-1">
-            Warum DNS-Signale herkömmliches Parking ablösen
+            {t('bento.main_title')}
           </h2>
         </div>
 
@@ -275,37 +273,36 @@ export default function HomePage() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-emerald-100 text-emerald-900 border border-emerald-300">
-                  Ablauf
+                  {t('bento.card1_badge')}
                 </span>
               </div>
               <h3 className="text-xl font-bold text-slate-950 mb-3">
-                Direkte Erkennung bei Whois- und Verfügbarkeitsprüfungen
+                {t('bento.card1_title')}
               </h3>
               <p className="text-sm text-slate-700 leading-relaxed mb-6">
-                Bisher sah ein Interessent erst beim Aufruf im Webbrowser, ob eine Domain zum Verkauf steht. 
-                RFC 10023 verlagert diese Information in das DNS:
+                {t('bento.card1_desc')}
               </p>
 
               <div className="space-y-3 font-mono text-xs">
                 <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
-                  <span className="text-slate-800 font-bold">1. Inhaber setzt TXT-Eintrag</span>
+                  <span className="text-slate-800 font-bold">{t('bento.step1')}</span>
                   <span className="text-slate-500">_for-sale.domain.de</span>
                 </div>
                 <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
-                  <span className="text-slate-800 font-bold">2. Resolver liest v=FORSALE1 aus</span>
+                  <span className="text-slate-800 font-bold">{t('bento.step2')}</span>
                   <span className="text-emerald-700 font-bold">DoH / Port 53</span>
                 </div>
                 <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
-                  <span className="text-slate-800 font-bold">3. Registrar zeigt Verkaufsoption</span>
-                  <span className="text-slate-900 font-extrabold">Whois &amp; Suche</span>
+                  <span className="text-slate-800 font-bold">{t('bento.step3')}</span>
+                  <span className="text-slate-900 font-extrabold">Whois &amp; Search</span>
                 </div>
               </div>
             </div>
 
             <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-              <span>Keine Bindung an externe Parkingservices</span>
+              <span>{t('bento.card1_footer')}</span>
               <Link to="/spezifikation" className="text-emerald-700 font-bold hover:underline">
-                Technische Details &rarr;
+                {t('bento.card1_tech_link')}
               </Link>
             </div>
           </div>
@@ -315,39 +312,39 @@ export default function HomePage() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-slate-800 text-emerald-400 border border-slate-700">
-                  Vergleich
+                  {t('bento.card2_badge')}
                 </span>
               </div>
               <h3 className="text-lg font-bold text-white mb-4">
-                Klassisches Parking versus RFC 10023
+                {t('bento.card2_title')}
               </h3>
 
               <div className="space-y-3 text-xs font-mono">
                 <div className="pb-2.5 border-b border-slate-800 flex justify-between">
-                  <span className="text-slate-400">Verkaufsprovision</span>
-                  <span className="text-emerald-400 font-bold">0 % (beim Direktverkauf)</span>
+                  <span className="text-slate-400">{t('bento.row_commission')}</span>
+                  <span className="text-emerald-400 font-bold">{t('bento.row_commission_val')}</span>
                 </div>
                 <div className="pb-2.5 border-b border-slate-800 flex justify-between">
-                  <span className="text-slate-400">Nameserver-Wechsel</span>
-                  <span className="text-emerald-400 font-bold">Nicht nötig</span>
+                  <span className="text-slate-400">{t('bento.row_ns')}</span>
+                  <span className="text-emerald-400 font-bold">{t('bento.row_ns_val')}</span>
                 </div>
                 <div className="pb-2.5 border-b border-slate-800 flex justify-between">
-                  <span className="text-slate-400">Deindexierungsrisiko</span>
-                  <span className="text-emerald-400 font-bold">Keines</span>
+                  <span className="text-slate-400">{t('bento.row_deindex')}</span>
+                  <span className="text-emerald-400 font-bold">{t('bento.row_deindex_val')}</span>
                 </div>
                 <div className="pb-2.5 border-b border-slate-800 flex justify-between">
-                  <span className="text-slate-400">DNSSEC-Signierung</span>
-                  <span className="text-emerald-400 font-bold">Voll unterstützt</span>
+                  <span className="text-slate-400">{t('bento.row_dnssec')}</span>
+                  <span className="text-emerald-400 font-bold">{t('bento.row_dnssec_val')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Maschinenlesbar</span>
-                  <span className="text-emerald-400 font-bold">Offizieller Standard</span>
+                  <span className="text-slate-400">{t('bento.row_machine')}</span>
+                  <span className="text-emerald-400 font-bold">{t('bento.row_machine_val')}</span>
                 </div>
               </div>
             </div>
 
             <div className="mt-6 pt-4 border-t border-slate-800 text-[11px] text-slate-400">
-              * Gilt für Direktverkäufe über den im DNS hinterlegten Kontaktlink.
+              {t('bento.card2_note')}
             </div>
           </div>
 
@@ -355,14 +352,13 @@ export default function HomePage() {
           <div className="lg:col-span-12 p-6 sm:p-7 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div className="space-y-1 max-w-3xl">
               <span className="text-[10px] font-mono uppercase font-bold text-emerald-700 tracking-wider">
-                Praxiseinsatz
+                {t('bento.card3_badge')}
               </span>
               <h4 className="text-base font-bold text-slate-950">
-                Registry SIDN (.nl) prüft RFC 10023 bei Domainabfragen
+                {t('bento.card3_title')}
               </h4>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Die niederländische Vergabestelle SIDN fragt bei Verfügbarkeitsprüfungen automatisiert den Eintrag <code>_for-sale</code> ab. 
-                Steht eine .nl-Adresse zum Verkauf, erscheint der Hinweis samt Preis und Kontakt direkt im Suchergebnis.
+                {t('bento.card3_desc')}
               </p>
             </div>
             <a
@@ -371,7 +367,7 @@ export default function HomePage() {
               rel="noopener noreferrer"
               className="shrink-0 px-4 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-900 font-mono text-xs font-bold transition-colors flex items-center gap-1.5"
             >
-              <span>SIDN.nl öffnen</span>
+              <span>{t('bento.card3_btn')}</span>
               <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
             </a>
           </div>
@@ -388,12 +384,10 @@ export default function HomePage() {
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <blockquote className="p-8 sm:p-10 rounded-2xl bg-slate-100 border-l-4 border-emerald-600 text-slate-900">
           <p className="text-lg sm:text-xl font-medium italic leading-relaxed">
-            &bdquo;RFC 10023 trennt das Verkaufsangebot von der eigentlichen Website. Eine Domain muss nicht 
-            brachliegen oder auf Werbebanner umgeleitet werden, um Kaufinteressenten zu signalisieren, 
-            dass Angebote willkommen sind.&ldquo;
+            {t('quote.text')}
           </p>
           <footer className="mt-4 text-xs font-mono text-slate-600">
-            &mdash; IETF DNSOP Working Group
+            {t('quote.author')}
           </footer>
         </blockquote>
       </section>
@@ -402,15 +396,21 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
           <span className="text-[11px] font-mono uppercase font-bold tracking-wider text-slate-500">
-            Fragen und Antworten
+            {t('faq.badge')}
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight mt-1">
-            Häufige Fragen zu RFC 10023
+            {t('faq.title')}
           </h2>
         </div>
 
         <div className="space-y-3">
-          {faqs.map((faq, idx) => (
+          {[
+            { q: t('faq.q1'), a: t('faq.a1') },
+            { q: t('faq.q2'), a: t('faq.a2') },
+            { q: t('faq.q3'), a: t('faq.a3') },
+            { q: t('faq.q4'), a: t('faq.a4') },
+            { q: t('faq.q5'), a: t('faq.a5') },
+          ].map((faq, idx) => (
             <div
               key={idx}
               className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-xs"
@@ -441,11 +441,11 @@ export default function HomePage() {
           <div className="flex items-center gap-2 mb-2">
             <Code2 className="w-5 h-5 text-emerald-600" />
             <h3 className="text-lg font-bold text-slate-950">
-              Widget zum Einbinden
+              {t('widget.title')}
             </h3>
           </div>
           <p className="text-xs text-slate-600 mb-4 max-w-2xl leading-relaxed">
-            Binde den RFC 10023 Validator oder Generator direkt in deine Website, dein Blog oder ein Kundenportal ein.
+            {t('widget.desc')}
           </p>
           <div className="relative">
             <pre className="p-4 bg-slate-950 text-emerald-300 rounded-xl font-mono text-xs overflow-x-auto whitespace-pre-wrap select-all">
@@ -457,7 +457,7 @@ export default function HomePage() {
               className="absolute top-3 right-3 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-mono font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-sm"
             >
               {copiedEmbed ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedEmbed ? 'Kopiert!' : 'Code kopieren'}</span>
+              <span>{copiedEmbed ? t('widget.copied') : t('widget.copy_btn')}</span>
             </button>
           </div>
         </div>
