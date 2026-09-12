@@ -38,9 +38,10 @@ interface ValidationResult {
 interface RfcValidatorProps {
   initialDomain?: string;
   embedded?: boolean;
+  autoFocus?: boolean;
 }
 
-export default function RfcValidator({ initialDomain = '', embedded = false }: RfcValidatorProps) {
+export default function RfcValidator({ initialDomain = '', embedded = false, autoFocus = false }: RfcValidatorProps) {
   const [searchParams] = useSearchParams();
   const urlDomain = searchParams.get('d') || searchParams.get('domain') || '';
   const effectiveInitial = initialDomain || urlDomain;
@@ -54,12 +55,12 @@ export default function RfcValidator({ initialDomain = '', embedded = false }: R
   const [showDevDetails, setShowDevDetails] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Autofocus input on standalone / full view
+  // Autofocus only when explicitly requested (e.g. dedicated tool view without scrolling)
   useEffect(() => {
-    if (!embedded && inputRef.current && !effectiveInitial) {
-      inputRef.current.focus();
+    if (autoFocus && inputRef.current && !effectiveInitial) {
+      inputRef.current.focus({ preventScroll: true });
     }
-  }, [embedded, effectiveInitial]);
+  }, [autoFocus, effectiveInitial]);
 
   // Sync if URL search params or initialDomain change
   useEffect(() => {
