@@ -10,14 +10,20 @@ export default function Footer() {
           
           {/* Col 1: Brand & Statement */}
           <div className="md:col-span-2 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-emerald-400">
+            <Link
+              to="/"
+              onClick={() => {
+                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+              }}
+              className="inline-flex items-center gap-3 group"
+            >
+              <div className="w-8 h-8 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
                 <Terminal className="w-4 h-4" />
               </div>
               <span className="text-xl font-extrabold tracking-tight text-white font-mono">
                 RFC10023<span className="text-emerald-400">.de</span>
               </span>
-            </div>
+            </Link>
             <p className="text-slate-400 text-sm leading-relaxed max-w-lg">
               Das unabhängige DACH-Referenzportal und Entwickler-Toolkit zum IETF-Standard 
               <strong className="text-slate-200"> RFC 10023</strong> (<em>The &apos;_for-sale&apos; Underscored and Globally Scoped DNS Node Name</em>). 
