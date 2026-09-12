@@ -7,17 +7,20 @@ import LanguageToggle from './LanguageToggle';
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const langPrefix = language === 'en' ? '/en' : '';
 
   const navLinks = [
-    { name: t('nav.validator'), path: '/validator', icon: ShieldCheck },
-    { name: t('nav.generator'), path: '/generator', icon: Cpu },
-    { name: t('nav.bulk'), path: '/bulk-scan', icon: Layers },
-    { name: t('nav.badge'), path: '/badge-generator', icon: Sparkles },
-    { name: t('nav.api'), path: '/api-docs', icon: Code2 },
-    { name: t('nav.legal'), path: '/recht-leitfaden', icon: Scale },
-    { name: t('nav.matrix'), path: '/hoster-matrix', icon: Database },
+    { name: t('nav.validator'), path: `${langPrefix}/validator`, icon: ShieldCheck },
+    { name: t('nav.generator'), path: `${langPrefix}/generator`, icon: Cpu },
+    { name: t('nav.bulk'), path: `${langPrefix}/bulk-scan`, icon: Layers },
+    { name: t('nav.badge'), path: `${langPrefix}/badge-generator`, icon: Sparkles },
+    { name: t('nav.api'), path: `${langPrefix}/api-docs`, icon: Code2 },
+    { name: t('nav.legal'), path: `${langPrefix}/recht-leitfaden`, icon: Scale },
+    { name: t('nav.matrix'), path: `${langPrefix}/hoster-matrix`, icon: Database },
   ];
+
+  const homePath = langPrefix || '/';
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
@@ -25,9 +28,9 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link
-            to="/"
+            to={homePath}
             onClick={(e) => {
-              if (location.pathname === '/') {
+              if (location.pathname === homePath) {
                 e.preventDefault();
               }
               window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
@@ -75,7 +78,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-2.5">
             <LanguageToggle />
             <Link
-              to="/validator"
+              to={`${langPrefix}/validator`}
               className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-bold font-mono tracking-wider uppercase rounded-md bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all duration-150 shadow-sm"
             >
               {t('nav.doh_test')}

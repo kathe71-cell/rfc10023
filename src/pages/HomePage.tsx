@@ -8,7 +8,8 @@ import HosterMatrix from '../components/HosterMatrix';
 import CitationBox from '../components/CitationBox';
 
 export default function HomePage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const langPrefix = language === 'en' ? '/en' : '';
   const [searchParams] = useSearchParams();
   const [copiedEmbed, setCopiedEmbed] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -101,7 +102,7 @@ export default function HomePage() {
                   <span>{t('hero.cta_generate')}</span>
                 </a>
                 <Link
-                  to="/bulk-scan"
+                  to={`${langPrefix}/bulk-scan`}
                   className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5"
                 >
                   <Layers className="w-3.5 h-3.5 text-emerald-600" />
@@ -156,7 +157,7 @@ export default function HomePage() {
 
               <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px]">
                 <span className="text-slate-500">{t('hero.terminal_example')}</span>
-                <Link to="/spezifikation" className="text-emerald-400 hover:underline flex items-center gap-1 font-bold">
+                <Link to={`${langPrefix}/spezifikation`} className="text-emerald-400 hover:underline flex items-center gap-1 font-bold">
                   {t('hero.terminal_spec_link')}
                 </Link>
               </div>
@@ -172,7 +173,7 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
-            to="/bulk-scan"
+            to={`${langPrefix}/bulk-scan`}
             className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all group"
           >
             <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700 w-fit mb-3 group-hover:scale-110 transition-transform">
@@ -185,7 +186,7 @@ export default function HomePage() {
           </Link>
 
           <Link
-            to="/badge-generator"
+            to={`${langPrefix}/badge-generator`}
             className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all group"
           >
             <div className="p-2.5 rounded-xl bg-slate-900 text-emerald-400 w-fit mb-3 group-hover:scale-110 transition-transform">
@@ -198,7 +199,7 @@ export default function HomePage() {
           </Link>
 
           <Link
-            to="/api-docs"
+            to={`${langPrefix}/api-docs`}
             className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all group"
           >
             <div className="p-2.5 rounded-xl bg-slate-100 text-slate-800 w-fit mb-3 group-hover:scale-110 transition-transform">
@@ -211,7 +212,7 @@ export default function HomePage() {
           </Link>
 
           <Link
-            to="/recht-leitfaden"
+            to={`${langPrefix}/recht-leitfaden`}
             className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all group"
           >
             <div className="p-2.5 rounded-xl bg-amber-100 text-amber-900 w-fit mb-3 group-hover:scale-110 transition-transform">
@@ -238,7 +239,7 @@ export default function HomePage() {
           </p>
           <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-mono text-slate-500">
             <span>IETF Standard &bull; ISSN: 2070-1721</span>
-            <Link to="/spezifikation" className="text-emerald-700 font-bold hover:underline">
+            <Link to={`${langPrefix}/spezifikation`} className="text-emerald-700 font-bold hover:underline">
               {t('def.spec_link')}
             </Link>
           </div>
@@ -301,7 +302,7 @@ export default function HomePage() {
 
             <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
               <span>{t('bento.card1_footer')}</span>
-              <Link to="/spezifikation" className="text-emerald-700 font-bold hover:underline">
+              <Link to={`${langPrefix}/spezifikation`} className="text-emerald-700 font-bold hover:underline">
                 {t('bento.card1_tech_link')}
               </Link>
             </div>

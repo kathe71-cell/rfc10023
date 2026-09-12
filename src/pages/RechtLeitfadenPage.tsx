@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function RechtLeitfadenPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const langPrefix = language === 'en' ? '/en' : '';
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
@@ -115,7 +116,7 @@ export default function RechtLeitfadenPage() {
           </p>
         </div>
         <Link
-          to="/generator"
+          to={`${langPrefix}/generator`}
           className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 font-mono font-bold text-xs rounded-xl text-white transition-colors"
         >
           {t('legal.cta_btn')}

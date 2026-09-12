@@ -801,6 +801,13 @@ const LanguageContext = createContext<LanguageContextType>({
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
+    // Initial check from current window URL
+    if (typeof window !== 'undefined') {
+      const pathname = window.location.pathname;
+      if (pathname === '/en' || pathname.startsWith('/en/')) {
+        return 'en';
+      }
+    }
     try {
       const saved = localStorage.getItem('rfc10023_lang');
       if (saved === 'de' || saved === 'en') return saved;
@@ -835,3 +842,4 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 };
 
 export const useLanguage = () => useContext(LanguageContext);
+

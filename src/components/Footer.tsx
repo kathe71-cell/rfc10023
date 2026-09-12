@@ -4,7 +4,9 @@ import { Terminal, Shield, ExternalLink, GitBranch, ArrowUpRight, Scale, Code2, 
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Footer() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const langPrefix = language === 'en' ? '/en' : '';
+  const homePath = langPrefix || '/';
 
   return (
     <footer className="bg-slate-950 text-slate-300 border-t border-slate-800">
@@ -14,9 +16,9 @@ export default function Footer() {
           {/* Col 1: Brand & Statement */}
           <div className="md:col-span-2 space-y-4">
             <Link
-              to="/"
+              to={homePath}
               onClick={(e) => {
-                if (window.location.pathname === '/') {
+                if (window.location.pathname === homePath) {
                   e.preventDefault();
                 }
                 window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
@@ -48,32 +50,32 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/validator" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                <Link to={`${langPrefix}/validator`} className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
                   {t('footer.link_validator')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
               <li>
-                <Link to="/generator" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                <Link to={`${langPrefix}/generator`} className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
                   {t('footer.link_generator')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
               <li>
-                <Link to="/bulk-scan" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                <Link to={`${langPrefix}/bulk-scan`} className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
                   {t('footer.link_bulk')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
               <li>
-                <Link to="/badge-generator" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                <Link to={`${langPrefix}/badge-generator`} className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
                   {t('footer.link_badge')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
               <li>
-                <Link to="/api-docs" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                <Link to={`${langPrefix}/api-docs`} className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
                   {t('footer.link_api')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
               <li>
-                <Link to="/hoster-matrix" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                <Link to={`${langPrefix}/hoster-matrix`} className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
                   {t('footer.link_matrix')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
@@ -87,12 +89,12 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/recht-leitfaden" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                <Link to={`${langPrefix}/recht-leitfaden`} className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
                   {t('footer.link_legal')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
               <li>
-                <Link to="/spezifikation" className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                <Link to={`${langPrefix}/spezifikation`} className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
                   {t('footer.link_spec')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
@@ -107,12 +109,12 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <Link to="/impressum" className="text-slate-300 hover:text-white transition-colors">
+                <Link to={`${langPrefix}/impressum`} className="text-slate-300 hover:text-white transition-colors">
                   {t('footer.link_imprint')}
                 </Link>
               </li>
               <li>
-                <Link to="/datenschutz" className="text-slate-300 hover:text-white transition-colors">
+                <Link to={`${langPrefix}/datenschutz`} className="text-slate-300 hover:text-white transition-colors">
                   {t('footer.link_privacy')}
                 </Link>
               </li>
@@ -175,7 +177,7 @@ export default function Footer() {
             <span>•</span>
             <span>{t('footer.analytics')}</span>
             <span>•</span>
-            <Link to="/impressum" className="text-slate-300 hover:underline">
+            <Link to={`${langPrefix}/impressum`} className="text-slate-300 hover:underline">
               {t('footer.imprint_bottom')}
             </Link>
           </div>
