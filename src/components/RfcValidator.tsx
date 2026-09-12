@@ -170,14 +170,19 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
           domain: d,
           nodeName,
           status: 'not_found',
-          statusMessage: `Kein TXT-Eintrag unter '${nodeName}' gefunden.`,
+          statusMessage: language === 'en'
+            ? `No TXT record found under '${nodeName}'.`
+            : `Kein TXT-Eintrag unter '${nodeName}' gefunden.`,
           architecture: 'unknown',
-          architectureLabel: 'Kein Eintrag',
+          architectureLabel: language === 'en' ? 'No Record' : 'Kein Eintrag',
           dnssec: isDnssec,
           rawTxt: [],
           tags: [],
           parsedMap: {},
-          warnings: [
+          warnings: language === 'en' ? [
+            'No resource record currently exists for this node in the global DNS.',
+            'Newly published records may take several minutes to propagate depending on authoritative nameserver TTLs.',
+          ] : [
             'Im weltweiten DNS existiert derzeit kein Eintrag für diesen Knoten.',
             'Neu angelegte DNS-Einträge können je nach Nameserver einige Minuten bis Stunden für die weltweite Verbreitung benötigen.',
           ],
@@ -223,31 +228,47 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
       const isMulti = rawTxtRecords.length > 1;
       const architecture: 'ietf_multi' | 'single_line' | 'unknown' = isMulti ? 'ietf_multi' : 'single_line';
       const architectureLabel = isMulti
-        ? `Mehrzeiliger Standard-Eintrag (${rawTxtRecords.length} TXT-Zeilen)`
-        : 'Einzeiliger Eintrag (1 TXT-Zeile)';
+        ? (language === 'en' ? `Multi-record RRset (${rawTxtRecords.length} TXT lines)` : `Mehrzeiliger Standard-Eintrag (${rawTxtRecords.length} TXT-Zeilen)`)
+        : (language === 'en' ? 'Single-line record (1 TXT line)' : 'Einzeiliger Eintrag (1 TXT-Zeile)');
 
       let status: 'valid' | 'warning' = 'valid';
 
       if (!foundForsaleVersion) {
         status = 'warning';
-        warnings.push('Der Pflicht-Header "v=FORSALE1;" fehlt oder ist fehlerhaft geschrieben.');
+        warnings.push(
+          language === 'en'
+            ? 'Mandatory header "v=FORSALE1;" is missing or misspelled.'
+            : 'Der Pflicht-Header "v=FORSALE1;" fehlt oder ist fehlerhaft geschrieben.'
+        );
       }
 
       if (!parsedMap.fval && !parsedMap.furi && !parsedMap.ftxt) {
         status = 'warning';
-        warnings.push('Der Eintrag enthält weder Preis (fval), Kontakt (furi) noch Notiz (ftxt).');
+        warnings.push(
+          language === 'en'
+            ? 'Record contains neither price (fval), contact URI (furi), nor remarks (ftxt).'
+            : 'Der Eintrag enthält weder Preis (fval), Kontakt (furi) noch Notiz (ftxt).'
+        );
       }
 
       if (parsedMap.fval) {
         const val = parsedMap.fval.toUpperCase();
         if (val !== 'VHB' && !/^[A-Z]{3}:?\d+/.test(val)) {
-          warnings.push(`Format beim Preis "${parsedMap.fval}": RFC 10023 empfiehlt Währungscode gefolgt vom Betrag ohne Leerzeichen (zum Beispiel EUR2500 oder USD1000).`);
+          warnings.push(
+            language === 'en'
+              ? `Price format "${parsedMap.fval}": RFC 10023 recommends ISO 4217 currency code followed immediately by amount without spaces (e.g. EUR2500 or USD1000).`
+              : `Format beim Preis "${parsedMap.fval}": RFC 10023 empfiehlt Währungscode gefolgt vom Betrag ohne Leerzeichen (zum Beispiel EUR2500 oder USD1000).`
+          );
         }
       }
 
       if (parsedMap.furi) {
         if (!parsedMap.furi.startsWith('http://') && !parsedMap.furi.startsWith('https://') && !parsedMap.furi.startsWith('mailto:') && !parsedMap.furi.startsWith('tel:')) {
-          warnings.push(`Kontaktadresse "${parsedMap.furi}": Bitte ein gängiges Schema wie https://, mailto: oder tel: verwenden.`);
+          warnings.push(
+            language === 'en'
+              ? `Contact URI "${parsedMap.furi}": Please use a standard URI scheme such as https://, mailto:, or tel:.`
+              : `Kontaktadresse "${parsedMap.furi}": Bitte ein gängiges Schema wie https://, mailto: oder tel: verwenden.`
+          );
         }
       }
 
@@ -256,8 +277,8 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
         nodeName,
         status,
         statusMessage: status === 'valid'
-          ? 'Gültiges RFC 10023 Angebot im DNS gefunden.'
-          : 'Eintrag im DNS gefunden, weicht aber teilweise vom Standard ab.',
+          ? (language === 'en' ? 'Valid RFC 10023 sale offer discovered in DNS.' : 'Gültiges RFC 10023 Angebot im DNS gefunden.')
+          : (language === 'en' ? 'DNS record found, but exhibits deviations from the IETF standard.' : 'Eintrag im DNS gefunden, weicht aber teilweise vom Standard ab.'),
         architecture,
         architectureLabel,
         dnssec: isDnssec,
@@ -278,9 +299,9 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
         domain: d,
         nodeName,
         status: 'error',
-        statusMessage: 'Abfrage fehlgeschlagen (Netzwerk- oder DNS-Zeitüberschreitung).',
+        statusMessage: language === 'en' ? 'Query failed (Network timeout or DNS resolution error).' : 'Abfrage fehlgeschlagen (Netzwerk- oder DNS-Zeitüberschreitung).',
         architecture: 'unknown',
-        architectureLabel: 'Fehler',
+        architectureLabel: language === 'en' ? 'Error' : 'Fehler',
         dnssec: false,
         rawTxt: [],
         tags: [],
