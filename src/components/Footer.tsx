@@ -5,8 +5,8 @@ import { Terminal, Shield, ExternalLink, GitBranch, ArrowUpRight, Scale, Code2, 
 export default function Footer() {
   return (
     <footer className="bg-slate-950 text-slate-300 border-t border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           
           {/* Col 1: Brand & Statement */}
           <div className="md:col-span-2 space-y-4">
@@ -110,7 +110,7 @@ export default function Footer() {
         </div>
 
         {/* Social Share Strip (100% DSGVO-konform ohne externe Tracker) */}
-        <div className="mt-10 pt-6 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-8 pt-4 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="text-xs text-slate-400 font-mono">
             Fachportal weiterempfehlen:
           </div>
@@ -151,7 +151,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom Facts Strip */}
-        <div className="mt-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-500">
+        <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-slate-500">
           <div className="flex items-center gap-3">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
             <span>IETF RFC 10023 · Status: Informational · Stand: Sept. 2026</span>
