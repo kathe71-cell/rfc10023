@@ -26,31 +26,38 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link
-            to={homePath}
-            onClick={(e) => {
-              if (location.pathname === homePath) {
-                e.preventDefault();
-              }
-              window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-              document.documentElement.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-              document.body.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-            }}
-            className="flex items-center gap-3 group"
-          >
-            <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform duration-200 shadow-sm">
-              <Terminal className="w-5 h-5" />
+          {/* Logo & Language Switcher */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link
+              to={homePath}
+              onClick={(e) => {
+                if (location.pathname === homePath) {
+                  e.preventDefault();
+                }
+                window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                document.documentElement.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                document.body.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+              }}
+              className="flex items-center gap-3 group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform duration-200 shadow-sm">
+                <Terminal className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-xl font-extrabold tracking-tight text-slate-900">
+                  RFC<span className="text-emerald-600">10023</span><span className="text-slate-400 text-sm font-semibold">.de</span>
+                </span>
+                <span className="hidden sm:block text-[10px] font-mono tracking-wider uppercase text-slate-500">
+                  _for-sale DACH Reference Hub
+                </span>
+              </div>
+            </Link>
+
+            {/* Desktop Language Toggle placed beside brand */}
+            <div className="hidden lg:flex items-center pl-2 border-l border-slate-200">
+              <LanguageToggle />
             </div>
-            <div>
-              <span className="text-xl font-extrabold tracking-tight text-slate-900">
-                RFC<span className="text-emerald-600">10023</span><span className="text-slate-400 text-sm font-semibold">.de</span>
-              </span>
-              <span className="hidden sm:block text-[10px] font-mono tracking-wider uppercase text-slate-500">
-                _for-sale DACH Reference Hub
-              </span>
-            </div>
-          </Link>
+          </div>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1 lg:gap-1.5">
@@ -74,12 +81,14 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Quick Action Button & Language Toggle */}
-          <div className="hidden md:flex items-center gap-2.5">
-            <LanguageToggle />
+          {/* Quick Action Button */}
+          <div className="hidden md:flex items-center gap-2">
+            <div className="lg:hidden">
+              <LanguageToggle />
+            </div>
             <Link
               to={`${langPrefix}/validator`}
-              className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-bold font-mono tracking-wider uppercase rounded-md bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all duration-150 shadow-sm"
+              className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-bold font-mono tracking-wider uppercase rounded-md bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all duration-150 shadow-sm"
             >
               {t('nav.doh_test')}
             </Link>
