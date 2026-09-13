@@ -4,19 +4,19 @@
 
   <!-- Home / Hub -->
   <url>
-    <loc>https://rfc10023.de/</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/" />
+    <loc>https://www.rfc10023.de/</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/" />
+    <loc>https://www.rfc10023.de/en</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -24,19 +24,19 @@
 
   <!-- Live Validator -->
   <url>
-    <loc>https://rfc10023.de/validator</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/validator" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/validator" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/validator" />
+    <loc>https://www.rfc10023.de/validator</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/validator" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/validator" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/validator" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en/validator</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/validator" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/validator" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/validator" />
+    <loc>https://www.rfc10023.de/en/validator</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/validator" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/validator" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/validator" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -44,19 +44,19 @@
 
   <!-- Record Generator -->
   <url>
-    <loc>https://rfc10023.de/generator</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/generator" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/generator" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/generator" />
+    <loc>https://www.rfc10023.de/generator</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/generator" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/generator" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/generator" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en/generator</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/generator" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/generator" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/generator" />
+    <loc>https://www.rfc10023.de/en/generator</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/generator" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/generator" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/generator" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -64,19 +64,19 @@
 
   <!-- Bulk Scanner -->
   <url>
-    <loc>https://rfc10023.de/bulk-scan</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/bulk-scan" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/bulk-scan" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/bulk-scan" />
+    <loc>https://www.rfc10023.de/bulk-scan</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/bulk-scan" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/bulk-scan" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/bulk-scan" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en/bulk-scan</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/bulk-scan" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/bulk-scan" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/bulk-scan" />
+    <loc>https://www.rfc10023.de/en/bulk-scan</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/bulk-scan" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/bulk-scan" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/bulk-scan" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -84,19 +84,19 @@
 
   <!-- Trust-Badge Generator -->
   <url>
-    <loc>https://rfc10023.de/badge-generator</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/badge-generator" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/badge-generator" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/badge-generator" />
+    <loc>https://www.rfc10023.de/badge-generator</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/badge-generator" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/badge-generator" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/badge-generator" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en/badge-generator</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/badge-generator" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/badge-generator" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/badge-generator" />
+    <loc>https://www.rfc10023.de/en/badge-generator</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/badge-generator" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/badge-generator" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/badge-generator" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -104,19 +104,19 @@
 
   <!-- API Docs -->
   <url>
-    <loc>https://rfc10023.de/api-docs</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/api-docs" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/api-docs" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/api-docs" />
+    <loc>https://www.rfc10023.de/api-docs</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/api-docs" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/api-docs" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/api-docs" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en/api-docs</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/api-docs" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/api-docs" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/api-docs" />
+    <loc>https://www.rfc10023.de/en/api-docs</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/api-docs" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/api-docs" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/api-docs" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -124,19 +124,19 @@
 
   <!-- Legal Guide -->
   <url>
-    <loc>https://rfc10023.de/recht-leitfaden</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/recht-leitfaden" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/legal-guidelines" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/recht-leitfaden" />
+    <loc>https://www.rfc10023.de/recht-leitfaden</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/recht-leitfaden" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/legal-guidelines" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/recht-leitfaden" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en/legal-guidelines</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/recht-leitfaden" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/legal-guidelines" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/recht-leitfaden" />
+    <loc>https://www.rfc10023.de/en/legal-guidelines</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/recht-leitfaden" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/legal-guidelines" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/recht-leitfaden" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -144,19 +144,19 @@
 
   <!-- Hoster Matrix -->
   <url>
-    <loc>https://rfc10023.de/hoster-matrix</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/hoster-matrix" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/hoster-matrix" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/hoster-matrix" />
+    <loc>https://www.rfc10023.de/hoster-matrix</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/hoster-matrix" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/hoster-matrix" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/hoster-matrix" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en/hoster-matrix</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/hoster-matrix" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/hoster-matrix" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/hoster-matrix" />
+    <loc>https://www.rfc10023.de/en/hoster-matrix</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/hoster-matrix" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/hoster-matrix" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/hoster-matrix" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -164,19 +164,19 @@
 
   <!-- Specification Guide -->
   <url>
-    <loc>https://rfc10023.de/spezifikation</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/spezifikation" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/specification" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/spezifikation" />
+    <loc>https://www.rfc10023.de/spezifikation</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/spezifikation" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/specification" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/spezifikation" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en/specification</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/spezifikation" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/specification" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/spezifikation" />
+    <loc>https://www.rfc10023.de/en/specification</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/spezifikation" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/specification" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/spezifikation" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -184,19 +184,19 @@
 
   <!-- FAQ Hub -->
   <url>
-    <loc>https://rfc10023.de/faq</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/faq" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/faq" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/faq" />
+    <loc>https://www.rfc10023.de/faq</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/faq" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/faq" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/faq" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en/faq</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/faq" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/faq" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/faq" />
+    <loc>https://www.rfc10023.de/en/faq</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/faq" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/faq" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/faq" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -204,10 +204,10 @@
 
   <!-- Embed Widget -->
   <url>
-    <loc>https://rfc10023.de/widget-embed</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/widget-embed" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/widget-embed" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/widget-embed" />
+    <loc>https://www.rfc10023.de/widget-embed</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/widget-embed" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/widget-embed" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/widget-embed" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -215,19 +215,19 @@
 
   <!-- Impressum / Imprint -->
   <url>
-    <loc>https://rfc10023.de/impressum</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/impressum" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/imprint" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/impressum" />
+    <loc>https://www.rfc10023.de/impressum</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/impressum" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/imprint" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/impressum" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en/imprint</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/impressum" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/imprint" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/impressum" />
+    <loc>https://www.rfc10023.de/en/imprint</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/impressum" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/imprint" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/impressum" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
@@ -235,19 +235,19 @@
 
   <!-- Datenschutz / Privacy -->
   <url>
-    <loc>https://rfc10023.de/datenschutz</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/datenschutz" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/privacy" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/datenschutz" />
+    <loc>https://www.rfc10023.de/datenschutz</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/datenschutz" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/privacy" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/datenschutz" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en/privacy</loc>
-    <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/datenschutz" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/privacy" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/datenschutz" />
+    <loc>https://www.rfc10023.de/en/privacy</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/datenschutz" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/privacy" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/datenschutz" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>

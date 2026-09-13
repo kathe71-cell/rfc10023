@@ -13,7 +13,6 @@
 - `furi`: Kontakt-URL oder Zielseite (z. B. Sedo, Escrow, Direktkontakt)
 - `fval`: Preisangabe im ISO-4217-Format (z. B. `EUR:2500`, `USD:5000`)
 - `ftxt`: Menschenlesbare Notiz (z. B. "Verhandlungsbasis", "Inkl. MwSt.")
-- `fcod`: Maschineller Transaktions- oder Hash-Code
 
 ## Tools auf rfc10023.de
 - **Live DNS-Validator**: https://rfc10023.de/validator (Echtzeit-Prüfung via DoH)
