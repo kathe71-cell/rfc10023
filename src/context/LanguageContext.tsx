@@ -195,6 +195,15 @@ const translations: Record<Language, Record<string, string>> = {
     'val.seconds': 'Sekunden',
     'val.share_title': 'Prüfergebnis für',
     'val.share_end': 'teilen:',
+    'val.audit_title': 'Domain-Audit & E-Mail-Sicherheit',
+    'val.audit_badge': 'Multi-Vektor DNS Prüfung',
+    'val.audit_score_label': 'Readiness Index',
+    'val.audit_copy_json': 'JSON kopieren',
+    'val.audit_json_copied': 'JSON kopiert!',
+    'val.audit_share_link': 'Link kopieren',
+    'val.audit_link_copied': 'Link kopiert!',
+    'val.audit_email_hygiene': 'E-Mail & Routing-Schutz',
+    'val.audit_tab_all': 'Alle Prüfungen',
 
     // Generator Component
     'gen.badge': 'DNS-Eintrag erstellen',
@@ -636,6 +645,15 @@ const translations: Record<Language, Record<string, string>> = {
     'val.seconds': 'seconds',
     'val.share_title': 'Share test result for',
     'val.share_end': ':',
+    'val.audit_title': 'Domain Audit & Email Security',
+    'val.audit_badge': 'Multi-Vector DNS Assessment',
+    'val.audit_score_label': 'Readiness Index',
+    'val.audit_copy_json': 'Copy JSON',
+    'val.audit_json_copied': 'JSON Copied!',
+    'val.audit_share_link': 'Copy Link',
+    'val.audit_link_copied': 'Link Copied!',
+    'val.audit_email_hygiene': 'Email & Routing Protection',
+    'val.audit_tab_all': 'All Checks',
 
     // Generator Component
     'gen.badge': 'Create DNS record',
