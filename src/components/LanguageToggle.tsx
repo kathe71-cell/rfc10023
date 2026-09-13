@@ -8,6 +8,26 @@ export default function LanguageToggle() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Slug mapping between German and English canonical routes
+  const slugMapDeToEn: Record<string, string> = {
+    '/recht-leitfaden': '/en/legal-guidelines',
+    '/spezifikation': '/en/specification',
+    '/impressum': '/en/imprint',
+    '/datenschutz': '/en/privacy',
+  };
+
+  const slugMapEnToDe: Record<string, string> = {
+    '/en/legal-guidelines': '/recht-leitfaden',
+    '/en/legal-guide': '/recht-leitfaden',
+    '/en/recht-leitfaden': '/recht-leitfaden',
+    '/en/specification': '/spezifikation',
+    '/en/spezifikation': '/spezifikation',
+    '/en/imprint': '/impressum',
+    '/en/impressum': '/impressum',
+    '/en/privacy': '/datenschutz',
+    '/en/datenschutz': '/datenschutz',
+  };
+
   const handleSwitch = (targetLang: 'de' | 'en') => {
     if (language === targetLang) return;
     setLanguage(targetLang);
@@ -17,12 +37,16 @@ export default function LanguageToggle() {
     const hash = location.hash;
 
     if (targetLang === 'en') {
-      if (!currentPath.startsWith('/en')) {
+      if (slugMapDeToEn[currentPath]) {
+        navigate(`${slugMapDeToEn[currentPath]}${search}${hash}`, { replace: true });
+      } else if (!currentPath.startsWith('/en')) {
         const newPath = currentPath === '/' ? '/en' : `/en${currentPath}`;
         navigate(`${newPath}${search}${hash}`, { replace: true });
       }
     } else {
-      if (currentPath === '/en' || currentPath === '/en/') {
+      if (slugMapEnToDe[currentPath]) {
+        navigate(`${slugMapEnToDe[currentPath]}${search}${hash}`, { replace: true });
+      } else if (currentPath === '/en' || currentPath === '/en/') {
         navigate(`/${search}${hash}`, { replace: true });
       } else if (currentPath.startsWith('/en/')) {
         const newPath = currentPath.replace(/^\/en/, '');

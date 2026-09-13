@@ -10,13 +10,15 @@ export default function Navbar() {
   const { t, language } = useLanguage();
   const langPrefix = language === 'en' ? '/en' : '';
 
+  const legalPath = language === 'en' ? '/en/legal-guidelines' : '/recht-leitfaden';
+
   const navLinks = [
     { name: t('nav.validator'), path: `${langPrefix}/validator`, icon: ShieldCheck },
     { name: t('nav.generator'), path: `${langPrefix}/generator`, icon: Cpu },
     { name: t('nav.bulk'), path: `${langPrefix}/bulk-scan`, icon: Layers },
     { name: t('nav.badge'), path: `${langPrefix}/badge-generator`, icon: Sparkles },
     { name: t('nav.api'), path: `${langPrefix}/api-docs`, icon: Code2 },
-    { name: t('nav.legal'), path: `${langPrefix}/recht-leitfaden`, icon: Scale },
+    { name: t('nav.legal'), path: legalPath, icon: Scale },
     { name: t('nav.matrix'), path: `${langPrefix}/hoster-matrix`, icon: Database },
   ];
 

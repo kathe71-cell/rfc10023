@@ -110,6 +110,7 @@ export default function App() {
             <Route path="/en/badge-generator" element={<BadgePage />} />
             <Route path="/en/api-docs" element={<ApiDocsPage />} />
             <Route path="/en/recht-leitfaden" element={<RechtLeitfadenPage />} />
+            <Route path="/en/legal-guidelines" element={<RechtLeitfadenPage />} />
             <Route path="/en/legal-guide" element={<RechtLeitfadenPage />} />
             <Route path="/en/hoster-matrix" element={<MatrixPage />} />
             <Route path="/en/spezifikation" element={<SpezifikationPage />} />

@@ -126,16 +126,16 @@
   <url>
     <loc>https://rfc10023.de/recht-leitfaden</loc>
     <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/recht-leitfaden" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/recht-leitfaden" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/legal-guidelines" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/recht-leitfaden" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en/recht-leitfaden</loc>
+    <loc>https://rfc10023.de/en/legal-guidelines</loc>
     <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/recht-leitfaden" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/recht-leitfaden" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/legal-guidelines" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/recht-leitfaden" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
@@ -166,16 +166,16 @@
   <url>
     <loc>https://rfc10023.de/spezifikation</loc>
     <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/spezifikation" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/spezifikation" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/specification" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/spezifikation" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en/spezifikation</loc>
+    <loc>https://rfc10023.de/en/specification</loc>
     <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/spezifikation" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/spezifikation" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/specification" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/spezifikation" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
@@ -217,16 +217,16 @@
   <url>
     <loc>https://rfc10023.de/impressum</loc>
     <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/impressum" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/impressum" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/imprint" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/impressum" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en/impressum</loc>
+    <loc>https://rfc10023.de/en/imprint</loc>
     <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/impressum" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/impressum" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/imprint" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/impressum" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
@@ -237,16 +237,16 @@
   <url>
     <loc>https://rfc10023.de/datenschutz</loc>
     <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/datenschutz" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/datenschutz" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/privacy" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/datenschutz" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://rfc10023.de/en/datenschutz</loc>
+    <loc>https://rfc10023.de/en/privacy</loc>
     <xhtml:link rel="alternate" hreflang="de" href="https://rfc10023.de/datenschutz" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/datenschutz" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://rfc10023.de/en/privacy" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://rfc10023.de/datenschutz" />
     <lastmod>2026-09-13</lastmod>
     <changefreq>monthly</changefreq>
