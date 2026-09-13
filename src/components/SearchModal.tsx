@@ -31,15 +31,19 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     }
   }, [isOpen]);
 
-  // Handle ESC or Cmd+K
+  // Handle ESC globally and close on backdrop click
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
         onClose();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    if (isOpen) {
+      window.addEventListener('keydown', handleGlobalKeyDown, true);
+    }
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown, true);
   }, [isOpen, onClose]);
 
   // Detect domain input
@@ -110,6 +114,12 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
+      return;
+    }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setSelectedIndex((prev) => (prev + 1) % Math.max(1, totalItemsCount));
@@ -171,7 +181,10 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 md:p-20 bg-slate-950/60 backdrop-blur-sm flex items-start justify-center animate-in fade-in duration-150">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 md:p-20 bg-slate-950/60 backdrop-blur-sm flex items-start justify-center animate-in fade-in duration-150"
+      onClick={onClose}
+    >
       <div
         className="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -197,15 +210,25 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
           />
           {query && (
             <button
-              onClick={() => setQuery('')}
-              className="p-1 rounded text-slate-400 hover:text-slate-600 mr-2"
+              onClick={() => {
+                setQuery('');
+                inputRef.current?.focus();
+              }}
+              title={language === 'en' ? 'Clear input' : 'Eingabe leeren'}
+              className="p-1 rounded text-slate-400 hover:text-slate-600 mr-1 text-xs font-mono"
             >
-              <X className="w-4 h-4" />
+              <span className="px-1.5 py-0.5 rounded bg-slate-200/80 text-[10px] font-bold text-slate-600">Leeren</span>
             </button>
           )}
-          <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-1 text-[10px] font-mono font-bold text-slate-500 bg-slate-200/80 rounded border border-slate-300">
-            ESC
-          </kbd>
+          {/* Prominent Close Button (X) */}
+          <button
+            onClick={onClose}
+            title={language === 'en' ? 'Close search (Esc)' : 'Suche schließen (Esc)'}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors ml-1"
+            aria-label={language === 'en' ? 'Close search modal' : 'Suchfenster schließen'}
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Results List */}
