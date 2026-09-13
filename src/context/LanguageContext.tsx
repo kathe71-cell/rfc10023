@@ -18,7 +18,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.api': 'API Docs',
     'nav.legal': 'Recht & Steuern',
     'nav.matrix': 'Matrix',
-    'nav.doh_test': 'DoH Test',
+    'nav.doh_test': 'DNS prüfen',
     'nav.mobile_validate': 'DNS Prüfen',
     'nav.mobile_generate': 'Record Bauen',
 
@@ -36,7 +36,7 @@ const translations: Record<Language, Record<string, string>> = {
     'hero.stat_mandatory': 'Pflichtfeld',
 
     // Terminal Hero Preview
-    'hero.terminal_header': 'Terminal — DNS-Abfrage',
+    'hero.terminal_header': 'RFC 10023 Wire Protocol',
     'hero.terminal_comment': '# Abfrage der Verkaufsdaten einer Domain:',
     'hero.terminal_node': 'DNS-Knoten:',
     'hero.terminal_dnssec': 'DNSSEC:',
@@ -56,8 +56,8 @@ const translations: Record<Language, Record<string, string>> = {
     'feat.legal_desc': 'Impressumspflicht nach § 5 DDG, Vertragsrecht und Preisangaben im DACH-Raum.',
 
     // Definition Box
-    'def.badge': 'Definition',
-    'def.text': 'RFC 10023 beschreibt einen DNS-TXT-Eintrag unter _for-sale.[domain]. Mit dem Pflichtfeld v=FORSALE1; sowie optionalen Angaben wie fval (Preis) und furi (Kontaktadresse) hinterlegen Inhaber ihre Verkaufsbereitschaft direkt in der DNS-Zone der Domain.',
+    'def.badge': 'IETF Spezifikation',
+    'def.text': 'RFC 10023 standardisiert die DNS-Signalisierung von Verkaufsangeboten über einen TXT-Resource-Record am Knotennamen _for-sale.[domain]. Das Protokoll ermöglicht Registraren, Resolvern und automatisierten Abfrage-Tools das strukturierte Auslesen von Verkaufsparametern (v=FORSALE1;), Preisforderungen (fval) und verifizierten Kontakt-URIs (furi) direkt aus der autoritativen Zone.',
     'def.spec_link': 'RFC 10023 Spezifikation →',
 
     // Bento / Comparison Grid
@@ -458,7 +458,7 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.api': 'API Docs',
     'nav.legal': 'Legal & Taxes',
     'nav.matrix': 'DNS Providers',
-    'nav.doh_test': 'DoH Test',
+    'nav.doh_test': 'Check DNS',
     'nav.mobile_validate': 'Check DNS',
     'nav.mobile_generate': 'Create Record',
 
@@ -476,7 +476,7 @@ const translations: Record<Language, Record<string, string>> = {
     'hero.stat_mandatory': 'Required Tag',
 
     // Terminal Hero Preview
-    'hero.terminal_header': 'Terminal — DNS Query',
+    'hero.terminal_header': 'RFC 10023 Wire Protocol',
     'hero.terminal_comment': '# Querying domain sale data directly via DNS:',
     'hero.terminal_node': 'DNS Node:',
     'hero.terminal_dnssec': 'DNSSEC:',
@@ -496,8 +496,8 @@ const translations: Record<Language, Record<string, string>> = {
     'feat.legal_desc': 'Imprint compliance, tax handling, contract law, and price disclosure standards.',
 
     // Definition Box
-    'def.badge': 'Definition',
-    'def.text': 'RFC 10023 defines a DNS TXT record placed under _for-sale.[domain]. With the mandatory tag v=FORSALE1; and optional tags such as fval (asking price) and furi (contact URI), domain owners publish their intention to sell directly in their authoritative DNS zone.',
+    'def.badge': 'IETF Specification',
+    'def.text': 'RFC 10023 standardizes domain sale signaling via a DNS TXT Resource Record under the authoritative node _for-sale.[domain]. The protocol enables registrars, resolvers, and automated scrapers to parse standardized sale parameters (v=FORSALE1;), asking prices (fval), and contact endpoints (furi) directly from the authoritative DNS zone.',
     'def.spec_link': 'RFC 10023 Specification →',
 
     // Bento / Comparison Grid

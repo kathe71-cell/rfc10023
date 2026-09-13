@@ -111,18 +111,18 @@ export default function HomePage() {
                 </Link>
               </div>
 
-              <div className="pt-6 border-t border-slate-100 grid grid-cols-3 gap-4 font-mono">
-                <div>
-                  <span className="block text-2xl font-black text-slate-950">0 %</span>
-                  <span className="text-[11px] text-slate-500 uppercase tracking-wider">{t('hero.stat_commission')}</span>
+              <div className="pt-6 border-t border-slate-100 grid grid-cols-3 gap-3 font-mono">
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="block text-base font-bold text-slate-900">0 %</span>
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">{t('hero.stat_commission')}</span>
                 </div>
-                <div>
-                  <span className="block text-2xl font-black text-slate-950">TXT 16</span>
-                  <span className="text-[11px] text-slate-500 uppercase tracking-wider">{t('hero.stat_record')}</span>
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="block text-base font-bold text-slate-900">TXT (16)</span>
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">{t('hero.stat_record')}</span>
                 </div>
-                <div>
-                  <span className="block text-2xl font-black text-emerald-700">v=FORSALE1</span>
-                  <span className="text-[11px] text-slate-500 uppercase tracking-wider">{t('hero.stat_mandatory')}</span>
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="block text-base font-bold text-emerald-700">v=FORSALE1</span>
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">{t('hero.stat_mandatory')}</span>
                 </div>
               </div>
 
@@ -133,12 +133,13 @@ export default function HomePage() {
               
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800 text-slate-400">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
-                  <span className="ml-2 text-[11px] text-slate-400">{t('hero.terminal_header')}</span>
+                  <Terminal className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-xs font-semibold text-slate-300">{t('hero.terminal_header')}</span>
                 </div>
-                <span className="text-[10px] text-emerald-400 font-bold uppercase">Live DoH</span>
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-800 text-emerald-400 text-[10px] font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>Live DoH</span>
+                </div>
               </div>
 
               <div className="space-y-2 text-slate-300 overflow-x-auto leading-relaxed">
@@ -263,7 +264,7 @@ export default function HomePage() {
           <span className="text-[11px] font-mono uppercase font-bold tracking-wider text-slate-500">
             {t('bento.bg_badge')}
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight mt-1">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight mt-1">
             {t('bento.main_title')}
           </h2>
         </div>
@@ -401,7 +402,7 @@ export default function HomePage() {
             <span className="text-[11px] font-mono uppercase font-bold tracking-wider text-slate-500">
               {t('faq.badge')}
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight mt-1">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight mt-1">
               {t('faq.title')}
             </h2>
           </div>
