@@ -7,11 +7,12 @@ interface BadgeGeneratorProps {
 }
 
 export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: BadgeGeneratorProps) {
-  const { t } = useLanguage();
-  const [domain, setDomain] = useState(initialDomain);
+  const { t, language } = useLanguage();
+  const langPrefix = language === 'en' ? '/en' : '';
+  const [domain, setDomain] = useState(initialDomain === 'deinedomain.de' && language === 'en' ? 'yourdomain.com' : initialDomain);
   const [theme, setTheme] = useState<'dark' | 'light' | 'emerald'>('dark');
   const [showPrice, setShowPrice] = useState(true);
-  const [priceText, setPriceText] = useState('2.500 €');
+  const [priceText, setPriceText] = useState(language === 'en' ? '$2,500' : '2.500 €');
   const [copiedHtml, setCopiedHtml] = useState(false);
   const [copiedMd, setCopiedMd] = useState(false);
 
@@ -21,9 +22,9 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
     .replace(/^https?:\/\//, '')
     .replace(/^www\./, '')
     .replace(/^_for-sale\./, '')
-    .split('/')[0] || 'deinedomain.de';
+    .split('/')[0] || (language === 'en' ? 'yourdomain.com' : 'deinedomain.de');
 
-  const lookupUrl = `https://rfc10023.de/validator?d=${encodeURIComponent(clean)}`;
+  const lookupUrl = `https://rfc10023.de${langPrefix}/validator?d=${encodeURIComponent(clean)}`;
 
   const badgeHtml = `<a href="${lookupUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:8px; padding:6px 12px; background:${
     theme === 'dark' ? '#0f172a' : theme === 'emerald' ? '#065f46' : '#ffffff'

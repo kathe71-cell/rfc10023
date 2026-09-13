@@ -264,7 +264,7 @@ export default function BulkValidator() {
                 <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                   <td className="px-4 py-3 font-bold text-slate-900">
                     <a
-                      href={`/validator?d=${encodeURIComponent(r.domain)}`}
+                      href={`${language === 'en' ? '/en' : ''}/validator?d=${encodeURIComponent(r.domain)}`}
                       className="hover:text-emerald-600 underline decoration-slate-300"
                     >
                       {r.domain}

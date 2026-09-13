@@ -187,7 +187,8 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
   };
 
   const copyShareLink = () => {
-    const url = `${window.location.origin}/validator?d=${encodeURIComponent(cleanDomain)}`;
+    const langPrefix = language === 'en' ? '/en' : '';
+    const url = `${window.location.origin}${langPrefix}/validator?d=${encodeURIComponent(cleanDomain)}`;
     navigator.clipboard.writeText(url);
     setShareCopied(true);
     setTimeout(() => setShareCopied(false), 2000);
@@ -449,7 +450,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           {/* Share Link */}
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
             <span className="text-xs font-mono text-slate-600 truncate">
-              {t('gen.share_label')} rfc10023.de/validator?d={cleanDomain}
+              {t('gen.share_label')} rfc10023.de{language === 'en' ? '/en' : ''}/validator?d={cleanDomain}
             </span>
             <button
               type="button"

@@ -91,7 +91,7 @@ export default function Navbar() {
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="p-2 rounded-md text-slate-700 hover:bg-slate-100"
-              aria-label="Menü öffnen"
+              aria-label={language === 'en' ? (isOpen ? 'Close menu' : 'Open menu') : (isOpen ? 'Menü schließen' : 'Menü öffnen')}
             >
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
