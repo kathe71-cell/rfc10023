@@ -24,7 +24,7 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
     .replace(/^_for-sale\./, '')
     .split('/')[0] || (language === 'en' ? 'yourdomain.com' : 'deinedomain.de');
 
-  const lookupUrl = `https://rfc10023.de${langPrefix}/validator?d=${encodeURIComponent(clean)}`;
+  const lookupUrl = `https://www.rfc10023.de${langPrefix}/validator?d=${encodeURIComponent(clean)}`;
 
   const badgeHtml = `<a href="${lookupUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:8px; padding:6px 12px; background:${
     theme === 'dark' ? '#0f172a' : theme === 'emerald' ? '#065f46' : '#ffffff'

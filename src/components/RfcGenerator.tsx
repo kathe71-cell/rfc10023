@@ -172,7 +172,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           `curl -sH "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?name=_for-sale.${cleanDomain}&type=TXT"`,
           ``,
           t('gen.comment_cli_api'),
-          `curl -s "https://rfc10023.de/api/lookup?d=${cleanDomain}"`,
+          `curl -s "https://www.rfc10023.de/api/lookup?d=${cleanDomain}"`,
         ].join('\n');
 
       default:

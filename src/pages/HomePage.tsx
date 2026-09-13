@@ -26,9 +26,9 @@ export default function HomePage() {
     }
   }, [searchParams]);
 
-  const embedUrl = language === 'en' ? 'https://rfc10023.de/en/widget-embed' : 'https://rfc10023.de/widget-embed';
+  const embedUrl = language === 'en' ? 'https://www.rfc10023.de/en/widget-embed' : 'https://www.rfc10023.de/widget-embed';
   const embedLabel = language === 'en' ? 'IETF RFC 10023 Reference Portal' : 'RFC 10023 DACH Portal';
-  const embedCode = `<iframe src="${embedUrl}" width="100%" height="540" frameborder="0" style="border-radius:12px; border:1px solid #e2e8f0;"></iframe>\n<p style="font-size:11px; color:#64748b; font-family:sans-serif;">Standard: <a href="https://rfc10023.de${langPrefix}" target="_blank">${embedLabel}</a></p>`;
+  const embedCode = `<iframe src="${embedUrl}" width="100%" height="540" frameborder="0" style="border-radius:12px; border:1px solid #e2e8f0;"></iframe>\n<p style="font-size:11px; color:#64748b; font-family:sans-serif;">Standard: <a href="https://www.rfc10023.de${langPrefix}" target="_blank">${embedLabel}</a></p>`;
 
   const copyEmbed = () => {
     navigator.clipboard.writeText(embedCode);

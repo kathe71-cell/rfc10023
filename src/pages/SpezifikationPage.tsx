@@ -142,7 +142,7 @@ export default function SpezifikationPage() {
       </section>
 
       {/* Citation Box */}
-      <CitationBox title={t('spec.citation_title')} url="https://rfc10023.de/spezifikation" />
+      <CitationBox title={t('spec.citation_title')} url="https://www.rfc10023.de/spezifikation" />
 
     </div>
   );

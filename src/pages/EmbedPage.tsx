@@ -46,7 +46,7 @@ export default function EmbedPage() {
         </div>
 
         <a
-          href={`https://rfc10023.de${langPrefix}`}
+          href={`https://www.rfc10023.de${langPrefix}`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-[11px] font-mono font-bold text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1"

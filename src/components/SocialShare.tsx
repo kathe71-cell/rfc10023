@@ -9,7 +9,7 @@ interface SocialShareProps {
 }
 
 export default function SocialShare({
-  url = 'https://rfc10023.de',
+  url = 'https://www.rfc10023.de',
   title = 'RFC 10023 DACH Portal – Domain-Verkäufe direkt im DNS',
   summary = 'Der neue IETF-Standard RFC 10023: Verkaufsangebote dezentral im DNS hinterlegen ohne Parking oder Weiterleitung.'
 }: SocialShareProps) {

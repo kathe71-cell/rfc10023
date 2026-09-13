@@ -9,7 +9,7 @@ interface CitationBoxProps {
 
 export default function CitationBox({
   title,
-  url = 'https://rfc10023.de/',
+  url = 'https://www.rfc10023.de/',
 }: CitationBoxProps) {
   const { t, language } = useLanguage();
   const [copied, setCopied] = useState(false);

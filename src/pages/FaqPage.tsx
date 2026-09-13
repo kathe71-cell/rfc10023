@@ -195,7 +195,7 @@ export default function FaqPage() {
       {/* Citation */}
       <CitationBox
         title={language === 'en' ? 'RFC 10023 FAQ & Technical Guide' : 'RFC 10023 Häufige Fragen (FAQ) & Praxis-Guide'}
-        url={`https://rfc10023.de${langPrefix}/faq`}
+        url={`https://www.rfc10023.de${langPrefix}/faq`}
       />
 
       {/* Schema.org FAQPage Structured Data for Google Rich Snippets */}
@@ -205,7 +205,7 @@ export default function FaqPage() {
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'FAQPage',
-            '@id': `https://rfc10023.de${langPrefix}/faq#faqpage`,
+            '@id': `https://www.rfc10023.de${langPrefix}/faq#faqpage`,
             'mainEntity': faqs.map(faq => ({
               '@type': 'Question',
               'name': faq.q,

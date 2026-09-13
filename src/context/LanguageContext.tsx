@@ -960,18 +960,32 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     document.documentElement.lang = language;
-    if (language === 'en') {
+    const isEn = language === 'en';
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    const ogLocale = document.querySelector('meta[property="og:locale"]');
+    const twitterUrl = document.querySelector('meta[name="twitter:url"]');
+
+    if (isEn) {
       document.title = 'RFC 10023 | The IETF Standard for Domain Sale Signals in the DNS';
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) {
         metaDesc.setAttribute('content', 'Independent reference portal & developer toolkit for RFC 10023. Live DNS validator for _for-sale TXT records, builder & DNS provider matrix.');
       }
+      if (canonicalLink) canonicalLink.setAttribute('href', 'https://www.rfc10023.de/en');
+      if (ogUrl) ogUrl.setAttribute('content', 'https://www.rfc10023.de/en');
+      if (ogLocale) ogLocale.setAttribute('content', 'en_US');
+      if (twitterUrl) twitterUrl.setAttribute('content', 'https://www.rfc10023.de/en');
     } else {
       document.title = 'RFC 10023 | Der IETF-Standard für Domain-Verkaufssignale im DNS';
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) {
         metaDesc.setAttribute('content', 'Unabhängiges DACH-Referenzportal für RFC 10023. Live DNS-Validator für _for-sale TXT-Records, interaktiver Record-Generator & Hoster-Kompatibilitätsmatrix.');
       }
+      if (canonicalLink) canonicalLink.setAttribute('href', 'https://www.rfc10023.de/');
+      if (ogUrl) ogUrl.setAttribute('content', 'https://www.rfc10023.de/');
+      if (ogLocale) ogLocale.setAttribute('content', 'de_DE');
+      if (twitterUrl) twitterUrl.setAttribute('content', 'https://www.rfc10023.de/');
     }
   }, [language]);
 

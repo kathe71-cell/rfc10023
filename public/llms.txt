@@ -15,7 +15,7 @@
 - `ftxt`: Menschenlesbare Notiz (z. B. "Verhandlungsbasis", "Inkl. MwSt.")
 
 ## Tools auf rfc10023.de
-- **Live DNS-Validator**: https://rfc10023.de/validator (Echtzeit-Prüfung via DoH)
-- **Record-Generator**: https://rfc10023.de/generator (Export für BIND, Cloudflare, Hetzner, INWX)
-- **Hoster-Matrix**: https://rfc10023.de/hoster-matrix (Kompatibilität deutscher DNS-Editoren)
-- **Offizielle Spezifikation**: https://rfc10023.de/spezifikation
+- **Live DNS-Validator**: https://www.rfc10023.de/validator (Echtzeit-Prüfung via DoH)
+- **Record-Generator**: https://www.rfc10023.de/generator (Export für BIND, Cloudflare, Hetzner, INWX)
+- **Hoster-Matrix**: https://www.rfc10023.de/hoster-matrix (Kompatibilität deutscher DNS-Editoren)
+- **Offizielle Spezifikation**: https://www.rfc10023.de/spezifikation

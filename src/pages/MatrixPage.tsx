@@ -51,7 +51,7 @@ export default function MatrixPage() {
       </div>
 
       {/* Citation Box */}
-      <CitationBox title={t('matrix.citation_title')} url="https://rfc10023.de/hoster-matrix" />
+      <CitationBox title={t('matrix.citation_title')} url="https://www.rfc10023.de/hoster-matrix" />
 
     </div>
   );

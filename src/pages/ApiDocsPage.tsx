@@ -10,7 +10,7 @@ export default function ApiDocsPage() {
   const [loading, setLoading] = useState(false);
   const [activeLangTab, setActiveLangTab] = useState<'curl' | 'js' | 'python' | 'go'>('curl');
 
-  const curlSnippet = `curl -s "https://rfc10023.de/api/v1/validate?domain=${testDomain}"`;
+  const curlSnippet = `curl -s "https://www.rfc10023.de/api/v1/validate?domain=${testDomain}"`;
 
   const runLiveTest = async () => {
     setLoading(true);
@@ -56,7 +56,7 @@ export default function ApiDocsPage() {
               GET
             </span>
             <code className="text-sm sm:text-base font-mono font-bold text-slate-900">
-              https://rfc10023.de/api/v1/validate?domain=&#123;domain&#125;
+              https://www.rfc10023.de/api/v1/validate?domain=&#123;domain&#125;
             </code>
           </div>
           <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
@@ -165,10 +165,10 @@ export default function ApiDocsPage() {
         {activeLangTab === 'curl' && (
           <pre className="p-4 bg-slate-950 text-slate-200 rounded-xl font-mono text-xs overflow-x-auto">
 {`# 1. Standard API Query
-curl -s "https://rfc10023.de/api/v1/validate?domain=forsaledns.net" | jq .
+curl -s "https://www.rfc10023.de/api/v1/validate?domain=forsaledns.net" | jq .
 
 # 2. Extract asking price directly via jq
-curl -s "https://rfc10023.de/api/v1/validate?domain=forsaledns.net" | jq -r '.tags.parsed.fval'`}
+curl -s "https://www.rfc10023.de/api/v1/validate?domain=forsaledns.net" | jq -r '.tags.parsed.fval'`}
           </pre>
         )}
 
@@ -176,7 +176,7 @@ curl -s "https://rfc10023.de/api/v1/validate?domain=forsaledns.net" | jq -r '.ta
           <pre className="p-4 bg-slate-950 text-slate-200 rounded-xl font-mono text-xs overflow-x-auto">
 {`// TypeScript / Node.js 18+
 async function checkDomainSale(domain: string) {
-  const res = await fetch(\`https://rfc10023.de/api/v1/validate?domain=\${encodeURIComponent(domain)}\`);
+  const res = await fetch(\`https://www.rfc10023.de/api/v1/validate?domain=\${encodeURIComponent(domain)}\`);
   const data = await res.json();
   
   if (data.status === "valid") {
@@ -199,7 +199,7 @@ checkDomainSale("forsaledns.net");`}
 import requests
 
 def verify_rfc10023(domain: str):
-    url = f"https://rfc10023.de/api/v1/validate?domain={domain}"
+    url = f"https://www.rfc10023.de/api/v1/validate?domain={domain}"
     response = requests.get(url, timeout=5)
     data = response.json()
     
@@ -233,7 +233,7 @@ type RfcResponse struct {
 }
 
 func main() {
-	resp, err := http.Get("https://rfc10023.de/api/v1/validate?domain=forsaledns.net")
+	resp, err := http.Get("https://www.rfc10023.de/api/v1/validate?domain=forsaledns.net")
 	if err != nil {
 		panic(err)
 	}

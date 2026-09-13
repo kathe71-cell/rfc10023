@@ -817,7 +817,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
               {t('val.share_title')} <strong>{result.domain}</strong> {t('val.share_end')}
             </span>
             <SocialShare
-              url={`https://rfc10023.de${langPrefix}/validator?d=${encodeURIComponent(result.domain)}`}
+              url={`https://www.rfc10023.de${langPrefix}/validator?d=${encodeURIComponent(result.domain)}`}
               title={language === 'en' 
                 ? `RFC 10023 Verification Report for ${result.domain} – DNS status: ${result.status === 'valid' ? 'Valid' : 'Audited'}`
                 : `RFC 10023 Prüfbericht für ${result.domain} – DNS-Status: ${result.status === 'valid' ? 'Valide hinterlegt' : 'Geprüft'}`}
