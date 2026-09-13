@@ -19,6 +19,7 @@ import EmbedPage from './pages/EmbedPage';
 import Impressum from './pages/Impressum';
 import Datenschutz from './pages/Datenschutz';
 import FaqPage from './pages/FaqPage';
+import SearchModal from './components/SearchModal';
 import { ShieldCheck, Cpu } from 'lucide-react';
 
 function RouteWatcher() {
@@ -40,7 +41,7 @@ function RouteWatcher() {
 
 function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  const { t, language } = useLanguage();
+  const { t, language, isSearchOpen, setIsSearchOpen } = useLanguage();
   const isEmbed = location.pathname.includes('-embed');
   const langPrefix = language === 'en' ? '/en' : '';
 
@@ -54,6 +55,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       <main className="flex-grow">{children}</main>
       <Footer />
       <ScrollToTop />
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
       {/* Sticky Mobile Bottom Bar (Mobile-First Godmode Rule) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 px-4 py-2.5 flex items-center justify-around gap-2 shadow-lg">

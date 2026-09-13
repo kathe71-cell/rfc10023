@@ -6,6 +6,8 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
+  isSearchOpen: boolean;
+  setIsSearchOpen: (open: boolean) => void;
 }
 
 const translations: Record<Language, Record<string, string>> = {
@@ -204,6 +206,11 @@ const translations: Record<Language, Record<string, string>> = {
     'val.audit_link_copied': 'Link kopiert!',
     'val.audit_email_hygiene': 'E-Mail & Routing-Schutz',
     'val.audit_tab_all': 'Alle Prüfungen',
+
+    // Search Component
+    'search.button_label': 'Suchen',
+    'search.shortcut': '⌘K',
+    'search.placeholder': 'Suche nach Tools, Tags (fval, furi), Hostern...',
 
     // Generator Component
     'gen.badge': 'DNS-Eintrag erstellen',
@@ -655,6 +662,11 @@ const translations: Record<Language, Record<string, string>> = {
     'val.audit_email_hygiene': 'Email & Routing Protection',
     'val.audit_tab_all': 'All Checks',
 
+    // Search Component
+    'search.button_label': 'Search',
+    'search.shortcut': '⌘K',
+    'search.placeholder': 'Search tools, tags (fval, furi), hosters...',
+
     // Generator Component
     'gen.badge': 'Create DNS record',
     'gen.title': 'RFC 10023 Generator',
@@ -915,6 +927,8 @@ const LanguageContext = createContext<LanguageContextType>({
   language: 'de',
   setLanguage: () => {},
   t: (key: string) => key,
+  isSearchOpen: false,
+  setIsSearchOpen: () => {},
 });
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -961,12 +975,26 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [language]);
 
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Global Cmd+K / Ctrl+K shortcut listener
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
   const t = (key: string): string => {
     return translations[language]?.[key] || translations.de[key] || key;
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, isSearchOpen, setIsSearchOpen }}>
       {children}
     </LanguageContext.Provider>
   );

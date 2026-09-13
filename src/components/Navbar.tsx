@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Terminal, ShieldCheck, Cpu, Database, Menu, X, BookOpen, Layers, Sparkles, Code2, Scale, HelpCircle } from 'lucide-react';
+import { Terminal, ShieldCheck, Cpu, Database, Menu, X, BookOpen, Layers, Sparkles, Code2, Scale, HelpCircle, Search } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageToggle from './LanguageToggle';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const { t, language } = useLanguage();
+  const { t, language, setIsSearchOpen } = useLanguage();
   const langPrefix = language === 'en' ? '/en' : '';
 
   const legalPath = language === 'en' ? '/en/legal-guidelines' : '/recht-leitfaden';
@@ -83,8 +83,19 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Quick Action Button */}
+          {/* Quick Action & Search Button */}
           <div className="hidden md:flex items-center gap-2">
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200/80 hover:text-slate-950 rounded-md border border-slate-200/80 transition-all duration-150"
+              title={language === 'en' ? 'Quick Search (⌘K)' : 'Schnellsuche (⌘K)'}
+            >
+              <Search className="w-3.5 h-3.5 text-slate-500" />
+              <span>{t('search.button_label')}</span>
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-bold text-slate-500 bg-white rounded border border-slate-200 shadow-2xs">
+                ⌘K
+              </kbd>
+            </button>
             <Link
               to={`${langPrefix}/validator`}
               className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-bold font-mono tracking-wider uppercase rounded-md bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all duration-150 shadow-sm"
@@ -95,6 +106,13 @@ export default function Navbar() {
 
           {/* Mobile Right Controls */}
           <div className="flex items-center gap-2 md:hidden">
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="p-2 rounded-md text-slate-700 hover:bg-slate-100"
+              aria-label={language === 'en' ? 'Search' : 'Suche'}
+            >
+              <Search className="w-5 h-5" />
+            </button>
             <LanguageToggle />
             <button
               onClick={() => setIsOpen(!isOpen)}
