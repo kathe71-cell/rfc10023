@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Copy, Check, Share2, Layers, AlertCircle, CheckCircle2, Sliders, Info, ShieldAlert, Terminal, Code2 } from 'lucide-react';
+import { Copy, Check, Share2, Layers, AlertCircle, AlertTriangle, CheckCircle2, Sliders, Info, ShieldAlert, Terminal, Code2 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { calculateUtf8ByteLength, cleanDomainInput } from '../utils/dnsIntelligence';
 
@@ -373,6 +373,17 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
             </div>
 
           </div>
+
+          {/* Single-Line RFC Notice */}
+          {recordFormat === 'single' && (
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200/90 text-xs font-mono text-amber-950 flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              <div className="leading-relaxed">
+                <span className="font-bold block mb-0.5">RFC 10023 § 2.1 Konformitäts-Hinweis:</span>
+                <p className="text-[11px] text-amber-900 font-sans">{t('gen.format_single_warn')}</p>
+              </div>
+            </div>
+          )}
 
           {/* Byte Limit Guard */}
           {exceeds255Limit ? (
