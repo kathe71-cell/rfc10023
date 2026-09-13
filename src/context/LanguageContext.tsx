@@ -926,6 +926,19 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     document.documentElement.lang = language;
+    if (language === 'en') {
+      document.title = 'RFC 10023 | The IETF Standard for Domain Sale Signals in the DNS';
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) {
+        metaDesc.setAttribute('content', 'Independent reference portal & developer toolkit for RFC 10023. Live DNS validator for _for-sale TXT records, builder & DNS provider matrix.');
+      }
+    } else {
+      document.title = 'RFC 10023 | Der IETF-Standard für Domain-Verkaufssignale im DNS';
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) {
+        metaDesc.setAttribute('content', 'Unabhängiges DACH-Referenzportal für RFC 10023. Live DNS-Validator für _for-sale TXT-Records, interaktiver Record-Generator & Hoster-Kompatibilitätsmatrix.');
+      }
+    }
   }, [language]);
 
   const t = (key: string): string => {
