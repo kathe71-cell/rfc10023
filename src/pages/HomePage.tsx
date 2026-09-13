@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { ShieldCheck, Cpu, Code2, Copy, Check, ArrowRight, ExternalLink, Terminal, CheckCircle2, ArrowUpRight, Zap, Shield, AlertTriangle, Layers, Sparkles, Scale } from 'lucide-react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { ShieldCheck, Cpu, Code2, Copy, Check, ArrowRight, ExternalLink, Terminal, CheckCircle2, ArrowUpRight, Zap, Shield, AlertTriangle, Layers, Sparkles, Scale, Search, Database } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import RfcValidator from '../components/RfcValidator';
 import RfcGenerator from '../components/RfcGenerator';
@@ -10,9 +10,22 @@ import CitationBox from '../components/CitationBox';
 export default function HomePage() {
   const { t, language } = useLanguage();
   const langPrefix = language === 'en' ? '/en' : '';
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [copiedEmbed, setCopiedEmbed] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [quickDomain, setQuickDomain] = useState('');
+
+  const handleQuickLookup = (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = quickDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^_for-sale\./, '');
+    if (!clean) return;
+    setSearchParams({ d: clean });
+    const el = document.getElementById('validator');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   useEffect(() => {
     const domainQuery = searchParams.get('d') || searchParams.get('domain');
@@ -62,105 +75,166 @@ export default function HomePage() {
   return (
     <div className="space-y-16 pb-16">
       
-      {/* Hero Section */}
-      <section className="pt-10 sm:pt-14 pb-12 border-b border-slate-200 bg-white relative">
+      {/* Hero Section: Engineering Reference Layout */}
+      <section className="pt-10 sm:pt-14 pb-14 border-b border-slate-200 bg-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
             
-            {/* Left Col */}
+            {/* Left Column: Spec Header, Authority Subline & Instant Lookup */}
             <div className="lg:col-span-7 space-y-6">
               
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-100 border border-slate-200 font-mono text-xs font-semibold text-slate-800">
-                <Terminal className="w-3.5 h-3.5 text-emerald-600" />
+              {/* Protocol Spec Badge */}
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-100 border border-slate-200/90 font-mono text-xs font-semibold text-slate-800">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>{t('hero.badge')}</span>
               </div>
 
-              <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-slate-950 leading-[1.05]">
-                {t('hero.title_part1')}<br />
-                {t('hero.title_part2')}<br />
-                <span className="text-emerald-700 underline decoration-slate-300 underline-offset-8">
-                  {t('hero.title_part3')}
+              {/* Engineering Reference Headline */}
+              <h1 className="text-3xl sm:text-5xl lg:text-[54px] font-black tracking-tight text-slate-950 leading-[1.12]">
+                <span>{t('hero.title_lead')} </span>
+                <span className="text-emerald-700 underline decoration-slate-200 decoration-4 underline-offset-8">
+                  {t('hero.title_highlight')}
                 </span>
               </h1>
 
+              {/* Protocol Description */}
               <p className="text-base sm:text-lg text-slate-700 leading-relaxed max-w-2xl font-normal">
                 {t('hero.desc')}
               </p>
 
+              {/* Integrated Instant Domain Lookup Form */}
+              <form onSubmit={handleQuickLookup} className="pt-2 max-w-xl">
+                <div className="flex flex-col sm:flex-row gap-2.5 p-1.5 rounded-2xl bg-slate-50 border border-slate-300/80 shadow-xs focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
+                  <div className="flex-1 flex items-center gap-2.5 px-3 py-2 text-slate-800">
+                    <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                    <input
+                      type="text"
+                      value={quickDomain}
+                      onChange={(e) => setQuickDomain(e.target.value)}
+                      placeholder={t('hero.search_placeholder')}
+                      className="w-full bg-transparent border-0 p-0 text-sm font-mono text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white font-mono font-bold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 shrink-0"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span>{t('hero.search_btn')}</span>
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 mt-2 px-1 text-[11px] font-mono text-slate-500">
+                  <span className="text-emerald-700 font-bold">Query:</span>
+                  <span>_for-sale.{quickDomain ? quickDomain.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^_for-sale\./, '') : 'example.com'} IN TXT (16)</span>
+                </div>
+              </form>
+
+              {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 <a
                   href="#validator"
-                  className="px-5 py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-mono font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2"
+                  className="px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-mono font-bold text-xs rounded-xl transition-all shadow-xs flex items-center gap-2"
                 >
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                   <span>{t('hero.cta_validate')}</span>
                 </a>
                 <a
                   href="#generator"
-                  className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-mono font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2"
+                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-mono font-bold text-xs rounded-xl transition-all shadow-xs flex items-center gap-2"
                 >
-                  <Cpu className="w-4 h-4" />
+                  <Cpu className="w-3.5 h-3.5" />
                   <span>{t('hero.cta_generate')}</span>
                 </a>
                 <Link
                   to={`${langPrefix}/bulk-scan`}
-                  className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5"
                 >
                   <Layers className="w-3.5 h-3.5 text-emerald-600" />
                   <span>{t('hero.cta_bulk')}</span>
                 </Link>
               </div>
 
-              <div className="pt-6 border-t border-slate-100 grid grid-cols-3 gap-4 font-mono">
-                <div>
-                  <span className="block text-2xl font-black text-slate-950">0 %</span>
-                  <span className="text-[11px] text-slate-500 uppercase tracking-wider">{t('hero.stat_commission')}</span>
-                </div>
-                <div>
-                  <span className="block text-2xl font-black text-slate-950">TXT 16</span>
-                  <span className="text-[11px] text-slate-500 uppercase tracking-wider">{t('hero.stat_record')}</span>
-                </div>
-                <div>
-                  <span className="block text-2xl font-black text-emerald-700">v=FORSALE1</span>
-                  <span className="text-[11px] text-slate-500 uppercase tracking-wider">{t('hero.stat_mandatory')}</span>
-                </div>
-              </div>
-
             </div>
 
-            {/* Right Col Terminal Panel */}
-            <div className="lg:col-span-5 bg-slate-950 rounded-2xl p-5 border border-slate-800 text-slate-200 font-mono text-xs shadow-xl">
+            {/* Right Column: Architectural DNS RRset Specification Card (No fake MacOS dots) */}
+            <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-300 shadow-sm p-5 space-y-4 font-mono">
               
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800 text-slate-400">
+              {/* Header: Node specification title */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
-                  <span className="ml-2 text-[11px] text-slate-400">{t('hero.terminal_header')}</span>
+                  <Database className="w-4 h-4 text-emerald-600" />
+                  <span className="font-bold text-xs text-slate-900">{t('hero.spec_badge')}</span>
                 </div>
-                <span className="text-[10px] text-emerald-400 font-bold uppercase">Live DoH</span>
+                <span className="px-2 py-0.5 rounded bg-emerald-100 border border-emerald-300 text-emerald-900 text-[10px] font-extrabold uppercase">
+                  RFC 10023
+                </span>
               </div>
 
-              <div className="space-y-2 text-slate-300 overflow-x-auto leading-relaxed">
-                <p className="text-slate-500">{t('hero.terminal_comment')}</p>
-                <p className="text-emerald-400">$ dig TXT _for-sale.forsaledns.net +short</p>
-                <div className="p-3 bg-slate-900/90 rounded-lg border border-slate-800 text-slate-200 space-y-1 my-2">
-                  <p className="text-emerald-300">&quot;v=FORSALE1;fval=USD195000&quot;</p>
-                  <p className="text-emerald-300">&quot;v=FORSALE1;furi=mailto:sales@sun.com.py&quot;</p>
-                  <p className="text-slate-400">&quot;v=FORSALE1;ftxt=Direct inquiries welcome&quot;</p>
+              {/* RRset Wire Metadata */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between text-slate-500 text-[11px]">
+                  <span>{t('hero.spec_node_label')}</span>
+                  <span className="text-slate-400 font-normal">{t('hero.spec_class')} • {t('hero.spec_ttl')}</span>
                 </div>
-                <div className="pt-2 text-[11px] text-slate-400 border-t border-slate-800/80 space-y-1">
-                  <p><strong className="text-slate-200">{t('hero.terminal_node')}</strong> _for-sale.forsaledns.net.</p>
-                  <p><strong className="text-slate-200">{t('hero.terminal_dnssec')}</strong> {t('hero.terminal_dnssec_val')}</p>
-                  <p><strong className="text-slate-200">{t('hero.terminal_standard')}</strong> IETF RFC 10023</p>
+                <div className="text-slate-900 font-bold text-sm select-all">
+                  _for-sale.<span className="text-emerald-700">forsaledns.net</span>.
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px]">
-                <span className="text-slate-500">{t('hero.terminal_example')}</span>
-                <Link to={`${langPrefix}/spezifikation`} className="text-emerald-400 hover:underline flex items-center gap-1 font-bold">
-                  {t('hero.terminal_spec_link')}
+              {/* Structured Tags / RDATA Breakdown */}
+              <div className="space-y-2">
+                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  {t('hero.spec_rdata_label')}
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  {/* Tag v */}
+                  <div className="p-2.5 rounded-lg bg-slate-900 text-white flex items-center justify-between">
+                    <div>
+                      <span className="text-emerald-400 font-bold">v=FORSALE1</span>
+                      <span className="text-slate-400">;</span>
+                    </div>
+                    <span className="text-[10px] text-emerald-400 font-semibold uppercase">{t('hero.spec_tag_v')}</span>
+                  </div>
+
+                  {/* Tag fval */}
+                  <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
+                    <div>
+                      <span className="text-slate-500">fval=</span>
+                      <span className="text-slate-900 font-bold">USD195000</span>
+                      <span className="text-slate-400">;</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500">{t('hero.spec_tag_fval')}</span>
+                  </div>
+
+                  {/* Tag furi */}
+                  <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
+                    <div>
+                      <span className="text-slate-500">furi=</span>
+                      <span className="text-slate-900 font-bold">mailto:sales@sun.com.py</span>
+                      <span className="text-slate-400">;</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500">{t('hero.spec_tag_furi')}</span>
+                  </div>
+
+                  {/* Tag ftxt */}
+                  <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
+                    <div>
+                      <span className="text-slate-500">ftxt=</span>
+                      <span className="text-slate-900 font-medium">Direct inquiries welcome</span>
+                      <span className="text-slate-400">;</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500">{t('hero.spec_tag_ftxt')}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Wire footer: live SIDN deployment & spec link */}
+              <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
+                <span>Production Registry: SIDN (.nl)</span>
+                <Link to={`${langPrefix}/spezifikation`} className="text-emerald-700 hover:underline font-bold flex items-center gap-1">
+                  RFC Standard →
                 </Link>
               </div>
 
