@@ -109,6 +109,7 @@ export function calculateUtf8ByteLength(str: string): number {
 
 export function cleanDomainInput(raw: string): string {
   let d = raw.trim().toLowerCase();
+  d = d.replace(/\s+/g, '');          // strip all internal whitespace (e.g. "rfc 10023.de" → "rfc10023.de")
   d = d.replace(/^https?:\/\//, '');
   d = d.replace(/^www\./, '');
   d = d.replace(/^_for-sale\./, '');
