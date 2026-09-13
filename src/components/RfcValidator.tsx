@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle2, AlertTriangle, XCircle, ArrowRight, Copy, Check, Terminal, ExternalLink, RefreshCw, ShieldCheck, Server, Sparkles, Activity, Cpu, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { cleanDomainInput, detectHosterFromNameservers, HosterProfile } from '../utils/dnsIntelligence';
+import { parseRfc10023Records, RfcTagItem } from '../utils/rfcParserEngine';
 import SocialShare from './SocialShare';
 
 interface TagItem {
@@ -198,80 +199,19 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
         return;
       }
 
-      // Syntax Analysis
-      const parsedTags: TagItem[] = [];
-      const parsedMap: Record<string, string> = {};
-      const warnings: string[] = [];
-      let foundForsaleVersion = false;
-
-      rawTxtRecords.forEach((recordStr, recIdx) => {
-        const cleanRec = recordStr.trim();
-
-        if (cleanRec.startsWith('v=FORSALE1;') || cleanRec === 'v=FORSALE1' || cleanRec.startsWith('v=FORSALE1')) {
-          foundForsaleVersion = true;
-        }
-
-        const segments = cleanRec.split(';').map((s) => s.trim()).filter(Boolean);
-
-        segments.forEach((seg) => {
-          const eqIdx = seg.indexOf('=');
-          if (eqIdx !== -1) {
-            const key = seg.substring(0, eqIdx).trim().toLowerCase();
-            const val = seg.substring(eqIdx + 1).trim();
-            parsedTags.push({ tag: key, value: val, sourceRecordIndex: recIdx });
-            if (!parsedMap[key]) {
-              parsedMap[key] = val;
-            }
-          }
-        });
-      });
-
-      const isMulti = rawTxtRecords.length > 1;
-      const architecture: 'ietf_multi' | 'single_line' | 'unknown' = isMulti ? 'ietf_multi' : 'single_line';
-      const architectureLabel = isMulti
-        ? (language === 'en' ? `Multi-record RRset (${rawTxtRecords.length} TXT lines)` : `Mehrzeiliger Standard-Eintrag (${rawTxtRecords.length} TXT-Zeilen)`)
-        : (language === 'en' ? 'Single-line record (1 TXT line)' : 'Einzeiliger Eintrag (1 TXT-Zeile)');
-
-      let status: 'valid' | 'warning' = 'valid';
-
-      if (!foundForsaleVersion) {
-        status = 'warning';
-        warnings.push(
-          language === 'en'
-            ? 'Mandatory header "v=FORSALE1;" is missing or misspelled.'
-            : 'Der Pflicht-Header "v=FORSALE1;" fehlt oder ist fehlerhaft geschrieben.'
-        );
-      }
-
-      if (!parsedMap.fval && !parsedMap.furi && !parsedMap.ftxt) {
-        status = 'warning';
-        warnings.push(
-          language === 'en'
-            ? 'Record contains neither price (fval), contact URI (furi), nor remarks (ftxt).'
-            : 'Der Eintrag enthält weder Preis (fval), Kontakt (furi) noch Notiz (ftxt).'
-        );
-      }
-
-      if (parsedMap.fval) {
-        const val = parsedMap.fval.toUpperCase();
-        if (val !== 'VHB' && !/^[A-Z]{3}:?\d+/.test(val)) {
-          warnings.push(
-            language === 'en'
-              ? `Price format "${parsedMap.fval}": RFC 10023 recommends ISO 4217 currency code followed immediately by amount without spaces (e.g. EUR2500 or USD1000).`
-              : `Format beim Preis "${parsedMap.fval}": RFC 10023 empfiehlt Währungscode gefolgt vom Betrag ohne Leerzeichen (zum Beispiel EUR2500 oder USD1000).`
-          );
-        }
-      }
-
-      if (parsedMap.furi) {
-        if (!parsedMap.furi.startsWith('http://') && !parsedMap.furi.startsWith('https://') && !parsedMap.furi.startsWith('mailto:') && !parsedMap.furi.startsWith('tel:')) {
-          warnings.push(
-            language === 'en'
-              ? `Contact URI "${parsedMap.furi}": Please use a standard URI scheme such as https://, mailto:, or tel:.`
-              : `Kontaktadresse "${parsedMap.furi}": Bitte ein gängiges Schema wie https://, mailto: oder tel: verwenden.`
-          );
-        }
-      }
+      // Authoritative RFC 10023 Engine Syntax & Compliance Analysis
+      const report = parseRfc10023Records(rawTxtRecords, language === 'en' ? 'en' : 'de');
+      const parsedTags: TagItem[] = report.tags.map((t) => ({
+        tag: t.tag,
+        value: t.value,
+        sourceRecordIndex: t.sourceRecordIndex,
+      }));
+      const parsedMap = report.parsedMap;
+      const warnings = report.warnings;
+      const status = report.status;
+      const statusMessage = report.statusMessage;
+      const architecture = report.architecture;
+      const architectureLabel = report.architectureLabel;
 
       setResult({
         domain: d,
