@@ -1,4 +1,4 @@
-# RFC 10023 – Das offizielle DACH-Referenzportal
+# RFC 10023 – Das unabhängige DACH-Referenzportal
 
 > RFC 10023 definiert den IETF-Standard für das Signalisieren von Domain-Verkaufsangeboten über standardisierte DNS TXT-Einträge am Knoten `_for-sale`.
 
