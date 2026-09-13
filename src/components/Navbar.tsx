@@ -54,7 +54,7 @@ export default function Navbar() {
             </Link>
 
             {/* Desktop Language Toggle placed beside brand */}
-            <div className="hidden lg:flex items-center pl-2 border-l border-slate-200">
+            <div className="hidden md:flex items-center pl-3 sm:pl-4 border-l border-slate-200">
               <LanguageToggle />
             </div>
           </div>
@@ -83,9 +83,6 @@ export default function Navbar() {
 
           {/* Quick Action Button */}
           <div className="hidden md:flex items-center gap-2">
-            <div className="lg:hidden">
-              <LanguageToggle />
-            </div>
             <Link
               to={`${langPrefix}/validator`}
               className="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-bold font-mono tracking-wider uppercase rounded-md bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all duration-150 shadow-sm"
