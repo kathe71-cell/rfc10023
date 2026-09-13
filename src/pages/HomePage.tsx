@@ -76,10 +76,9 @@ export default function HomePage() {
                 <span>{t('hero.badge')}</span>
               </div>
 
-              <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-slate-950 leading-[1.05]">
-                {t('hero.title_part1')}<br />
-                {t('hero.title_part2')}<br />
-                <span className="text-emerald-700 underline decoration-slate-300 underline-offset-8">
+              <h1 className="text-2xl sm:text-4xl lg:text-[40px] font-extrabold tracking-tight text-slate-950 leading-snug">
+                <span>{t('hero.title_part1')} {t('hero.title_part2')}</span>
+                <span className="block mt-1 sm:mt-1.5 text-emerald-700 underline decoration-slate-300 decoration-2 underline-offset-8">
                   {t('hero.title_part3')}
                 </span>
               </h1>
