@@ -249,6 +249,16 @@ const translations: Record<Language, Record<string, string>> = {
     'gen.comment_cli_doh': '# 2. Abfrage über DNS over HTTPS (Cloudflare):',
     'gen.comment_cli_api': '# 3. Direkte Abfrage über rfc10023.de API:',
 
+    // E-E-A-T Trust Box
+    'trust.badge': 'E-E-A-T Fachredaktion & Datenquellen',
+    'trust.title': 'Redaktionelle Qualitätsgarantie & Primärquellen',
+    'trust.reviewed_by': 'Fachredaktion rfc10023.de · Stand: September 2026',
+    'trust.standards_label': 'Geprüft nach Standards:',
+    'trust.standards_val': 'IETF RFC 10023 · RFC 1035 · RFC 8552 · W3C DoH (RFC 8484)',
+    'trust.sources_label': 'Offizielle Primärquellen:',
+    'trust.sources_val': 'IETF Datatracker, RFC Editor, SIDN (nl), DENIC eG, Cloudflare & Google Public DNS.',
+    'trust.methodology': 'Methodik & Transparenz: Sämtliche Validierungen erfolgen in Echtzeit ohne Zwischenspeicherung via DNS over HTTPS (DoH) direkt auf autoritativen Anycast-Resolvern. Alle Code-Exporte entsprechen den strengen Wire-Format-Grenzen (max. 255 Bytes je String nach RFC 1035).',
+
     // Footer Links
     'footer.claim': 'Das unabhängige DACH-Referenzportal und Entwickler-Toolkit zum IETF-Standard RFC 10023. Dezentrale, standardisierte Kennzeichnung von Domain-Verkaufsabsichten ohne proprietäre Plattform-Abhängigkeit.',
     'footer.disclaimer_title': 'Unabhängigkeitshinweis:',
@@ -678,6 +688,16 @@ const translations: Record<Language, Record<string, string>> = {
     'gen.comment_cli_dig': '# 1. Local lookup with dig:',
     'gen.comment_cli_doh': '# 2. DNS over HTTPS query (Cloudflare):',
     'gen.comment_cli_api': '# 3. Direct query via rfc10023.de API:',
+
+    // E-E-A-T Trust Box
+    'trust.badge': 'E-E-A-T Editorial Board & Sources',
+    'trust.title': 'Editorial Quality Standard & Primary Sources',
+    'trust.reviewed_by': 'Technical Editorial Board rfc10023.de · Updated: September 2026',
+    'trust.standards_label': 'Audited against Standards:',
+    'trust.standards_val': 'IETF RFC 10023 · RFC 1035 · RFC 8552 · W3C DoH (RFC 8484)',
+    'trust.sources_label': 'Official Primary Sources:',
+    'trust.sources_val': 'IETF Datatracker, RFC Editor, SIDN (nl), DENIC eG, Cloudflare & Google Public DNS.',
+    'trust.methodology': 'Methodology & Transparency: All lookups execute in real time without caching via DNS over HTTPS (DoH) against authoritative anycast resolvers. All record builders enforce wire-format length constraints (max. 255 bytes per character-string per RFC 1035).',
 
     // Footer Links
     'footer.claim': 'The independent reference portal and developer toolkit for the IETF standard RFC 10023. Decentralized, standardized signaling of domain sale intentions without proprietary platform lock-in.',

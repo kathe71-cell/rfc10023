@@ -474,6 +474,43 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* E-E-A-T Editorial Trust- & Data Sources Box */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-700 block">
+                  {t('trust.badge')}
+                </span>
+                <h3 className="text-base sm:text-lg font-bold text-slate-950">
+                  {t('trust.title')}
+                </h3>
+              </div>
+            </div>
+            <span className="text-xs font-mono text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 shrink-0">
+              {t('trust.reviewed_by')}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="font-bold text-slate-700 block mb-1">{t('trust.standards_label')}</span>
+              <span className="text-slate-900 font-semibold">{t('trust.standards_val')}</span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="font-bold text-slate-700 block mb-1">{t('trust.sources_label')}</span>
+              <span className="text-slate-900 font-semibold">{t('trust.sources_val')}</span>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-600 leading-relaxed font-normal pt-1">
+            {t('trust.methodology')}
+          </p>
+        </div>
+      </section>
+
       {/* Citation Box */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <CitationBox />
