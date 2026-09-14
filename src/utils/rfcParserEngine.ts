@@ -1,5 +1,5 @@
 // RFC 10023 Reference Parser Engine
-// Authoritative IETF Standards Track RFC 10023 parsing and validation logic
+// Authoritative IETF Informational RFC 10023 parsing and validation logic
 
 export interface RfcTagItem {
   tag: string;

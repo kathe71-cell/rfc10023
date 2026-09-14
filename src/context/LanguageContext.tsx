@@ -464,7 +464,7 @@ const translations: Record<Language, Record<string, string>> = {
     'citation.gen_title': 'RFC 10023 Record Generator & Multi-Format Exporter',
     'citation.copy': 'Zitierung kopieren',
     'citation.copied': 'Zitierung kopiert',
-    'citation.status': 'Stand: September 2026 · IETF Standards Track',
+    'citation.status': 'Stand: September 2026 · IETF Informational RFC',
   },
   en: {
     // Navigation
@@ -919,7 +919,7 @@ const translations: Record<Language, Record<string, string>> = {
     'citation.gen_title': 'RFC 10023 Record Generator & Multi-Format Exporter',
     'citation.copy': 'Copy Citation',
     'citation.copied': 'Citation Copied',
-    'citation.status': 'Published: September 2026 · IETF Standards Track',
+    'citation.status': 'Published: September 2026 · IETF Informational RFC',
   }
 };
 
