@@ -16,6 +16,23 @@ interface BulkItemResult {
   warnings: string[];
 }
 
+function isValidDomainFormat(raw: string): { isValid: boolean; cleaned: string } {
+  const cleaned = cleanDomainInput(raw);
+  if (
+    !cleaned ||
+    !cleaned.includes('.') ||
+    cleaned.length < 4 ||
+    cleaned.includes(' ') ||
+    cleaned.startsWith('.') ||
+    cleaned.endsWith('.') ||
+    cleaned.startsWith('-') ||
+    cleaned.endsWith('-')
+  ) {
+    return { isValid: false, cleaned: raw.trim() };
+  }
+  return { isValid: true, cleaned };
+}
+
 export default function BulkValidator() {
   const { t, language } = useLanguage();
   const [inputText, setInputText] = useState(
@@ -28,35 +45,55 @@ export default function BulkValidator() {
   const startBulkScan = async () => {
     const rawLines = inputText
       .split('\n')
-      .map((l) => cleanDomainInput(l))
-      .filter((d) => d.includes('.') && d.length > 3);
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
 
-    const domains = Array.from(new Set(rawLines)).slice(0, 30); // Max 30 domains for DoH concurrency & rate limits
+    const lines = Array.from(new Set(rawLines)).slice(0, 30); // Max 30 domains for DoH concurrency & rate limits
 
-    if (domains.length === 0) {
-      alert(language === 'en' ? 'Please enter at least one valid domain name (one domain per line).' : 'Bitte gib mindestens einen gültigen Domainnamen ein (eine Domain pro Zeile).');
+    if (lines.length === 0) {
+      alert(language === 'en' ? 'Please enter at least one domain name (one domain per line).' : 'Bitte gib mindestens einen Domainnamen ein (eine Domain pro Zeile).');
       return;
     }
 
     setIsRunning(true);
     setProgress(0);
-    const initialList: BulkItemResult[] = domains.map((d) => ({
-      domain: d,
-      status: 'pending',
-      dnsStatus: 'PENDING',
-      dnssec: false,
-      hoster: language === 'en' ? 'Resolving...' : 'Ermittle...',
-      rawCount: 0,
-      warnings: [],
-    }));
+
+    const queue: { domain: string; index: number }[] = [];
+    let completed = 0;
+
+    const initialList: BulkItemResult[] = lines.map((rawLine, index) => {
+      const { isValid, cleaned } = isValidDomainFormat(rawLine);
+      if (!isValid) {
+        completed++;
+        return {
+          domain: rawLine,
+          status: 'error',
+          dnsStatus: 'ERROR',
+          dnssec: false,
+          hoster: '-',
+          rawCount: 0,
+          warnings: [language === 'en' ? 'Invalid domain format' : 'Ungültiges Domainformat'],
+        };
+      }
+      queue.push({ domain: cleaned, index });
+      return {
+        domain: cleaned,
+        status: 'pending',
+        dnsStatus: 'PENDING',
+        dnssec: false,
+        hoster: language === 'en' ? 'Resolving...' : 'Ermittle...',
+        rawCount: 0,
+        warnings: [],
+      };
+    });
+
     setResults(initialList);
+    setProgress(lines.length > 0 ? Math.round((completed / lines.length) * 100) : 0);
 
     const updatedList = [...initialList];
-    let completed = 0;
 
     // Concurrency throttle: process in batches of 3
     const CONCURRENCY = 3;
-    const queue = domains.map((d, index) => ({ domain: d, index }));
 
     async function processItem(item: { domain: string; index: number }) {
       const d = item.domain;
@@ -182,7 +219,7 @@ export default function BulkValidator() {
       }
 
       completed++;
-      setProgress(Math.round((completed / domains.length) * 100));
+      setProgress(Math.round((completed / lines.length) * 100));
       setResults([...updatedList]);
     }
 
@@ -202,8 +239,8 @@ export default function BulkValidator() {
 
   const exportCsv = () => {
     const header = language === 'en'
-      ? 'Domain;Status;DNS Status;Price (fval);Contact (furi);DNSSEC;Hoster;Record Count\n'
-      : 'Domain;Status;DNS-Status;Preis (fval);Kontakt (furi);DNSSEC;Hoster;Anzahl Records\n';
+      ? 'Domain;Status;DNS Status;Price (fval);Contact (furi);DNSSEC (AD);Hoster;Record Count\n'
+      : 'Domain;Status;DNS-Status;Preis (fval);Kontakt (furi);DNSSEC (AD);Hoster;Anzahl Records\n';
     
     const rows = results
       .map((r) => {
@@ -212,7 +249,13 @@ export default function BulkValidator() {
         const dnsSt = sanitizeCsvCell(r.dnsStatus);
         const fval = sanitizeCsvCell(r.fval || '');
         const furi = sanitizeCsvCell(r.furi || '');
-        const dnssecStr = sanitizeCsvCell(r.dnssec ? (language === 'en' ? 'YES (AD)' : 'JA (AD)') : (language === 'en' ? 'NO' : 'NEIN'));
+        const dnssecStr = sanitizeCsvCell(
+          r.status === 'error' && r.hoster === '-'
+            ? '-'
+            : r.dnssec
+            ? (language === 'en' ? 'YES (AD)' : 'JA (AD)')
+            : (language === 'en' ? 'Not validated (AD=0)' : 'Nicht validiert (AD=0)')
+        );
         const hoster = sanitizeCsvCell(r.hoster);
         const count = sanitizeCsvCell(r.rawCount);
         return `"${d}";"${st}";"${dnsSt}";"${fval}";"${furi}";"${dnssecStr}";"${hoster}";"${count}"`;
@@ -324,12 +367,16 @@ export default function BulkValidator() {
               {results.map((r, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                   <td className="px-4 py-3 font-bold text-slate-900">
-                    <a
-                      href={`${language === 'en' ? '/en' : ''}/validator?d=${encodeURIComponent(r.domain)}`}
-                      className="hover:text-emerald-600 underline decoration-slate-300"
-                    >
-                      {r.domain}
-                    </a>
+                    {r.status === 'error' && r.warnings.some(w => w.includes('Domainformat') || w.includes('domain format')) ? (
+                      <span className="text-slate-700">{r.domain}</span>
+                    ) : (
+                      <a
+                        href={`${language === 'en' ? '/en' : ''}/validator?d=${encodeURIComponent(r.domain)}`}
+                        className="hover:text-emerald-600 underline decoration-slate-300"
+                      >
+                        {r.domain}
+                      </a>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-col gap-1 items-start">
@@ -352,7 +399,12 @@ export default function BulkValidator() {
                       {r.status === 'error' && (
                         <span className="text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded">{t('bulk.status_error')}</span>
                       )}
-                      {r.dnsStatus !== 'PENDING' && (
+                      {r.status === 'error' && r.warnings.length > 0 && (
+                        <span className="text-[10px] text-rose-500 font-mono">
+                          {r.warnings[0]}
+                        </span>
+                      )}
+                      {r.dnsStatus !== 'PENDING' && !r.warnings.some(w => w.includes('Domainformat') || w.includes('domain format')) && (
                         <span className="text-[10px] text-slate-400 font-mono">
                           DNS: {r.dnsStatus}
                         </span>
@@ -365,12 +417,20 @@ export default function BulkValidator() {
                   </td>
                   <td className="px-4 py-3 text-slate-600">{r.hoster}</td>
                   <td className="px-4 py-3">
-                    {r.dnssec ? (
+                    {r.status === 'error' && r.hoster === '-' ? (
+                      <span className="text-slate-400">-</span>
+                    ) : r.dnssec ? (
                       <span className="text-emerald-700 font-bold flex items-center gap-1">
                         <ShieldCheck className="w-3.5 h-3.5" /> {t('bulk.dnssec_yes')}
                       </span>
                     ) : (
-                      <span className="text-slate-400">{t('bulk.dnssec_no')}</span>
+                      <span
+                        className="text-slate-500 flex items-center gap-1"
+                        title={language === 'en' ? 'DoH resolver response without Authenticated Data flag (AD=0)' : 'Resolver-Antwort ohne Authenticated-Data-Flag (AD=0)'}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                        {t('bulk.dnssec_no')}
+                      </span>
                     )}
                   </td>
                 </tr>

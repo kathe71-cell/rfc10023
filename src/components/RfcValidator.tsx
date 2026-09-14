@@ -685,7 +685,16 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
           {/* 5. Direct Action Links */}
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <Link
-              to={`${langPrefix}/generator?d=${encodeURIComponent(result.domain)}`}
+              to={{
+                pathname: `${langPrefix}/generator`,
+                search: new URLSearchParams({
+                  d: result.domain,
+                  ...(result.report.parsedMap.fval ? { fval: result.report.parsedMap.fval } : {}),
+                  ...(result.report.parsedMap.furi ? { furi: result.report.parsedMap.furi } : {}),
+                  ...(result.report.parsedMap.ftxt ? { ftxt: result.report.parsedMap.ftxt } : {}),
+                  ...(result.report.parsedMap.fcod ? { fcod: result.report.parsedMap.fcod } : {}),
+                }).toString(),
+              }}
               className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-mono font-bold text-xs flex items-center gap-2 transition-all shadow-sm"
             >
               <Cpu className="w-3.5 h-3.5" />
@@ -693,7 +702,10 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
             </Link>
 
             <Link
-              to={`${langPrefix}/badge-generator?d=${encodeURIComponent(result.domain)}`}
+              to={{
+                pathname: `${langPrefix}/badge-generator`,
+                search: new URLSearchParams({ d: result.domain }).toString(),
+              }}
               className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono font-semibold text-xs flex items-center gap-2 transition-colors border border-slate-200"
             >
               <Sparkles className="w-3.5 h-3.5 text-emerald-600" />

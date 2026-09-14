@@ -14,26 +14,51 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
   const [searchParams] = useSearchParams();
   const urlDomain = searchParams.get('domain') || searchParams.get('d') || '';
   const urlHoster = searchParams.get('hoster') || '';
+  const urlFval = searchParams.get('fval') || '';
+  const urlFuri = searchParams.get('furi') || '';
+  const urlFtxt = searchParams.get('ftxt') || '';
+  const urlFcod = searchParams.get('fcod') || '';
 
   const defaultDomain = language === 'en' ? 'example.com' : 'beispieldomain.de';
 
+  // Helper to split fval into currency + amount
+  const parseInitialFval = (raw: string) => {
+    const clean = raw.trim();
+    if (!clean) {
+      return { curr: language === 'en' ? 'USD' : 'EUR', amt: '2500' };
+    }
+    const match = clean.match(/^([A-Za-z]+)([\d.,]+)$/);
+    if (match) {
+      return { curr: match[1].toUpperCase(), amt: match[2] };
+    }
+    return { curr: language === 'en' ? 'USD' : 'EUR', amt: clean };
+  };
+
+  const initialPricing = parseInitialFval(urlFval);
+
   const [domain, setDomain] = useState(urlDomain);
-  const [currency, setCurrency] = useState(language === 'en' ? 'USD' : 'EUR');
-  const [amount, setAmount] = useState('2500');
+  const [currency, setCurrency] = useState(initialPricing.curr);
+  const [amount, setAmount] = useState(urlFval ? initialPricing.amt : '2500');
   const [isVhb, setIsVhb] = useState(false);
-  const [furi, setFuri] = useState('');
-  const [ftxt, setFtxt] = useState(''); // Default is strictly empty per RFC 10023 instructions
-  const [fcod, setFcod] = useState('');
+  const [furi, setFuri] = useState(urlFuri);
+  const [ftxt, setFtxt] = useState(urlFtxt); // Default is empty or passed parameter
+  const [fcod, setFcod] = useState(urlFcod);
   const [ttl, setTtl] = useState('3600');
   const [activeTab, setActiveTab] = useState<'bind' | 'cloudflare' | 'hetzner' | 'inwx' | 'netcup' | 'terraform' | 'cli'>('bind');
   const [copied, setCopied] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
 
   useEffect(() => {
-    if (urlDomain) {
-      setDomain(urlDomain);
+    if (urlDomain) setDomain(urlDomain);
+    if (urlFuri) setFuri(urlFuri);
+    if (urlFtxt) setFtxt(urlFtxt);
+    if (urlFcod) setFcod(urlFcod);
+    if (urlFval) {
+      const p = parseInitialFval(urlFval);
+      setCurrency(p.curr);
+      setAmount(p.amt);
     }
-  }, [urlDomain]);
+  }, [urlDomain, urlFval, urlFuri, urlFtxt, urlFcod]);
 
   useEffect(() => {
     if (urlHoster && ['bind', 'cloudflare', 'hetzner', 'inwx', 'netcup', 'terraform', 'cli'].includes(urlHoster)) {
@@ -358,12 +383,12 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           </div>
 
           {/* TTL Selection */}
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-mono">
-            <span className="font-bold text-slate-600">Empfohlene TTL:</span>
+          <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono">
+            <span className="font-bold text-slate-600 shrink-0">Empfohlene TTL:</span>
             <select
               value={ttl}
               onChange={(e) => setTtl(e.target.value)}
-              className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-md focus:outline-none font-mono"
+              className="w-full sm:w-auto max-w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-md focus:outline-none font-mono text-xs truncate"
             >
               <option value="300">300 s (5 min – empfohlen für Verkaufs-Records)</option>
               <option value="3600">3600 s (1 h – Standard-Hosting)</option>
@@ -449,17 +474,23 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
             </pre>
 
             {/* Bottom Actions inside code card */}
-            <div className="pt-3 mt-3 border-t border-slate-800 flex items-center justify-between">
-              <span className="text-[10px] text-slate-400">
+            <div className="pt-3 mt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+              <span className="text-[10px] text-slate-400 truncate">
                 {recordStrings.length} {recordStrings.length === 1 ? 'TXT-Eintrag' : 'TXT-Einträge (Multi-Record RRset)'}
               </span>
               <button
                 type="button"
                 onClick={copyExport}
-                className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm"
+                disabled={exceeds255Limit}
+                className={`px-3.5 py-2 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm shrink-0 ${
+                  exceeds255Limit
+                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                    : 'bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white'
+                }`}
+                title={exceeds255Limit ? 'Export gesperrt: Mindestens ein TXT-Record überschreitet das 255-Byte-Limit (RFC 1035).' : ''}
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5 text-white" />}
-                <span>{copied ? 'Kopiert!' : 'Werte kopieren'}</span>
+                {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copied ? 'Kopiert!' : exceeds255Limit ? 'Limit überschritten' : 'Werte kopieren'}</span>
               </button>
             </div>
 

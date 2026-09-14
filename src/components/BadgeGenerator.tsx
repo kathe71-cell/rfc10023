@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Copy, Check, ShieldCheck, Sparkles, ExternalLink, Code2, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -10,11 +11,21 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
   const { t, language } = useLanguage();
   const isEn = language === 'en';
   const langPrefix = isEn ? '/en' : '';
-  const [domain, setDomain] = useState(initialDomain === 'deinedomain.de' && isEn ? 'yourdomain.com' : initialDomain);
+  const [searchParams] = useSearchParams();
+  const queryDomain = searchParams.get('d') || searchParams.get('domain') || '';
+  const effectiveInitial = queryDomain || (initialDomain === 'deinedomain.de' && isEn ? 'yourdomain.com' : initialDomain);
+
+  const [domain, setDomain] = useState(effectiveInitial);
   const [theme, setTheme] = useState<'dark' | 'light' | 'emerald'>('dark');
   const [badgeText, setBadgeText] = useState(isEn ? 'Verify DNS For-Sale Record' : 'DNS-Verkaufseintrag prüfen');
   const [copiedHtml, setCopiedHtml] = useState(false);
   const [copiedMd, setCopiedMd] = useState(false);
+
+  useEffect(() => {
+    if (queryDomain) {
+      setDomain(queryDomain);
+    }
+  }, [queryDomain]);
 
   const clean = domain
     .trim()
