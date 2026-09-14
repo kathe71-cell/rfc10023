@@ -132,7 +132,7 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
               <span>Transparenz- &amp; Haftungshinweis:</span>
             </div>
             <p className="leading-relaxed">
-              Ein Badge signalisiert Interessenten lediglich, dass ein RFC 10023 Verkaufseintrag im DNS existiert und live geprüft werden kann. 
+              Das Badge verlinkt zur neutralen Prüfung, ob ein RFC 10023 DNS-Verkaufseintrag vorhanden ist. 
               Es stellt <strong>keinen</strong> Identitäts-, Eigentums- oder Berechtigungsnachweis des Verkäufers dar.
             </p>
           </div>

@@ -38,8 +38,8 @@ export default function HomePage() {
 
   const faqs = [
     {
-      q: 'Warum RFC 10023 statt klassischem Domainparking bei Sedo oder Afternic?',
-      a: 'Domainparking über externe Werbeseiten birgt handfeste Nachteile: Browser blockieren die Banner, Suchmaschinen strafen geparkte Adressen mit Deindexierung ab und bei einem Verkauf fallen 10 bis 15 Prozent Provision an. Mit RFC 10023 bleibt die Domain auf Ihren regulären Nameservern oder einer eigenen Webpräsenz erreichbar. Das Verkaufsangebot wird direkt im DNS signalisiert, lesbar für Registrare und Käufer ohne Zwischenhändler.'
+      q: 'Warum RFC 10023 statt klassischem Domainparking bei externen Werbediensten?',
+      a: 'Herkömmliches Domainparking ersetzt die eigentlichen Webseiten-Inhalte durch Werbelinks Dritter. Mit RFC 10023 verbleibt die Domain in der gewohnten DNS-Zone des Inhabers. Das Verkaufsinteresse wird als eigenständiger TXT-Record am Knotennamen _for-sale publiziert – maschinenlesbar für Registrare und direkte Interessenten, ohne dass die Hauptseite verändert werden muss.'
     },
     {
       q: 'Muss jede Tag-Angabe in einen separaten TXT-Eintrag?',

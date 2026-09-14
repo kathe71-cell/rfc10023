@@ -112,8 +112,8 @@ const translations: Record<Language, Record<string, string>> = {
     'faq.cat_technical': 'Technik & DNSSEC',
     'faq.cat_legal': 'Recht & Steuern',
     'faq.cat_hoster': 'Hoster & Registrars',
-    'faq.q1': 'Warum RFC 10023 statt klassischem Domainparking bei Sedo oder Afternic?',
-    'faq.a1': 'Domainparking über externe Werbeseiten birgt handfeste Nachteile: Browser blockieren die Banner, Suchmaschinen strafen geparkte Adressen mit Deindexierung ab und bei einem Verkauf fallen 10 bis 15 Prozent Provision an. Mit RFC 10023 bleibt die Domain auf Ihren regulären Nameservern oder einer eigenen Webpräsenz erreichbar. Das Verkaufsangebot wird direkt im DNS signalisiert, lesbar für Registrare und Käufer ohne Zwischenhändler.',
+    'faq.q1': 'Warum RFC 10023 statt klassischem Domainparking bei externen Werbediensten?',
+    'faq.a1': 'Herkömmliches Domainparking ersetzt die eigentlichen Webseiten-Inhalte durch Werbelinks Dritter. Mit RFC 10023 verbleibt die Domain in der gewohnten DNS-Zone des Inhabers. Das Verkaufsinteresse wird als eigenständiger TXT-Record am Knotennamen _for-sale publiziert – maschinenlesbar für Registrare und direkte Interessenten, ohne dass die Hauptseite verändert werden muss.',
     'faq.q2': 'Muss jede Tag-Angabe in einen separaten TXT-Eintrag?',
     'faq.a2': 'Nach RFC 10023 Abschnitt 2.1 lautet die Vorgabe der IETF: Jeder TXT-Eintrag enthält genau ein Tag-Wert-Paar (zum Beispiel Eintrag 1 mit "v=FORSALE1;fval=USD195000" und Eintrag 2 mit "v=FORSALE1;furi=https://..."). Unser Generator unterstützt sowohl dieses offizielle Verfahren als auch die einzeilige Variante für Nameserver mit einfacher Menüführung.',
     'faq.q3': 'Wie erkennen Registrare und Broker, dass eine Domain zum Verkauf steht?',
@@ -461,7 +461,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Citation Box
     'citation.title': 'Zitierhinweis für Fachmedien & Publikationen',
-    'citation.default_title': 'RFC 10023: Der IETF-Standard für Domain-Verkaufssignale im DNS',
+    'citation.default_title': 'RFC 10023: IETF Informational-Publikation für Domain-Verkaufssignale im DNS',
     'citation.val_title': 'RFC 10023 DNS Live-Validator & Inspektor',
     'citation.gen_title': 'RFC 10023 Record Generator & Multi-Format Exporter',
     'citation.copy': 'Zitierung kopieren',
@@ -569,8 +569,8 @@ const translations: Record<Language, Record<string, string>> = {
     'faq.cat_technical': 'Technical & DNSSEC',
     'faq.cat_legal': 'Legal & Taxes',
     'faq.cat_hoster': 'Hosters & Registrars',
-    'faq.q1': 'Why RFC 10023 instead of classic domain parking at Sedo or Afternic?',
-    'faq.a1': 'Classic parking pages carry significant disadvantages: ad blockers suppress banners, search engines penalize parked sites by deindexing them, and brokers charge 10% to 15% commissions. With RFC 10023, your domain stays on your regular nameservers or website. The sale signal is embedded right inside the DNS, accessible to registrars and buyers without intermediaries.',
+    'faq.q1': 'Why RFC 10023 instead of classic third-party domain parking?',
+    'faq.a1': 'Traditional domain parking substitutes original website content with third-party advertising links. With RFC 10023, your domain stays on your regular nameservers and existing web content remains intact. The sale intent is published as a dedicated TXT record at the _for-sale node, accessible to registrars and prospective buyers without altering your main website.',
     'faq.q2': 'Must each tag be placed in a separate TXT record?',
     'faq.a2': 'According to RFC 10023 Section 2.1, the IETF specification states that each TXT record should contain exactly one tag-value pair (e.g. record 1 with "v=FORSALE1;fval=USD195000" and record 2 with "v=FORSALE1;furi=https://..."). Our generator supports both this multi-line standard and a single-line fallback for limited DNS control panels.',
     'faq.q3': 'How do registrars and brokers discover that a domain is for sale?',
@@ -918,7 +918,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Citation Box
     'citation.title': 'Citation Reference for Publications & Media',
-    'citation.default_title': 'RFC 10023: The IETF Standard for Domain Sale Signals in the DNS',
+    'citation.default_title': 'RFC 10023: The IETF Informational Publication for Domain Sale Signals in the DNS',
     'citation.val_title': 'RFC 10023 DNS Live Validator & Inspector',
     'citation.gen_title': 'RFC 10023 Record Generator & Multi-Format Exporter',
     'citation.copy': 'Copy Citation',
