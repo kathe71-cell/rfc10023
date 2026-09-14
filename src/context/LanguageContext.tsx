@@ -84,12 +84,12 @@ const translations: Record<Language, Record<string, string>> = {
     'bento.row_commission_val': '0 % (beim Direktverkauf)',
     'bento.row_ns': 'Nameserver-Wechsel',
     'bento.row_ns_val': 'Nicht nötig',
-    'bento.row_deindex': 'Deindexierungsrisiko',
-    'bento.row_deindex_val': 'Keines',
+    'bento.row_deindex': 'Einfluss auf Webseiten-Inhalte',
+    'bento.row_deindex_val': 'Unabhängig (Webseite bleibt unverändert)',
     'bento.row_dnssec': 'DNSSEC-Signierung',
-    'bento.row_dnssec_val': 'Voll unterstützt',
+    'bento.row_dnssec_val': 'Voll kompatibel',
     'bento.row_machine': 'Maschinenlesbar',
-    'bento.row_machine_val': 'IETF RFC 10023',
+    'bento.row_machine_val': 'IETF RFC 10023 (Informational)',
     'bento.card2_note': '* Gilt für Direktverkäufe über den im DNS hinterlegten Kontaktlink.',
 
     'bento.card3_badge': 'Praxiseinsatz',
@@ -104,7 +104,7 @@ const translations: Record<Language, Record<string, string>> = {
     // FAQs
     'faq.badge': 'Fragen und Antworten',
     'faq.title': 'Häufige Fragen zu RFC 10023',
-    'faq.desc': 'Detaillierte Antworten auf die wichtigsten technischen, rechtlichen und praktischen Fragen zum IETF-Standard für Domain-Verkaufssignale im DNS.',
+    'faq.desc': 'Detaillierte Antworten auf die wichtigsten technischen, rechtlichen und praktischen Fragen zur IETF-Publikation RFC 10023 (Informational) für Domain-Verkaufssignale im DNS.',
     'faq.view_all': 'Alle Fragen & Antworten im FAQ-Hub →',
     'faq.search_placeholder': 'FAQ durchsuchen...',
     'faq.cat_all': 'Alle Themen',
@@ -276,10 +276,10 @@ const translations: Record<Language, Record<string, string>> = {
     'trust.standards_val': 'IETF RFC 10023 · RFC 1035 · RFC 8552 · W3C DoH (RFC 8484)',
     'trust.sources_label': 'Offizielle Primärquellen:',
     'trust.sources_val': 'IETF Datatracker, RFC Editor, SIDN (nl), DENIC eG, Cloudflare & Google Public DNS.',
-    'trust.methodology': 'Methodik & Transparenz: Sämtliche Validierungen erfolgen in Echtzeit ohne Zwischenspeicherung via DNS over HTTPS (DoH) direkt auf autoritativen Anycast-Resolvern. Alle Code-Exporte entsprechen den strengen Wire-Format-Grenzen (max. 255 Bytes je String nach RFC 1035).',
+    'trust.methodology': 'Methodik & Transparenz: Validierungen erfolgen clientseitig via DNS over HTTPS (DoH) über rekursive Anycast-Resolver (Cloudflare 1.1.1.1 / Google 8.8.8.8). DNS-Antworten unterliegen den vom jeweiligen Nameserver festgelegten TTL-Werten; kürzlich geänderte Einträge können daher zwischengespeichert sein. Alle Code-Exporte entsprechen den Wire-Format-Grenzen (max. 255 Bytes je String nach RFC 1035).',
 
     // Footer Links
-    'footer.claim': 'Das unabhängige DACH-Referenzportal und Entwickler-Toolkit zum IETF-Standard RFC 10023. Dezentrale, standardisierte Kennzeichnung von Domain-Verkaufsabsichten ohne proprietäre Plattform-Abhängigkeit.',
+    'footer.claim': 'Das unabhängige DACH-Referenzportal und Entwickler-Toolkit zur IETF-Publikation RFC 10023 (Informational). Dezentrale Kennzeichnung von Domain-Verkaufsabsichten im DNS ohne Plattform-Abhängigkeit.',
     'footer.disclaimer_title': 'Unabhängigkeitshinweis:',
     'footer.disclaimer': 'rfc10023.de ist ein freies Fach- und Informationsportal. Es besteht kein gesellschaftsrechtliches Verhältnis zur Internet Engineering Task Force (IETF) oder DENIC eG.',
     'footer.tools_title': 'Tools & Hub',
@@ -375,8 +375,8 @@ const translations: Record<Language, Record<string, string>> = {
     'badge.code_md_title': 'Markdown für GitHub oder Readme',
     'badge.copy_html': 'HTML kopieren',
     'badge.copy_md': 'Markdown kopieren',
-    'badge.benefit1_title': 'Echtheitsnachweis',
-    'badge.benefit1_desc': 'Interessenten sehen sofort, dass das Angebot direkt aus der maßgeblichen DNS-Zone des Inhabers stammt.',
+    'badge.benefit1_title': 'Direktlink zur DNS-Prüfung',
+    'badge.benefit1_desc': 'Interessenten können den im DNS hinterlegten Status mit einem Klick auf rfc10023.de unabhängig in Echtzeit nachprüfen.',
     'badge.benefit2_title': 'Provision sparen',
     'badge.benefit2_desc': 'Verlinken Sie direkt auf Ihr eigenes Kontaktformular oder einen Treuhanddienst wie Escrow.com und sparen Sie Vermittlungsgebühren.',
     'badge.benefit3_title': 'Datenschutzfreundlich',
@@ -541,12 +541,12 @@ const translations: Record<Language, Record<string, string>> = {
     'bento.row_commission_val': '0 % (on direct sales)',
     'bento.row_ns': 'Nameserver Switching',
     'bento.row_ns_val': 'Not required',
-    'bento.row_deindex': 'Search Engine Deindexing',
-    'bento.row_deindex_val': 'Zero risk',
+    'bento.row_deindex': 'Website Content Impact',
+    'bento.row_deindex_val': 'Independent (Website remains untouched)',
     'bento.row_dnssec': 'DNSSEC Signatures',
-    'bento.row_dnssec_val': 'Fully supported',
+    'bento.row_dnssec_val': 'Fully compatible',
     'bento.row_machine': 'Machine-Readable',
-    'bento.row_machine_val': 'IETF RFC 10023',
+    'bento.row_machine_val': 'IETF RFC 10023 (Informational)',
     'bento.card2_note': '* Applies to direct peer-to-peer transactions initiated through the DNS contact URI.',
 
     'bento.card3_badge': 'Production Deployment',
@@ -561,7 +561,7 @@ const translations: Record<Language, Record<string, string>> = {
     // FAQs
     'faq.badge': 'Frequently Asked Questions',
     'faq.title': 'Common Questions about RFC 10023',
-    'faq.desc': 'Detailed answers to the most critical technical, legal, and operational questions regarding the IETF standard for domain sale signals in the DNS.',
+    'faq.desc': 'Detailed answers to the most critical technical, legal, and operational questions regarding the IETF Informational publication RFC 10023 for domain sale signals in the DNS.',
     'faq.view_all': 'Explore all Questions in the FAQ Hub →',
     'faq.search_placeholder': 'Search FAQs...',
     'faq.cat_all': 'All Topics',
@@ -733,10 +733,10 @@ const translations: Record<Language, Record<string, string>> = {
     'trust.standards_val': 'IETF RFC 10023 · RFC 1035 · RFC 8552 · W3C DoH (RFC 8484)',
     'trust.sources_label': 'Official Primary Sources:',
     'trust.sources_val': 'IETF Datatracker, RFC Editor, SIDN (nl), DENIC eG, Cloudflare & Google Public DNS.',
-    'trust.methodology': 'Methodology & Transparency: All lookups execute in real time without caching via DNS over HTTPS (DoH) against authoritative anycast resolvers. All record builders enforce wire-format length constraints (max. 255 bytes per character-string per RFC 1035).',
+    'trust.methodology': 'Methodology & Transparency: Lookups execute client-side via DNS over HTTPS (DoH) using recursive anycast resolvers (Cloudflare 1.1.1.1 / Google 8.8.8.8). Responses reflect authoritative nameserver TTLs; recently modified records may be cached temporarily. All record builders enforce wire-format length constraints (max. 255 bytes per character-string per RFC 1035).',
 
     // Footer Links
-    'footer.claim': 'The independent reference portal and developer toolkit for the IETF standard RFC 10023. Decentralized, standardized signaling of domain sale intentions without proprietary platform lock-in.',
+    'footer.claim': 'The independent reference portal and developer toolkit for the IETF publication RFC 10023 (Informational). Decentralized signaling of domain sale intentions in the DNS without proprietary platform lock-in.',
     'footer.disclaimer_title': 'Independence Notice:',
     'footer.disclaimer': 'rfc10023.de is an independent educational and technical portal. There is no corporate affiliation with the Internet Engineering Task Force (IETF) or DENIC eG.',
     'footer.tools_title': 'Tools & Hub',
@@ -832,8 +832,8 @@ const translations: Record<Language, Record<string, string>> = {
     'badge.code_md_title': 'Markdown for GitHub or Readme',
     'badge.copy_html': 'Copy HTML',
     'badge.copy_md': 'Copy Markdown',
-    'badge.benefit1_title': 'Proof of Ownership',
-    'badge.benefit1_desc': 'Prospective buyers see immediately that the sale offer originates directly from the authoritative DNS zone.',
+    'badge.benefit1_title': 'Direct DNS Verification Link',
+    'badge.benefit1_desc': 'Prospective buyers can inspect and verify the DNS record independently on rfc10023.de with a single click.',
     'badge.benefit2_title': 'Zero Commissions',
     'badge.benefit2_desc': 'Link directly to your own contact form or an escrow service like Escrow.com and save 10-15% broker fees.',
     'badge.benefit3_title': 'Privacy-Friendly',
@@ -965,32 +965,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     document.documentElement.lang = language;
     const isEn = language === 'en';
-    const canonicalLink = document.querySelector('link[rel="canonical"]');
-    const ogUrl = document.querySelector('meta[property="og:url"]');
     const ogLocale = document.querySelector('meta[property="og:locale"]');
-    const twitterUrl = document.querySelector('meta[name="twitter:url"]');
-
-    if (isEn) {
-      document.title = 'RFC 10023 | The IETF Standard for Domain Sale Signals in the DNS';
-      const metaDesc = document.querySelector('meta[name="description"]');
-      if (metaDesc) {
-        metaDesc.setAttribute('content', 'Independent reference portal & developer toolkit for RFC 10023. Live DNS validator for _for-sale TXT records, builder & DNS provider matrix.');
-      }
-      if (canonicalLink) canonicalLink.setAttribute('href', 'https://www.rfc10023.de/en');
-      if (ogUrl) ogUrl.setAttribute('content', 'https://www.rfc10023.de/en');
-      if (ogLocale) ogLocale.setAttribute('content', 'en_US');
-      if (twitterUrl) twitterUrl.setAttribute('content', 'https://www.rfc10023.de/en');
-    } else {
-      document.title = 'RFC 10023 | Der IETF-Standard für Domain-Verkaufssignale im DNS';
-      const metaDesc = document.querySelector('meta[name="description"]');
-      if (metaDesc) {
-        metaDesc.setAttribute('content', 'Unabhängiges DACH-Referenzportal für RFC 10023. Live DNS-Validator für _for-sale TXT-Records, interaktiver Record-Generator & Hoster-Kompatibilitätsmatrix.');
-      }
-      if (canonicalLink) canonicalLink.setAttribute('href', 'https://www.rfc10023.de/');
-      if (ogUrl) ogUrl.setAttribute('content', 'https://www.rfc10023.de/');
-      if (ogLocale) ogLocale.setAttribute('content', 'de_DE');
-      if (twitterUrl) twitterUrl.setAttribute('content', 'https://www.rfc10023.de/');
-    }
+    if (ogLocale) ogLocale.setAttribute('content', isEn ? 'en_US' : 'de_DE');
   }, [language]);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);

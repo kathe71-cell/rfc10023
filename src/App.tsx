@@ -52,34 +52,48 @@ function RouteWatcher() {
     if (ogUrl) ogUrl.setAttribute('content', fullUrl);
     if (twitterUrl) twitterUrl.setAttribute('content', fullUrl);
 
-    // Page titles per route
+    const metaDesc = document.querySelector('meta[name="description"]');
+
+    // Page titles & meta descriptions per route
     if (isEn) {
       if (pathname.includes('/generator')) {
         document.title = 'RFC 10023 Record Generator | DNS for-sale RRset Builder';
+        if (metaDesc) metaDesc.setAttribute('content', 'Build specification-compliant RFC 10023 multi-record RRsets for Cloudflare, Hetzner, INWX, BIND and Terraform.');
       } else if (pathname.includes('/validator')) {
         document.title = 'RFC 10023 DNS Validator | Live _for-sale Inspection';
+        if (metaDesc) metaDesc.setAttribute('content', 'Inspect live _for-sale TXT records with DNS error taxonomy, DNSSEC AD-flag check and isolated mail routing diagnostics.');
       } else if (pathname.includes('/bulk-scan')) {
         document.title = 'RFC 10023 Bulk Portfolio Auditor | Multi-Domain Scan';
+        if (metaDesc) metaDesc.setAttribute('content', 'Audit multiple domain names simultaneously for RFC 10023 for-sale TXT records with throttled DoH requests.');
       } else if (pathname.includes('/dokumentation') || pathname.includes('/documentation')) {
         document.title = 'RFC 10023 Documentation & Specification Hub';
+        if (metaDesc) metaDesc.setAttribute('content', 'Comprehensive technical documentation for IETF RFC 10023 (Informational), hoster compatibility matrix and developer API.');
       } else if (pathname.includes('/badge')) {
         document.title = 'RFC 10023 Status Badge Generator';
+        if (metaDesc) metaDesc.setAttribute('content', 'Generate neutral DNS verification links and privacy-compliant HTML/CSS badges for domain sales pages.');
       } else {
-        document.title = 'RFC 10023 | The IETF Informational Publication for Domain Sale Signals';
+        document.title = 'RFC 10023 | Signal Domain Sales Directly in the DNS';
+        if (metaDesc) metaDesc.setAttribute('content', 'Independent reference portal & developer toolkit for IETF RFC 10023 (Informational). Live DNS validator and multi-record builder.');
       }
     } else {
       if (pathname.includes('/generator')) {
         document.title = 'RFC 10023 Generator | DNS-Verkaufseinträge erstellen';
+        if (metaDesc) metaDesc.setAttribute('content', 'Erstelle standardkonforme RFC 10023 Multi-Record RRsets für Cloudflare, Hetzner, INWX, Netcup, BIND und Terraform.');
       } else if (pathname.includes('/validator')) {
         document.title = 'RFC 10023 DNS-Validator | Live-Prüfung von _for-sale Einträgen';
+        if (metaDesc) metaDesc.setAttribute('content', 'Prüfe _for-sale TXT-Einträge live im DNS mit genauer Fehlerdifferenzierung, DNSSEC-Transparenz und E-Mail-Routing-Diagnose.');
       } else if (pathname.includes('/bulk-scan')) {
         document.title = 'RFC 10023 Portfolio-Prüfung | Massenabfrage';
+        if (metaDesc) metaDesc.setAttribute('content', 'Gleichzeitige Prüfung ganzer Domain-Portfolios auf RFC 10023 Verkaufssignale mit DoH-Ratenbegrenzung und CSV-Export.');
       } else if (pathname.includes('/dokumentation')) {
         document.title = 'RFC 10023 Dokumentation | Spezifikation & Leitfäden';
+        if (metaDesc) metaDesc.setAttribute('content', 'Zentrale Dokumentation zu IETF RFC 10023 (Informational): ABNF-Syntax, Anbieter-Konfigurationen, REST-API und Rechtsfragen.');
       } else if (pathname.includes('/badge')) {
         document.title = 'RFC 10023 Badge Generator | DNS-Verkaufsstatus einbinden';
+        if (metaDesc) metaDesc.setAttribute('content', 'Erstelle neutrale Prüf-Links und 100% datenschutzkonforme HTML/CSS-Badges für Domain-Verkaufsseiten.');
       } else {
         document.title = 'RFC 10023 | Zeige im DNS, dass deine Domain zum Verkauf steht';
+        if (metaDesc) metaDesc.setAttribute('content', 'Unabhängiges Referenz-Portal und Entwickler-Toolkit für IETF RFC 10023 (Informational). Live DNS-Validator und Record-Generator.');
       }
     }
   }, [location.pathname, language, setLanguage]);

@@ -239,7 +239,7 @@ export default function HomePage() {
             {t('def.text')}
           </p>
           <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-mono text-slate-500">
-            <span>IETF Standard &bull; ISSN: 2070-1721</span>
+            <span>IETF RFC 10023 (Informational) &bull; ISSN: 2070-1721</span>
             <Link to={language === 'en' ? '/en/specification' : '/spezifikation'} className="text-emerald-700 font-bold hover:underline">
               {t('def.spec_link')}
             </Link>
