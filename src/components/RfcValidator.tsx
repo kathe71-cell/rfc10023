@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
   CheckCircle2,
@@ -10,55 +10,41 @@ import {
   Terminal,
   ExternalLink,
   RefreshCw,
-  ShieldCheck,
   Server,
-  Sparkles,
-  Activity,
-  Cpu,
-  ChevronDown,
-  ChevronUp,
   Share2,
   FileCode,
-  Mail,
-  ShieldAlert,
-  Info
+  Info,
+  Cpu,
+  Trash2,
+  Clock,
+  Sparkles
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { cleanDomainInput, detectHosterFromNameservers, HosterProfile } from '../utils/dnsIntelligence';
-import { parseRfc10023Records, RfcTagItem } from '../utils/rfcParserEngine';
-import { performDomainAudit, DomainHealthAudit } from '../utils/dnsAuditEngine';
-import SocialShare from './SocialShare';
+import { parseRfc10023Records, RfcValidationReport, DnsQueryStatus } from '../utils/rfcParserEngine';
+import { performDomainDiagnostics, DomainDiagnosticsReport } from '../utils/dnsAuditEngine';
 
-interface TagItem {
-  tag: string;
-  value: string;
-  sourceRecordIndex: number;
+interface HistoryEntry {
+  domain: string;
+  dnsStatus: DnsQueryStatus;
+  saleSignalFound: boolean;
+  status: 'valid' | 'warning' | 'not_found' | 'nxdomain' | 'error';
+  timestamp: string;
 }
 
-interface ValidationResult {
+interface ValidationFullResult {
   domain: string;
   nodeName: string;
-  status: 'valid' | 'warning' | 'not_found' | 'error';
-  statusMessage: string;
-  architecture: 'ietf_multi' | 'single_line' | 'unknown';
-  architectureLabel: string;
-  dnssec: boolean;
-  rawTxt: string[];
-  tags: TagItem[];
-  parsedMap: Record<string, string>;
-  warnings: string[];
-  dnsProvider: string;
+  report: RfcValidationReport;
+  dnssecAdFlag: boolean;
   nameservers: string[];
+  hosterProfile: HosterProfile | null;
   detectedHoster: HosterProfile | null;
-  latencyMs: number;
-  queryFlags: {
-    ad: boolean;
-    ra: boolean;
-    rd: boolean;
-    cd: boolean;
-  };
+  resolver: string;
   ttl: number | null;
-  audit: DomainHealthAudit | null;
+  timestamp: string;
+  diagnostics: DomainDiagnosticsReport;
+  latencyMs: number;
 }
 
 interface RfcValidatorProps {
@@ -67,43 +53,58 @@ interface RfcValidatorProps {
   autoFocus?: boolean;
 }
 
+const LOCAL_STORAGE_KEY = 'rfc10023_recent_domains_v2';
+
 export default function RfcValidator({ initialDomain = '', embedded = false, autoFocus = false }: RfcValidatorProps) {
-  const { t, language } = useLanguage();
-  const langPrefix = language === 'en' ? '/en' : '';
+  const { language } = useLanguage();
+  const isEn = language === 'en';
+  const langPrefix = isEn ? '/en' : '';
   const [searchParams] = useSearchParams();
-  const urlDomain = searchParams.get('d') || searchParams.get('domain') || '';
-  const effectiveInitial = initialDomain || urlDomain;
+  const queryDomain = searchParams.get('d') || searchParams.get('domain') || '';
+  const effectiveInitial = cleanDomainInput(queryDomain || initialDomain);
 
   const [domainInput, setDomainInput] = useState(effectiveInitial);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<ValidationResult | null>(null);
+  const [result, setResult] = useState<ValidationFullResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [digCopied, setDigCopied] = useState(false);
   const [jsonCopied, setJsonCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
-  const [showRaw, setShowRaw] = useState(false);
-  const [showDevDetails, setShowDevDetails] = useState(false);
+  const [recentHistory, setRecentHistory] = useState<HistoryEntry[]>(() => {
+    try {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Autofocus only when explicitly requested
-  useEffect(() => {
-    if (autoFocus && inputRef.current && !effectiveInitial) {
-      inputRef.current.focus({ preventScroll: true });
+  const saveToHistory = (entry: HistoryEntry) => {
+    try {
+      setRecentHistory((prev) => {
+        const updated = [entry, ...prev.filter((h) => h.domain !== entry.domain)].slice(0, 5);
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+        return updated;
+      });
+    } catch {
+      // ignore
     }
-  }, [autoFocus, effectiveInitial]);
+  };
 
-  // Sync if URL search params or initialDomain change
-  useEffect(() => {
-    if (effectiveInitial && effectiveInitial !== domainInput) {
-      setDomainInput(effectiveInitial);
-      handleValidate(effectiveInitial);
+  const clearHistory = () => {
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+      setRecentHistory([]);
+    } catch {
+      // ignore
     }
-  }, [effectiveInitial]);
+  };
 
-  const handleValidate = async (targetDomain?: string) => {
+  const handleValidate = useCallback(async (targetDomain?: string) => {
     const d = cleanDomainInput(targetDomain || domainInput);
     if (!d || !d.includes('.')) {
-      alert(t('val.invalid_domain'));
+      alert(isEn ? 'Please enter a valid domain name (e.g. example.com).' : 'Bitte gib einen gültigen Domainnamen ein (z. B. beispieldomain.de).');
       return;
     }
 
@@ -113,12 +114,11 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
     const startTime = performance.now();
     const nodeName = `_for-sale.${d}`;
     let rawTxtRecords: string[] = [];
-    let isDnssec = false;
-    let providerUsed = 'Cloudflare 1.1.1.1 Anycast';
+    let resolverUsed = 'Cloudflare Anycast DoH (1.1.1.1)';
+    let dnsStatus: DnsQueryStatus = 'NOERROR';
     const nameservers: string[] = [];
     let detectedHoster: HosterProfile | null = null;
     let ttl: number | null = null;
-    let flags = { ad: false, ra: true, rd: true, cd: false };
 
     try {
       // 1. Fetch Authoritative Nameservers
@@ -139,159 +139,169 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
           }
         }
       } catch (e) {
-        console.warn('NS query failed', e);
+        console.warn('NS query notice', e);
       }
 
       // 2. Query Leaf Node TXT via Cloudflare DoH
-      const cfUrl = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(nodeName)}&type=TXT`;
-      const cfRes = await fetch(cfUrl, {
-        headers: { Accept: 'application/dns-json' },
-      });
+      let cfData: any = null;
+      try {
+        const cfRes = await fetch(
+          `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(nodeName)}&type=TXT`,
+          { headers: { Accept: 'application/dns-json' } }
+        );
+        if (cfRes.ok) {
+          cfData = await cfRes.json();
+        }
+      } catch {
+        // Fallback to Google
+      }
 
-      if (cfRes.ok) {
-        const data = await cfRes.json();
-        isDnssec = Boolean(data.AD);
-        flags = {
-          ad: Boolean(data.AD),
-          ra: Boolean(data.RA ?? true),
-          rd: Boolean(data.RD ?? true),
-          cd: Boolean(data.CD ?? false),
-        };
-        if (data.Answer && Array.isArray(data.Answer)) {
-          const txtAnswers = data.Answer.filter((a: { type: number }) => a.type === 16);
+      if (cfData) {
+        if (cfData.Status === 3) {
+          dnsStatus = 'NXDOMAIN';
+        } else if (cfData.Status === 2) {
+          dnsStatus = 'SERVFAIL';
+        } else if (cfData.Status === 0) {
+          dnsStatus = cfData.Answer && cfData.Answer.length > 0 ? 'NOERROR' : 'NODATA';
+        }
+
+        if (cfData.Answer && Array.isArray(cfData.Answer)) {
+          const txtAnswers = cfData.Answer.filter((a: { type: number }) => a.type === 16);
           if (txtAnswers.length > 0 && txtAnswers[0].TTL !== undefined) {
             ttl = txtAnswers[0].TTL;
           }
           rawTxtRecords = txtAnswers.map((a: { data: string }) => a.data.replace(/^"|"$/g, ''));
         }
-      }
-
-      // 3. Fallback to Google DoH if no records found
-      if (rawTxtRecords.length === 0) {
-        providerUsed = 'Google 8.8.8.8 Anycast';
-        const googleUrl = `https://dns.google/resolve?name=${encodeURIComponent(nodeName)}&type=TXT`;
-        const gRes = await fetch(googleUrl);
-        if (gRes.ok) {
-          const gData = await gRes.json();
-          if (gData.AD) isDnssec = true;
-          flags = {
-            ad: Boolean(gData.AD),
-            ra: Boolean(gData.RA ?? true),
-            rd: Boolean(gData.RD ?? true),
-            cd: Boolean(gData.CD ?? false),
-          };
-          if (gData.Answer && Array.isArray(gData.Answer)) {
-            const txtAnswers = gData.Answer.filter((a: { type: number }) => a.type === 16);
-            if (txtAnswers.length > 0 && txtAnswers[0].TTL !== undefined) {
-              ttl = txtAnswers[0].TTL;
+      } else {
+        // Fallback to Google DoH
+        resolverUsed = 'Google Public DNS (8.8.8.8)';
+        try {
+          const gRes = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(nodeName)}&type=TXT`);
+          if (gRes.ok) {
+            const gData = await gRes.json();
+            if (gData.Status === 3) {
+              dnsStatus = 'NXDOMAIN';
+            } else if (gData.Status === 2) {
+              dnsStatus = 'SERVFAIL';
+            } else if (gData.Status === 0) {
+              dnsStatus = gData.Answer && gData.Answer.length > 0 ? 'NOERROR' : 'NODATA';
             }
-            rawTxtRecords = txtAnswers.map((a: { data: string }) => a.data.replace(/^"|"$/g, ''));
+            if (gData.Answer && Array.isArray(gData.Answer)) {
+              const txtAnswers = gData.Answer.filter((a: { type: number }) => a.type === 16);
+              if (txtAnswers.length > 0 && txtAnswers[0].TTL !== undefined) {
+                ttl = txtAnswers[0].TTL;
+              }
+              rawTxtRecords = txtAnswers.map((a: { data: string }) => a.data.replace(/^"|"$/g, ''));
+            }
+          } else {
+            dnsStatus = 'ERROR';
           }
+        } catch {
+          dnsStatus = 'TIMEOUT';
         }
       }
 
       const latencyMs = Math.round(performance.now() - startTime);
 
-      // Determine RFC 10023 status
-      let interimStatus: 'valid' | 'warning' | 'not_found' | 'error' = 'not_found';
-      let parsedTags: TagItem[] = [];
-      let parsedMap: Record<string, string> = {};
-      let warnings: string[] = [];
-      let statusMessage = '';
-      let architecture: 'ietf_multi' | 'single_line' | 'unknown' = 'unknown';
-      let architectureLabel = language === 'en' ? 'No Record' : 'Kein Eintrag';
+      // 3. Parse and evaluate records using RFC 10023 engine
+      const report = parseRfc10023Records(rawTxtRecords, dnsStatus, isEn ? 'en' : 'de');
 
-      if (rawTxtRecords.length > 0) {
-        const report = parseRfc10023Records(rawTxtRecords, language === 'en' ? 'en' : 'de');
-        parsedTags = report.tags.map((t) => ({
-          tag: t.tag,
-          value: t.value,
-          sourceRecordIndex: t.sourceRecordIndex,
-        }));
-        parsedMap = report.parsedMap;
-        warnings = report.warnings;
-        interimStatus = report.status;
-        statusMessage = interimStatus === 'valid'
-          ? (language === 'en' ? 'Valid RFC 10023 sale offer discovered in DNS.' : 'Gültiges RFC 10023 Angebot im DNS gefunden.')
-          : (language === 'en' ? 'DNS record found, but exhibits deviations from the IETF standard.' : 'Eintrag im DNS gefunden, weicht aber teilweise vom Standard ab.');
-        architecture = report.architecture;
-        architectureLabel = report.architectureLabel;
-      } else {
-        statusMessage = language === 'en'
-          ? `No TXT record found under '${nodeName}'.`
-          : `Kein TXT-Eintrag unter '${nodeName}' gefunden.`;
-        warnings = language === 'en' ? [
-          'No resource record currently exists for this node in the global DNS.',
-          'Newly published records may take several minutes to propagate depending on authoritative nameserver TTLs.',
-        ] : [
-          'Im weltweiten DNS existiert derzeit kein Eintrag für diesen Knoten.',
-          'Neu angelegte DNS-Einträge können je nach Nameserver einige Minuten bis Stunden für die weltweite Verbreitung benötigen.',
-        ];
-      }
-
-      // 4. Run Multi-Vector Health & Email Routing Audit
-      let auditResult: DomainHealthAudit | null = null;
+      // 4. Run isolated diagnostics (Email & DNSSEC) in parallel
+      let diagResult: DomainDiagnosticsReport | null = null;
       try {
-        auditResult = await performDomainAudit(d, interimStatus, language === 'en' ? 'en' : 'de');
-      } catch (auditErr) {
-        console.warn('Audit engine failed', auditErr);
+        diagResult = await performDomainDiagnostics(d, isEn ? 'en' : 'de');
+      } catch (e) {
+        console.warn('Diagnostics notice', e);
       }
 
-      setResult({
+      const fullResult: ValidationFullResult = {
         domain: d,
         nodeName,
-        status: interimStatus,
-        statusMessage,
-        architecture,
-        architectureLabel,
-        dnssec: isDnssec,
-        rawTxt: rawTxtRecords,
-        tags: parsedTags,
-        parsedMap,
-        warnings,
-        dnsProvider: providerUsed,
-        nameservers,
+        report,
+        dnssecAdFlag: Boolean(cfData?.AD),
+        diagnostics: diagResult ?? {
+          domain: d,
+          timestamp: new Date().toISOString(),
+          resolver: resolverUsed,
+          items: [],
+          mxRecords: [],
+          hasNullMx: false,
+          hasFallbackA: false,
+          aRecords: [],
+          aaaaRecords: [],
+          spfRecord: null,
+          dmarcRecord: null,
+          dnssecAdFlag: false,
+          dnssecMessage: '',
+        },
+        hosterProfile: detectedHoster,
         detectedHoster,
-        latencyMs,
-        queryFlags: flags,
+        nameservers,
+        resolver: resolverUsed,
         ttl,
-        audit: auditResult,
+        timestamp: new Date().toISOString(),
+        latencyMs,
+      };
+
+      setResult(fullResult);
+
+      saveToHistory({
+        domain: d,
+        dnsStatus: report.dnsStatus,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: report.status,
+        saleSignalFound: report.saleSignalFound,
       });
-    } catch (err) {
+    } catch {
       const latencyMs = Math.round(performance.now() - startTime);
+      const report = parseRfc10023Records([], 'ERROR', isEn ? 'en' : 'de');
       setResult({
         domain: d,
         nodeName,
-        status: 'error',
-        statusMessage: language === 'en' ? 'Query failed (Network timeout or DNS resolution error).' : 'Abfrage fehlgeschlagen (Netzwerk- oder DNS-Zeitüberschreitung).',
-        architecture: 'unknown',
-        architectureLabel: language === 'en' ? 'Error' : 'Fehler',
-        dnssec: false,
-        rawTxt: [],
-        tags: [],
-        parsedMap: {},
-        warnings: [String(err)],
-        dnsProvider: providerUsed,
-        nameservers: [],
+        report,
+        dnssecAdFlag: false,
+        diagnostics: {
+          domain: d,
+          timestamp: new Date().toISOString(),
+          resolver: resolverUsed,
+          items: [],
+          mxRecords: [],
+          hasNullMx: false,
+          hasFallbackA: false,
+          aRecords: [],
+          aaaaRecords: [],
+          spfRecord: null,
+          dmarcRecord: null,
+          dnssecAdFlag: false,
+          dnssecMessage: '',
+        },
+        hosterProfile: null,
         detectedHoster: null,
-        latencyMs,
-        queryFlags: flags,
+        nameservers: [],
+        resolver: resolverUsed,
         ttl: null,
-        audit: null,
+        timestamp: new Date().toISOString(),
+        latencyMs,
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [domainInput, isEn]);
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  useEffect(() => {
+    if (autoFocus && inputRef.current && !effectiveInitial) {
+      inputRef.current.focus({ preventScroll: true });
+    }
+  }, [autoFocus, effectiveInitial]);
+
+  useEffect(() => {
+    if (effectiveInitial) {
+      handleValidate(effectiveInitial);
+    }
+  }, [effectiveInitial, handleValidate]);
 
   const copyDigCommand = (targetDomain?: string) => {
-    const d = cleanDomainInput(targetDomain || domainInput || t('val.placeholder'));
+    const d = cleanDomainInput(targetDomain || domainInput || 'example.com');
     const cmd = `dig TXT _for-sale.${d} +short`;
     navigator.clipboard.writeText(cmd);
     setDigCopied(true);
@@ -300,18 +310,37 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
 
   const copyJsonResult = () => {
     if (!result) return;
-    const jsonStr = JSON.stringify(result, null, 2);
-    navigator.clipboard.writeText(jsonStr);
+    navigator.clipboard.writeText(JSON.stringify(result, null, 2));
     setJsonCopied(true);
     setTimeout(() => setJsonCopied(false), 2000);
   };
 
   const copyShareLink = () => {
     if (!result) return;
-    const shareUrl = `https://www.rfc10023.de${langPrefix}/validator?d=${encodeURIComponent(result.domain)}`;
+    const shareUrl = `${window.location.origin}${langPrefix}/validator?d=${encodeURIComponent(result.domain)}`;
     navigator.clipboard.writeText(shareUrl);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  // Safe URI Link rendering
+  const renderSafeUri = (uri: string) => {
+    const clean = uri.trim();
+    const isSafeScheme = clean.startsWith('https://') || clean.startsWith('http://') || clean.startsWith('mailto:') || clean.startsWith('tel:');
+    if (!isSafeScheme) {
+      return <span className="font-mono text-slate-800 break-all select-all">{clean}</span>;
+    }
+    return (
+      <a
+        href={clean}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-900 underline font-mono text-xs break-all"
+      >
+        <span>{clean}</span>
+        <ExternalLink className="w-3 h-3 shrink-0" />
+      </a>
+    );
   };
 
   return (
@@ -323,20 +352,20 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
-              {t('val.badge')}
+              {isEn ? 'RFC 10023 Validator' : 'RFC 10023 Validator'}
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            {t('val.title')}
+            {isEn ? 'Inspect DNS For-Sale Status' : 'DNS-Verkaufseintrag prüfen'}
           </h2>
         </div>
-        <div className="flex items-center gap-2 text-xs font-mono text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+        <div className="flex items-center gap-2 text-xs font-mono text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
           <Terminal className="w-3.5 h-3.5 text-emerald-600" />
-          <span>{t('val.node_prefix')}</span>
+          <span>Knoten: _for-sale.[domain]</span>
         </div>
       </div>
 
-      {/* Input */}
+      {/* Form Input */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -345,7 +374,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
         className="space-y-4"
       >
         <div className="relative flex items-center">
-          <div className="absolute left-4 text-slate-400 font-mono text-sm pointer-events-none select-none">
+          <div className="absolute left-4 text-slate-400 font-mono text-sm pointer-events-none select-none hidden sm:block">
             _for-sale.
           </div>
           <input
@@ -359,8 +388,8 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
                 setResult(null);
               }
             }}
-            placeholder={t('val.placeholder')}
-            className="w-full pl-24 pr-28 sm:pr-40 py-3.5 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white focus:outline-none rounded-xl text-slate-900 font-mono text-base transition-all"
+            placeholder={isEn ? 'e.g. example.com or forsaledns.net' : 'z. B. beispieldomain.de oder forsaledns.net'}
+            className="w-full pl-4 sm:pl-24 pr-28 sm:pr-40 py-3.5 bg-slate-50 border border-slate-200 focus:border-slate-900 focus:bg-white focus:outline-none rounded-xl text-slate-900 font-mono text-sm sm:text-base transition-all"
           />
           <button
             type="submit"
@@ -370,12 +399,11 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
             {loading ? (
               <>
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span className="hidden sm:inline">{t('val.btn_checking')}</span>
+                <span className="hidden sm:inline">Prüfe...</span>
               </>
             ) : (
               <>
-                <span>{t('val.btn_check')}</span>
-                <span className="hidden sm:inline text-[10px] text-slate-400 font-normal">↵</span>
+                <span>Prüfen</span>
                 <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
               </>
             )}
@@ -385,8 +413,8 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
         {/* Quick test buttons & CLI dig shortcut */}
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-slate-400">{t('val.examples')}</span>
-            {['forsaledns.net', 'meinedomain.de'].map((example) => (
+            <span className="font-mono text-slate-400">Beispiele:</span>
+            {['forsaledns.net', 'beispieldomain.de'].map((example) => (
               <button
                 key={example}
                 type="button"
@@ -405,29 +433,65 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
             <button
               type="button"
               onClick={() => copyDigCommand()}
-              title={t('val.dig_title')}
               className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono text-[11px] font-semibold flex items-center gap-1.5 transition-colors border border-slate-200"
             >
               <Terminal className="w-3 h-3 text-emerald-600" />
-              <span>{digCopied ? t('val.dig_copied') : t('val.dig_btn')}</span>
+              <span>{digCopied ? 'Kopiert!' : 'dig Befehl'}</span>
             </button>
-            <span className="hidden md:inline-block text-[10px] text-slate-400 font-mono">
-              {t('val.esc_hint')}
-            </span>
           </div>
         </div>
       </form>
 
-      {/* Results */}
+      {/* Local Storage History */}
+      {recentHistory.length > 0 && !result && (
+        <div className="mt-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-mono font-bold text-slate-700 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-slate-500" />
+              <span>Zuletzt geprüfte Domains (nur lokal im Browser gespeichert):</span>
+            </span>
+            <button
+              type="button"
+              onClick={clearHistory}
+              className="text-[11px] font-mono text-slate-500 hover:text-rose-600 flex items-center gap-1 transition-colors"
+              title="Lokalen Verlauf löschen"
+            >
+              <Trash2 className="w-3 h-3" />
+              <span>Historie leeren</span>
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {recentHistory.map((item) => (
+              <button
+                key={item.domain}
+                type="button"
+                onClick={() => {
+                  setDomainInput(item.domain);
+                  handleValidate(item.domain);
+                }}
+                className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-slate-400 text-xs font-mono flex items-center gap-2 transition-all shadow-2xs"
+              >
+                <span className={`w-2 h-2 rounded-full ${item.saleSignalFound ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
+                <span className="font-bold text-slate-800">{item.domain}</span>
+                <span className="text-[10px] text-slate-400">({item.timestamp})</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Validation Results */}
       {result && (
         <div className="mt-8 pt-6 border-t border-slate-100 space-y-6">
           
-          {/* Action Toolbar (Share link, Copy JSON, Copy dig) */}
+          {/* Action Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-700">{result.domain}</span>
+              <span className="font-bold text-slate-800">{result.domain}</span>
               <span className="text-slate-400">•</span>
               <span className="text-slate-500">{result.latencyMs} ms</span>
+              <span className="text-slate-400">•</span>
+              <span className="text-slate-500">{result.resolver}</span>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -436,7 +500,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
                 className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-100 transition-colors flex items-center gap-1.5 shadow-2xs"
               >
                 {linkCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5 text-slate-500" />}
-                <span>{linkCopied ? t('val.audit_link_copied') : t('val.audit_share_link')}</span>
+                <span>{linkCopied ? 'Kopiert!' : 'Link'}</span>
               </button>
               <button
                 type="button"
@@ -444,385 +508,247 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
                 className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 font-semibold hover:bg-slate-100 transition-colors flex items-center gap-1.5 shadow-2xs"
               >
                 {jsonCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <FileCode className="w-3.5 h-3.5 text-slate-500" />}
-                <span>{jsonCopied ? t('val.audit_json_copied') : t('val.audit_copy_json')}</span>
+                <span>{jsonCopied ? 'Kopiert!' : 'JSON'}</span>
               </button>
             </div>
           </div>
 
-          {/* Domain Audit & Readiness Hero Index */}
-          {result.audit && (
-            <div className={`p-5 sm:p-6 rounded-2xl border ${
-              result.audit.rating === 'optimal'
-                ? 'bg-emerald-50/50 border-emerald-200'
-                : result.audit.rating === 'critical'
-                ? 'bg-rose-50/50 border-rose-200'
-                : result.audit.rating === 'good'
-                ? 'bg-slate-50 border-slate-200'
-                : 'bg-amber-50/50 border-amber-200'
-            }`}>
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                
-                {/* Score Dial / Badge Indicator */}
-                <div className="flex items-center gap-4 sm:gap-5">
-                  <div className="relative flex items-center justify-center shrink-0 w-20 h-20 rounded-2xl bg-white border border-slate-200 shadow-xs">
-                    <svg className="w-18 h-18 -rotate-90 transform" viewBox="0 0 36 36">
-                      <path
-                        className="text-slate-100"
-                        strokeWidth="3.5"
-                        stroke="currentColor"
-                        fill="none"
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
-                      <path
-                        className={
-                          result.audit.score >= 80
-                            ? 'text-emerald-500 transition-all duration-1000 ease-out'
-                            : result.audit.score >= 50
-                            ? 'text-amber-500 transition-all duration-1000 ease-out'
-                            : 'text-rose-500 transition-all duration-1000 ease-out'
-                        }
-                        strokeDasharray={`${result.audit.score}, 100`}
-                        strokeWidth="3.5"
-                        strokeLinecap="round"
-                        stroke="currentColor"
-                        fill="none"
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
-                    </svg>
-                    <div className="absolute flex flex-col items-center justify-center text-center">
-                      <span className="text-xl font-black font-mono text-slate-900 leading-none">
-                        {result.audit.score}
-                      </span>
-                      <span className="text-[9px] font-mono text-slate-400 font-bold uppercase mt-0.5">
-                        / 100
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white border border-slate-200 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-700 shadow-2xs mb-1.5">
-                      <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                      <span>{t('val.audit_score_label')}</span>
-                    </div>
-                    <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                      {result.audit.ratingLabel}
-                    </h3>
-                    <p className="text-xs text-slate-600 mt-1 max-w-xl leading-relaxed">
-                      {result.audit.summary}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Primary Action Button */}
-                <div className="shrink-0 flex items-center gap-2">
-                  <Link
-                    to={`${langPrefix}/generator?domain=${encodeURIComponent(result.domain)}`}
-                    className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-mono font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
-                  >
-                    <Sparkles className="w-4 h-4 text-emerald-400" />
-                    <span>{language === 'en' ? 'Optimize Record' : 'Record anpassen'}</span>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Multi-Vector Assessment Checklist */}
-              <div className="mt-6 pt-5 border-t border-slate-200/80 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {result.audit.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-1.5"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-mono font-bold text-slate-500 uppercase truncate">
-                        {item.label}
-                      </span>
-                      {item.status === 'pass' && (
-                        <span className="shrink-0 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 font-mono font-bold text-[10px] flex items-center gap-1">
-                          <Check className="w-3 h-3 text-emerald-700" /> OK
-                        </span>
-                      )}
-                      {item.status === 'warn' && (
-                        <span className="shrink-0 px-2 py-0.5 rounded-md bg-amber-100 text-amber-950 font-mono font-bold text-[10px] flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3 text-amber-700" /> Notice
-                        </span>
-                      )}
-                      {item.status === 'fail' && (
-                        <span className="shrink-0 px-2 py-0.5 rounded-md bg-rose-100 text-rose-950 font-mono font-bold text-[10px] flex items-center gap-1 animate-pulse">
-                          <ShieldAlert className="w-3 h-3 text-rose-700" /> Risk
-                        </span>
-                      )}
-                      {item.status === 'info' && (
-                        <span className="shrink-0 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono font-bold text-[10px] flex items-center gap-1">
-                          <Info className="w-3 h-3 text-slate-500" /> Info
-                        </span>
-                      )}
-                    </div>
-                    <div className="font-mono text-xs font-black text-slate-900 truncate">
-                      {item.value}
-                    </div>
-                    <p className="text-[11px] text-slate-600 leading-normal">
-                      {item.summary}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-            </div>
-          )}
-
-          {/* Status Alert */}
-          <div className={`p-4 sm:p-5 rounded-xl border flex items-start sm:items-center justify-between gap-4 ${
-            result.status === 'valid'
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
-              : result.status === 'warning'
-              ? 'bg-amber-50 border-amber-200 text-amber-950'
-              : result.status === 'not_found'
-              ? 'bg-slate-100 border-slate-200 text-slate-800'
-              : 'bg-rose-50 border-rose-200 text-rose-950'
+          {/* 1. Primary Status Banner */}
+          <div className={`p-5 rounded-2xl border ${
+            result.report.saleSignalFound
+              ? result.report.status === 'valid'
+                ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950'
+                : 'bg-amber-50/80 border-amber-300 text-amber-950'
+              : result.report.dnsStatus === 'NXDOMAIN'
+                ? 'bg-rose-50/80 border-rose-300 text-rose-950'
+                : result.report.dnsStatus === 'SERVFAIL' || result.report.dnsStatus === 'TIMEOUT' || result.report.dnsStatus === 'ERROR'
+                  ? 'bg-amber-50/80 border-amber-300 text-amber-950'
+                  : 'bg-slate-100 border-slate-300 text-slate-900'
           }`}>
-            <div className="flex items-start gap-3">
-              {result.status === 'valid' && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />}
-              {result.status === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />}
-              {result.status === 'not_found' && <XCircle className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" />}
-              {result.status === 'error' && <XCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />}
-              <div>
-                <h4 className="font-extrabold text-sm sm:text-base">{result.statusMessage}</h4>
-                <div className="flex flex-wrap items-center gap-3 text-xs font-mono opacity-80 mt-1">
-                  <span>Resolver: {result.dnsProvider}</span>
-                  {result.dnssec && (
-                    <span className="text-emerald-700 font-bold flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5" /> {t('val.dnssec_confirmed')}
-                    </span>
-                  )}
-                  <span>{t('val.architecture_label')} {result.architectureLabel}</span>
-                </div>
-              </div>
-            </div>
-
-            {result.rawTxt.length > 0 && (
-              <button
-                type="button"
-                onClick={() => copyToClipboard(result.rawTxt.join('\n'))}
-                className="shrink-0 p-2 rounded-lg bg-white border border-slate-200 text-xs font-mono font-semibold flex items-center gap-1.5 shadow-2xs hover:bg-slate-50"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">{copied ? t('val.record_copied') : t('val.copy_record')}</span>
-              </button>
-            )}
-          </div>
-
-          {/* Hoster Info Banner */}
-          {result.detectedHoster ? (
-            <div className="p-4 rounded-xl bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
-                  <Server className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
-                    {t('val.detected_hoster')}
-                  </div>
-                  <div className="text-sm font-bold font-mono text-emerald-400">
-                    {result.detectedHoster.name}
-                  </div>
-                  <div className="text-xs text-slate-300 mt-0.5">
-                    {result.detectedHoster.instructions}
-                  </div>
-                </div>
-              </div>
-              <Link
-                to={`${langPrefix}/generator?domain=${encodeURIComponent(result.domain)}`}
-                className="shrink-0 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{t('val.create_for_hoster')}</span>
-              </Link>
-            </div>
-          ) : result.nameservers.length > 0 ? (
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-600 flex flex-wrap items-center gap-2">
-              <span className="font-bold text-slate-800">Nameserver:</span>
-              {result.nameservers.map((ns, idx) => (
-                <span key={idx} className="bg-white px-2 py-0.5 rounded border border-slate-200">
-                  {ns}
-                </span>
-              ))}
-            </div>
-          ) : null}
-
-          {/* Parsed Tag Cards */}
-          {result.status !== 'not_found' && result.status !== 'error' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-[11px] font-mono uppercase font-bold text-slate-500 block mb-1">
-                  Version (<code className="text-slate-800 font-bold">v</code>)
-                </span>
-                <span className="font-mono text-sm font-black text-slate-900">
-                  {result.parsedMap.v || 'FORSALE1'}
-                </span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-[11px] font-mono uppercase font-bold text-slate-500 block mb-1">
-                  {t('val.price_label')} (<code className="text-emerald-700 font-bold">fval</code>)
-                </span>
-                <span className="font-mono text-sm font-black text-emerald-700">
-                  {result.parsedMap.fval || t('val.price_empty')}
-                </span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 sm:col-span-2">
-                <span className="text-[11px] font-mono uppercase font-bold text-slate-500 block mb-1">
-                  {t('val.contact_label')} (<code className="text-emerald-700 font-bold">furi</code>)
-                </span>
-                {result.parsedMap.furi ? (
-                  <a
-                    href={result.parsedMap.furi}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-xs text-blue-600 hover:underline flex items-center gap-1 truncate"
-                  >
-                    <span className="truncate">{result.parsedMap.furi}</span>
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                  </a>
+            <div className="flex items-start gap-3.5">
+              <div className="shrink-0 mt-0.5">
+                {result.report.saleSignalFound ? (
+                  result.report.status === 'valid' ? (
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                  ) : (
+                    <AlertTriangle className="w-6 h-6 text-amber-600" />
+                  )
+                ) : result.report.dnsStatus === 'NXDOMAIN' ? (
+                  <XCircle className="w-6 h-6 text-rose-600" />
+                ) : result.report.dnsStatus === 'SERVFAIL' || result.report.dnsStatus === 'TIMEOUT' ? (
+                  <AlertTriangle className="w-6 h-6 text-amber-600" />
                 ) : (
-                  <span className="font-mono text-xs text-slate-400">{t('val.contact_empty')}</span>
+                  <Info className="w-6 h-6 text-slate-500" />
                 )}
               </div>
-
-              {result.parsedMap.ftxt && (
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 sm:col-span-2 lg:col-span-4">
-                  <span className="text-[11px] font-mono uppercase font-bold text-slate-500 block mb-1">
-                    {t('val.note_label')} (<code className="text-slate-800 font-bold">ftxt</code>)
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-black tracking-tight">
+                    {result.report.saleSignalFound
+                      ? 'Verkaufssignal im DNS aktiv (v=FORSALE1;)'
+                      : result.report.dnsStatus === 'NXDOMAIN'
+                        ? 'Domain existiert nicht im DNS (NXDOMAIN)'
+                        : result.report.dnsStatus === 'SERVFAIL' || result.report.dnsStatus === 'TIMEOUT'
+                          ? `DNS-Serverfehler (${result.report.dnsStatus})`
+                          : 'Kein Verkaufseintrag im DNS hinterlegt'}
+                  </h3>
+                  <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-white/70 border border-current/20">
+                    {result.report.architectureLabel}
                   </span>
-                  <p className="text-xs text-slate-800 font-mono italic">
-                    &bdquo;{result.parsedMap.ftxt}&ldquo;
-                  </p>
                 </div>
-              )}
+                <p className="text-xs sm:text-sm opacity-90 leading-relaxed font-sans">
+                  {result.report.statusMessage}
+                </p>
+                <div className="text-[11px] font-mono opacity-80 pt-1">
+                  DNS-Abfragestatus: <strong>{result.report.dnsStatus}</strong> | Abgefragter Host: <strong>{result.nodeName}</strong> {result.ttl ? `| TTL: ${result.ttl}s` : ''}
+                </div>
+              </div>
+            </div>
+          </div>
 
+          {/* 2. Detected RFC 10023 Tags */}
+          {result.report.saleSignalFound && (
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
+              <div className="px-5 py-3 bg-slate-50 border-b border-slate-200 font-mono text-xs font-bold text-slate-700 flex items-center justify-between">
+                <span>Extrahierte RFC 10023 Datenfelder:</span>
+                <span className="text-slate-400 font-normal">{result.report.tags.length} Content-Tags</span>
+              </div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* fval */}
+                <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
+                    Kaufpreis (fval)
+                  </span>
+                  {result.report.parsedMap.fval ? (
+                    <span className="text-base font-mono font-bold text-slate-950">
+                      {result.report.parsedMap.fval}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-mono text-slate-400 italic">Nicht angegeben (z. B. Verhandlungsbasis)</span>
+                  )}
+                  <p className="text-[11px] text-slate-500">Unverbindliche Richtpreisangabe nach RFC 10023 § 2.2.4.</p>
+                </div>
+
+                {/* furi */}
+                <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
+                    Kontakt / Marktplatz (furi)
+                  </span>
+                  {result.report.parsedMap.furi ? (
+                    <div>{renderSafeUri(result.report.parsedMap.furi)}</div>
+                  ) : (
+                    <span className="text-xs font-mono text-slate-400 italic">Keine URI angegeben</span>
+                  )}
+                  <p className="text-[11px] text-slate-500">Klickbare URI für Verhandlungen (RFC 3986).</p>
+                </div>
+
+                {/* ftxt */}
+                <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
+                    Freitext / Konditionen (ftxt)
+                  </span>
+                  {result.report.parsedMap.ftxt ? (
+                    <span className="text-xs font-mono text-slate-900 block break-words">
+                      {result.report.parsedMap.ftxt}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-mono text-slate-400 italic">Keine Notiz hinterlegt</span>
+                  )}
+                  <p className="text-[11px] text-slate-500">Zusätzliche menschlesbare Verkaufsbedingungen.</p>
+                </div>
+
+                {/* fcod */}
+                <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 block">
+                    Registrar-Systemcode (fcod)
+                  </span>
+                  {result.report.parsedMap.fcod ? (
+                    <span className="text-xs font-mono text-slate-900 font-bold block break-all">
+                      {result.report.parsedMap.fcod}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-mono text-slate-400 italic">Kein Systemcode vorhanden</span>
+                  )}
+                  <p className="text-[11px] text-slate-500">Maschinenlesbarer Vermittlungscode nach RFC 10023 § 2.2.1.</p>
+                </div>
+
+              </div>
             </div>
           )}
 
-          {/* Warnings */}
-          {result.warnings.length > 0 && (
-            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1.5">
-              <strong className="block font-bold text-amber-950 font-mono">{t('val.warnings_title')}</strong>
-              <ul className="list-disc list-inside space-y-1">
-                {result.warnings.map((w, idx) => (
+          {/* 3. Warnings / Deviations Notice */}
+          {result.report.warnings.length > 0 && (
+            <div className="p-4 rounded-xl bg-amber-50/90 border border-amber-200 text-xs font-mono text-amber-950 space-y-1.5">
+              <div className="flex items-center gap-2 font-bold text-amber-900">
+                <AlertTriangle className="w-4 h-4 text-amber-700" />
+                <span>Format- und Syntaxhinweise:</span>
+              </div>
+              <ul className="list-disc pl-5 space-y-1 text-amber-900">
+                {result.report.warnings.map((w, idx) => (
                   <li key={idx}>{w}</li>
                 ))}
               </ul>
             </div>
           )}
 
-          {/* Raw RRset & Dev Inspector */}
-          <div className="space-y-3 pt-2">
-            
-            <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
-              {result.rawTxt.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowRaw(!showRaw)}
-                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center gap-1.5 transition-colors"
-                >
-                  <span>{showRaw ? t('val.raw_hide') : t('val.raw_show')}</span>
-                </button>
-              )}
-
+          {/* 4. Raw Wire DNS Records */}
+          <div className="bg-slate-950 rounded-xl border border-slate-800 p-4 font-mono text-xs text-slate-300 space-y-2">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-[11px] text-slate-400">
+              <span>Rohdaten aus dem DNS-Zonendatei-Antwortsatz (RRset):</span>
               <button
                 type="button"
-                onClick={() => setShowDevDetails(!showDevDetails)}
-                className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center gap-1.5 transition-colors"
+                onClick={() => {
+                  navigator.clipboard.writeText(result.report.rawRecords.join('\n'));
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="hover:text-white flex items-center gap-1"
               >
-                <Activity className="w-3.5 h-3.5 text-emerald-600" />
-                <span>{showDevDetails ? t('val.inspector_hide') : `${t('val.inspector_show')} (${result.latencyMs} ms)`}</span>
-                {showDevDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => copyDigCommand(result.domain)}
-                className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center gap-1.5 transition-colors ml-auto"
-              >
-                <Terminal className="w-3.5 h-3.5 text-emerald-600" />
-                <span>{digCopied ? t('val.dig_copied') : t('val.dig_btn')}</span>
+                {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                <span>{copied ? 'Kopiert!' : 'TXT kopieren'}</span>
               </button>
             </div>
-
-            {/* Collapsible Dev Details */}
-            {showDevDetails && (
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-mono text-xs space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2 text-[11px] text-slate-400 uppercase tracking-wider">
-                  <span className="flex items-center gap-1.5">
-                    <Cpu className="w-3.5 h-3.5 text-emerald-400" />
-                    DoH Query Inspector & Response Metrics
-                  </span>
-                  <span className="text-emerald-400 font-bold">{result.latencyMs} ms RTT</span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
-                  <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
-                    <span className="text-slate-500 block text-[10px]">Resolver:</span>
-                    <span className="text-emerald-400 font-bold truncate block">{result.dnsProvider}</span>
-                  </div>
-                  <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
-                    <span className="text-slate-500 block text-[10px]">DNSSEC (AD Flag):</span>
-                    <span className={result.queryFlags.ad ? 'text-emerald-400 font-bold' : 'text-slate-400'}>
-                      {result.queryFlags.ad ? t('val.dnssec_valid') : t('val.dnssec_unsigned')}
-                    </span>
-                  </div>
-                  <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
-                    <span className="text-slate-500 block text-[10px]">Flags (RD / RA):</span>
-                    <span className="text-slate-300 font-bold">
-                      RD={result.queryFlags.rd ? '1' : '0'} RA={result.queryFlags.ra ? '1' : '0'}
-                    </span>
-                  </div>
-                  <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
-                    <span className="text-slate-500 block text-[10px]">Record TTL:</span>
-                    <span className="text-slate-300 font-bold">
-                      {result.ttl !== null ? `${result.ttl} ${t('val.seconds')}` : 'n/a'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="pt-2 text-[11px] text-slate-400 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-slate-800/60">
-                  <span className="text-slate-400">Terminal Quick-Check:</span>
-                  <code className="bg-slate-900 px-2 py-1 rounded text-emerald-300 select-all overflow-x-auto">
-                    dig TXT {result.nodeName} +short
-                  </code>
-                </div>
-              </div>
-            )}
-
-            {/* Raw TXT Box */}
-            {showRaw && result.rawTxt.length > 0 && (
-              <div className="p-3.5 rounded-xl bg-slate-950 text-emerald-300 font-mono text-xs space-y-1 overflow-x-auto">
-                <div className="text-[10px] text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-800 mb-2">
-                  {t('val.raw_title')} ({result.rawTxt.length} Records)
-                </div>
-                {result.rawTxt.map((txt, idx) => (
-                  <div key={idx} className="flex gap-2">
-                    <span className="text-slate-500 select-none">[{idx + 1}]</span>
-                    <span className="text-emerald-400">&quot;{txt}&quot;</span>
+            {result.report.rawRecords.length > 0 ? (
+              <div className="space-y-1 text-emerald-300">
+                {result.report.rawRecords.map((r, idx) => (
+                  <div key={idx} className="p-2 rounded bg-slate-900/80 border border-slate-800 break-all select-all">
+                    "{r}"
                   </div>
                 ))}
               </div>
+            ) : (
+              <div className="text-slate-500 italic py-2">Keine TXT-Einträge auf diesem Knotennamen empfangen.</div>
             )}
           </div>
 
-          {/* Social Share Result */}
-          <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3.5 rounded-xl">
-            <span className="text-xs text-slate-600 font-mono">
-              {t('val.share_title')} <strong>{result.domain}</strong> {t('val.share_end')}
-            </span>
-            <SocialShare
-              url={`https://www.rfc10023.de${langPrefix}/validator?d=${encodeURIComponent(result.domain)}`}
-              title={language === 'en' 
-                ? `RFC 10023 Verification Report for ${result.domain} – DNS status: ${result.status === 'valid' ? 'Valid' : 'Audited'}`
-                : `RFC 10023 Prüfbericht für ${result.domain} – DNS-Status: ${result.status === 'valid' ? 'Valide hinterlegt' : 'Geprüft'}`}
-            />
+          {/* 5. Direct Action Links */}
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <Link
+              to={`${langPrefix}/generator?d=${encodeURIComponent(result.domain)}`}
+              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-mono font-bold text-xs flex items-center gap-2 transition-all shadow-sm"
+            >
+              <Cpu className="w-3.5 h-3.5" />
+              <span>Diesen Eintrag im Generator anpassen / korrigieren</span>
+            </Link>
+
+            <Link
+              to={`${langPrefix}/badge-generator?d=${encodeURIComponent(result.domain)}`}
+              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono font-semibold text-xs flex items-center gap-2 transition-colors border border-slate-200"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Badge für {result.domain} erstellen</span>
+            </Link>
           </div>
+
+          {/* 6. Isolated DNS & Mail Diagnostics (No Fake Scores) */}
+          {result.diagnostics && (
+            <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
+                <div className="space-y-0.5">
+                  <h4 className="text-sm font-bold text-slate-900 font-mono flex items-center gap-2">
+                    <Server className="w-4 h-4 text-slate-600" />
+                    <span>Optionale DNS- &amp; Maildiagnose</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Rein informativ dargestellt – hat keinen Einfluss auf die Gültigkeit des RFC 10023 Verkaufs-Signals.
+                  </p>
+                </div>
+                <span className="text-[11px] font-mono text-slate-600 bg-white px-2.5 py-1 rounded border border-slate-200">
+                  DNSSEC: {result.diagnostics.dnssecAdFlag ? 'AD-Bit gesetzt' : 'AD-Bit nicht verifiziert'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-xs">
+                {result.diagnostics.items.map((diag) => (
+                  <div key={diag.id} className="p-3 bg-white rounded-lg border border-slate-200 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-800">{diag.label}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                        diag.status === 'notice' ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-700'
+                      }`}>
+                        {diag.value}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 font-sans">{diag.summary}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 7. Technical Transparency Box */}
+          <div className="p-4 rounded-xl bg-slate-100 border border-slate-200 text-[11px] font-mono text-slate-600 space-y-1">
+            <div className="font-bold text-slate-700">Audit-Transparenz &amp; Cache-Hinweis:</div>
+            <div>Prüfzeitpunkt: {new Date(result.timestamp).toLocaleString()} (Lokal)</div>
+            <div>Verwendeter Anycast-Resolver: {result.resolver}</div>
+            <div>Hoster-Heuristik: {result.detectedHoster ? result.detectedHoster.name : 'Individuell / Eigene Nameserver'}</div>
+            {result.nameservers.length > 0 && <div>Autoritative Nameserver: {result.nameservers.join(', ')}</div>}
+            <div className="text-slate-500 pt-1">
+              * DNS-Einträge unterliegen TTL-Caching. Kürzlich geänderte Einträge können je nach Resolver einige Minuten bis Stunden Zwischenspeicherung aufweisen.
+            </div>
+          </div>
+
         </div>
       )}
 

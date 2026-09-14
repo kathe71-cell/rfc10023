@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Copy, Check, Share2, Layers, AlertCircle, AlertTriangle, CheckCircle2, Sliders, Info, ShieldAlert, Terminal, Code2 } from 'lucide-react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { Copy, Check, Share2, AlertCircle, CheckCircle2, ShieldAlert, ArrowRight, ExternalLink } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { calculateUtf8ByteLength, cleanDomainInput } from '../utils/dnsIntelligence';
 
@@ -10,23 +10,22 @@ interface RfcGeneratorProps {
 
 export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
   const { t, language } = useLanguage();
+  const langPrefix = language === 'en' ? '/en' : '';
   const [searchParams] = useSearchParams();
   const urlDomain = searchParams.get('domain') || searchParams.get('d') || '';
+  const urlHoster = searchParams.get('hoster') || '';
 
-  const defaultDomain = t('gen.default_domain');
-  const defaultFtxt = t('gen.default_ftxt');
+  const defaultDomain = language === 'en' ? 'example.com' : 'beispieldomain.de';
 
   const [domain, setDomain] = useState(urlDomain);
   const [currency, setCurrency] = useState(language === 'en' ? 'USD' : 'EUR');
   const [amount, setAmount] = useState('2500');
   const [isVhb, setIsVhb] = useState(false);
   const [furi, setFuri] = useState('');
-  const [ftxt, setFtxt] = useState(defaultFtxt);
-  const [hasUserEditedFtxt, setHasUserEditedFtxt] = useState(false);
+  const [ftxt, setFtxt] = useState(''); // Default is strictly empty per RFC 10023 instructions
   const [fcod, setFcod] = useState('');
   const [ttl, setTtl] = useState('3600');
-  const [recordFormat, setRecordFormat] = useState<'multi' | 'single'>('multi');
-  const [activeTab, setActiveTab] = useState<'bind' | 'cloudflare' | 'hetzner' | 'inwx' | 'terraform' | 'dnscontrol' | 'cli'>('bind');
+  const [activeTab, setActiveTab] = useState<'bind' | 'cloudflare' | 'hetzner' | 'inwx' | 'netcup' | 'terraform' | 'cli'>('bind');
   const [copied, setCopied] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
 
@@ -36,26 +35,28 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
     }
   }, [urlDomain]);
 
-  // Update default ftxt when language changes if user hasn't typed their own text
   useEffect(() => {
-    if (!hasUserEditedFtxt) {
-      setFtxt(t('gen.default_ftxt'));
+    if (urlHoster && ['bind', 'cloudflare', 'hetzner', 'inwx', 'netcup', 'terraform', 'cli'].includes(urlHoster)) {
+      setActiveTab(urlHoster as any);
     }
-  }, [language, hasUserEditedFtxt, t]);
+  }, [urlHoster]);
 
   // Clean domain name
   const cleanDomain = cleanDomainInput(domain) || defaultDomain;
 
-  // Sanitize numeric amount
+  // Sanitize numeric amount (allow decimal dot)
   const cleanAmount = amount.replace(',', '.').replace(/[^0-9.]/g, '');
 
-  // Build the tags
+  // Sanitize text inputs against newlines / DNS injection
+  const sanitizeText = (val: string) => val.replace(/[\r\n]+/g, ' ').replace(/"/g, '\\"').trim();
+
+  // Build the tags (RFC 10023 ABNF)
   const buildTags = () => {
     const tags: { key: string; val: string }[] = [];
 
-    // fval: Asking price. If VHB, omit fval and place note in ftxt
+    // fval: Asking price. If VHB, fval is omitted as VHB is not valid RFC 10023 ABNF
     if (!isVhb && cleanAmount) {
-      tags.push({ key: 'fval', val: `${currency}${cleanAmount}` });
+      tags.push({ key: 'fval', val: `${currency.toUpperCase()}${cleanAmount}` });
     }
 
     if (furi.trim()) {
@@ -63,19 +64,19 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
     }
 
     if (isVhb) {
-      const note = ftxt.trim();
-      const vhbTag = t('gen.vhb_tag');
-      if (note && !note.toLowerCase().includes('vhb') && !note.toLowerCase().includes('verhandlung') && !note.toLowerCase().includes('obo') && !note.toLowerCase().includes('negotiable')) {
-        tags.push({ key: 'ftxt', val: `${note} (${language === 'en' ? 'OBO' : 'VHB'})` });
+      const note = sanitizeText(ftxt);
+      const vhbNote = language === 'en' ? 'Negotiable (OBO)' : 'Verhandlungsbasis (VHB)';
+      if (note) {
+        tags.push({ key: 'ftxt', val: `${note} (${vhbNote})` });
       } else {
-        tags.push({ key: 'ftxt', val: note || vhbTag });
+        tags.push({ key: 'ftxt', val: vhbNote });
       }
     } else if (ftxt.trim()) {
-      tags.push({ key: 'ftxt', val: ftxt.trim() });
+      tags.push({ key: 'ftxt', val: sanitizeText(ftxt) });
     }
 
     if (fcod.trim()) {
-      tags.push({ key: 'fcod', val: fcod.trim() });
+      tags.push({ key: 'fcod', val: sanitizeText(fcod) });
     }
 
     return tags;
@@ -83,17 +84,12 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
 
   const tags = buildTags();
 
-  // Generate records
+  // Standard compliant Multi-Record RRset: Each TXT record contains exactly ONE tag-value pair
   const getRecordStrings = (): string[] => {
-    if (recordFormat === 'multi') {
-      if (tags.length === 0) {
-        return ['v=FORSALE1;'];
-      }
-      return tags.map((t) => `v=FORSALE1;${t.key}=${t.val}`);
-    } else {
-      const joined = tags.map((t) => `${t.key}=${t.val}`).join('; ');
-      return [`v=FORSALE1; ${joined}`];
+    if (tags.length === 0) {
+      return ['v=FORSALE1;'];
     }
+    return tags.map((t) => `v=FORSALE1;${t.key}=${t.val}`);
   };
 
   const recordStrings = getRecordStrings();
@@ -108,70 +104,74 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
     switch (activeTab) {
       case 'bind':
         return [
-          `${t('gen.comment_bind_zone')} ${cleanDomain}`,
-          `${t('gen.comment_bind_node')}${cleanDomain}. ${t('gen.comment_bind_type')}`,
-          ...recordStrings.map((rec) => `_for-sale.${cleanDomain}. ${ttl} IN TXT "${rec}"`),
+          `; RFC 10023 Zonefile für ${cleanDomain}`,
+          `; Knotennamen: _for-sale.${cleanDomain}. | Typ: TXT | TTL: ${ttl}`,
+          ...recordStrings.map((rec) => `_for-sale.${cleanDomain}. ${ttl} IN TXT "${rec.replace(/"/g, '\\"')}"`),
         ].join('\n');
 
       case 'cloudflare':
         return [
-          t('gen.comment_cf_dash'),
-          t('gen.comment_cf_hint'),
+          `# Cloudflare Dashboard (DNS -> Records -> Add Record)`,
+          `# Hinweis: Content genau wie angegeben ohne äußere Anführungszeichen einfügen`,
           ``,
           ...recordStrings.map((rec, idx) => 
-            `[${t('gen.entry_label')} #${idx + 1}]\n${t('gen.type_label')}:     TXT\n${t('gen.name_label')}:    _for-sale\nTTL:     Auto\n${t('gen.content_label')}:  ${rec}\n`
+            `[Record #${idx + 1}]\nType:    TXT\nName:    _for-sale\nTTL:     Auto\nContent: ${rec}\n`
           ),
         ].join('\n');
 
       case 'hetzner':
         return [
-          t('gen.comment_hetzner_dash'),
-          t('gen.comment_hetzner_hint'),
+          `# Hetzner DNS Console (dns.hetzner.com)`,
+          `# Hetzner unterstützt führende Unterstriche (RFC 8552) uneingeschränkt`,
           ``,
           ...recordStrings.map((rec, idx) => 
-            `[${t('gen.entry_label')} #${idx + 1}]\n${t('gen.type_label')}:   TXT\n${t('gen.name_label')}:  _for-sale\nTTL:   ${ttl}\n${t('gen.value_label')}:  ${rec}\n`
+            `[Eintrag #${idx + 1}]\nTyp:   TXT\nName:  _for-sale\nTTL:   ${ttl}\nWert:  ${rec}\n`
           ),
         ].join('\n');
 
       case 'inwx':
         return [
-          t('gen.comment_inwx_dash'),
+          `# INWX Domain-Center (Tab: DNS-Einträge)`,
+          `# Mehrzeiliges RRset im INWX Domain-Center anlegen`,
+          ``,
           ...recordStrings.map((rec, idx) => 
-            `[${t('gen.entry_label')} ${idx + 1}] ${t('gen.name_label')}: _for-sale | ${t('gen.type_label')}: TXT | ${t('gen.value_label')}: ${rec} | TTL: ${ttl}`
+            `[Eintrag #${idx + 1}]\nTyp:  TXT\nName: _for-sale\nTTL:  ${ttl}\nWert: ${rec}\n`
+          ),
+        ].join('\n');
+
+      case 'netcup':
+        return [
+          `# Netcup CCP (Customer Control Panel -> DNS)`,
+          `# Netcup akzeptiert Unterstriche für TXT-Records ohne Warnung`,
+          ``,
+          ...recordStrings.map((rec, idx) => 
+            `[Eintrag #${idx + 1}]\nHost:        _for-sale\nType:        TXT\nDestination: ${rec}\n`
           ),
         ].join('\n');
 
       case 'terraform':
         return [
-          t('gen.comment_tf_def'),
+          `# Terraform HCL (Cloudflare / DNS Provider)`,
           ...recordStrings.map((rec, idx) => 
 `resource "cloudflare_record" "forsale_${idx + 1}" {
   zone_id = var.cloudflare_zone_id
   name    = "_for-sale"
   type    = "TXT"
-  content = "${rec}"
-  ttl     = 3600
+  content = "${rec.replace(/"/g, '\\"')}"
+  ttl     = ${ttl}
 }`
           ),
         ].join('\n\n');
 
-      case 'dnscontrol':
-        return [
-          `// DNSControl (dnsconfig.js)`,
-          `D("${cleanDomain}", REGISTRAR, DnsProvider(PROVIDER),`,
-          ...recordStrings.map((rec) => `  TXT("_for-sale", "${rec}", TTL(3600)),`),
-          `);`
-        ].join('\n');
-
       case 'cli':
         return [
-          t('gen.comment_cli_dig'),
+          `# 1. DNS-Einträge abfragen (nach Hinterlegung)`,
           `dig TXT _for-sale.${cleanDomain} +short`,
           ``,
-          t('gen.comment_cli_doh'),
+          `# 2. DNS-over-HTTPS (DoH) JSON-Abfrage`,
           `curl -sH "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?name=_for-sale.${cleanDomain}&type=TXT"`,
           ``,
-          t('gen.comment_cli_api'),
+          `# 3. RFC10023.de API-Validator`,
           `curl -s "https://www.rfc10023.de/api/lookup?d=${cleanDomain}"`,
         ].join('\n');
 
@@ -187,8 +187,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
   };
 
   const copyShareLink = () => {
-    const langPrefix = language === 'en' ? '/en' : '';
-    const url = `${window.location.origin}${langPrefix}/validator?d=${encodeURIComponent(cleanDomain)}`;
+    const url = `${window.location.origin}${langPrefix}/validator?d=${encodeURIComponent(cleanDomain)}&hoster=${activeTab}`;
     navigator.clipboard.writeText(url);
     setShareCopied(true);
     setTimeout(() => setShareCopied(false), 2000);
@@ -203,40 +202,39 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
-              {t('gen.badge')}
+              {language === 'en' ? 'RFC 10023 Generator' : 'RFC 10023 Generator'}
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            {t('gen.title')}
+            {language === 'en' ? 'Generate DNS For-Sale TXT Records' : 'DNS-Verkaufseinträge erstellen'}
           </h2>
         </div>
-        <div className="flex items-center gap-2 text-xs font-mono text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
-          <CheckCircle2 className="w-3.5 h-3.5" />
-          <span>{t('gen.rfc_conform')}</span>
+        <div className="flex items-center gap-2 text-xs font-mono text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+          <span>{language === 'en' ? 'IETF RFC 10023 Compliant' : 'IETF RFC 10023 Konform'}</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* Left Col: Config Inputs */}
         <div className="lg:col-span-7 space-y-5">
           
-          {/* Domain Input */}
+          {/* Domain Input - Clean, collision-free layout */}
           <div>
             <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              {t('gen.step1')}
+              {language === 'en' ? '1. Domain Name' : '1. Domainname'}
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={domain}
-                onChange={(e) => setDomain(e.target.value)}
-                placeholder={defaultDomain}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
-              />
-              <span className="absolute right-3 top-2.5 text-xs font-mono text-slate-400 select-none">
-                {t('gen.node_label')}{cleanDomain}
-              </span>
+            <input
+              type="text"
+              value={domain}
+              onChange={(e) => setDomain(e.target.value)}
+              placeholder={defaultDomain}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900 transition-colors"
+            />
+            <div className="mt-1.5 flex items-center justify-between text-xs font-mono text-slate-500">
+              <span>{language === 'en' ? 'DNS Leaf Node:' : 'DNS-Knoten:'} <strong className="text-slate-800">_for-sale.{cleanDomain}</strong></span>
+              <span className="text-[11px] text-slate-400">RFC 8552 Underscore</span>
             </div>
           </div>
 
@@ -244,7 +242,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
-                {t('gen.step2')}
+                {language === 'en' ? '2. Price (fval)' : '2. Kaufpreis (fval)'}
               </label>
               <label className="flex items-center gap-2 cursor-pointer text-xs font-mono text-slate-700 font-medium">
                 <input
@@ -253,7 +251,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                   onChange={(e) => setIsVhb(e.target.checked)}
                   className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
                 />
-                <span>{t('gen.vhb')}</span>
+                <span>{language === 'en' ? 'Negotiable (OBO)' : 'Verhandlungsbasis (VHB)'}</span>
               </label>
             </div>
 
@@ -269,6 +267,8 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                     <option value="USD">USD ($)</option>
                     <option value="CHF">CHF (CHF)</option>
                     <option value="GBP">GBP (£)</option>
+                    <option value="BTC">BTC (₿)</option>
+                    <option value="ETH">ETH (Ξ)</option>
                   </select>
                 </div>
                 <div className="col-span-2">
@@ -283,125 +283,132 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               </div>
             ) : (
               <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-mono text-emerald-900">
-                ✓ {t('gen.vhb_note')}
+                ✓ {language === 'en' 
+                    ? 'Negotiable: fval is omitted (RFC 10023 ABNF requires numeric amount). Note is stored in ftxt.' 
+                    : 'Verhandlungsbasis: fval wird weggelassen (RFC 10023 ABNF verlangt Zahlenwert). Vermerk erfolgt in ftxt.'}
               </div>
             )}
+            <p className="text-[11px] text-slate-500 leading-normal">
+              {language === 'en'
+                ? 'RFC 10023 Section 2.2.4: Price is indicative and non-binding. Conforms to currency + amount syntax.'
+                : 'RFC 10023 § 2.2.4: Preisangabe ist unverbindlich. Format: Währung + Betrag (z. B. EUR2500).'}
+            </p>
           </div>
 
-          {/* Contact URI */}
+          {/* Contact URI (furi) */}
           <div>
             <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              {t('gen.step3')}
+              {language === 'en' ? '3. Contact or Marketplace URI (furi)' : '3. Kontakt- oder Marktplatz-Link (furi)'}
             </label>
             <input
               type="text"
               value={furi}
               onChange={(e) => setFuri(e.target.value)}
-              placeholder={t('gen.furi_placeholder')}
+              placeholder="https://dan.com/buy-domain/example.com oder mailto:kontakt@..."
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
             />
             <span className="text-[11px] text-slate-500 mt-1 block">
-              {t('gen.step3_hint')}
+              {language === 'en'
+                ? 'Recommended schemes: https://, http://, mailto:, tel:'
+                : 'Empfohlene Schemata nach RFC 10023: https://, http://, mailto:, tel:'}
             </span>
           </div>
 
-          {/* Free Text Note */}
+          {/* Optional Note (ftxt) - Default EMPTY per guidelines */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
-                {t('gen.step4')}
+                {language === 'en' ? '4. Optional Note (ftxt)' : '4. Optionale Notiz (ftxt)'}
               </label>
               <span className="text-[11px] font-mono text-slate-400">
-                {calculateUtf8ByteLength(ftxt)} Bytes
+                {calculateUtf8ByteLength(ftxt)} / 239 Bytes
               </span>
             </div>
             <input
               type="text"
               value={ftxt}
-              onChange={(e) => {
-                setFtxt(e.target.value);
-                setHasUserEditedFtxt(true);
-              }}
-              placeholder={t('gen.ftxt_placeholder')}
+              onChange={(e) => setFtxt(e.target.value)}
+              placeholder={language === 'en' ? 'e.g. Escrow transfer available, direct sale (leave empty if not needed)' : 'z. B. Treuhandservice möglich, Direktverkauf (leer lassen falls nicht benötigt)'}
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
             />
+            <span className="text-[11px] text-slate-500 mt-1 block">
+              {language === 'en'
+                ? 'Standard default is empty. Example text is only an illustration and not exported automatically.'
+                : 'Standardmäßig leer. Beispieltexte dienen nur zur Veranschaulichung und werden nicht ungefragt exportiert.'}
+            </span>
           </div>
 
-          {/* Format Switcher */}
-          <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
-            
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold text-slate-600">{t('gen.format')}</span>
-              <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 text-xs font-mono">
-                <button
-                  type="button"
-                  onClick={() => setRecordFormat('multi')}
-                  className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
-                    recordFormat === 'multi'
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {t('gen.format_multi')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRecordFormat('single')}
-                  className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
-                    recordFormat === 'single'
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {t('gen.format_single')}
-                </button>
-              </div>
-            </div>
-
-            {/* TTL */}
-            <div className="flex items-center gap-2 text-xs font-mono">
-              <span className="font-bold text-slate-600">TTL:</span>
-              <select
-                value={ttl}
-                onChange={(e) => setTtl(e.target.value)}
-                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-md focus:outline-none"
-              >
-                <option value="300">300 s (5 min)</option>
-                <option value="3600">3600 s (1 h)</option>
-                <option value="86400">86400 s (24 h)</option>
-              </select>
-            </div>
-
+          {/* Optional System Code (fcod) */}
+          <div>
+            <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              {language === 'en' ? '5. Optional System Code (fcod)' : '5. Optionaler Registrar-Systemcode (fcod)'}
+            </label>
+            <input
+              type="text"
+              value={fcod}
+              onChange={(e) => setFcod(e.target.value)}
+              placeholder="z. B. EXCO-S2lscm95IHdhcyBoZXJl"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
+            />
+            <span className="text-[11px] text-slate-500 mt-1 block">
+              {language === 'en'
+                ? 'RFC 10023 § 2.2.1: Machine code negotiated between cooperating registrars/brokers.'
+                : 'RFC 10023 § 2.2.1: Spezifischer Code für kooperierende Registrare oder Broker.'}
+            </span>
           </div>
 
-          {/* Single-Line RFC Notice */}
-          {recordFormat === 'single' && (
-            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200/90 text-xs font-mono text-amber-950 flex items-start gap-2.5">
-              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-              <div className="leading-relaxed">
-                <span className="font-bold block mb-0.5">RFC 10023 § 2.1 Konformitäts-Hinweis:</span>
-                <p className="text-[11px] text-amber-900 font-sans">{t('gen.format_single_warn')}</p>
-              </div>
-            </div>
-          )}
+          {/* TTL Selection */}
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-mono">
+            <span className="font-bold text-slate-600">Empfohlene TTL:</span>
+            <select
+              value={ttl}
+              onChange={(e) => setTtl(e.target.value)}
+              className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-md focus:outline-none font-mono"
+            >
+              <option value="300">300 s (5 min – empfohlen für Verkaufs-Records)</option>
+              <option value="3600">3600 s (1 h – Standard-Hosting)</option>
+              <option value="86400">86400 s (24 h)</option>
+            </select>
+          </div>
 
           {/* Byte Limit Guard */}
           {exceeds255Limit ? (
             <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs font-mono text-rose-900 flex items-start gap-2.5">
               <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
               <div>
-                <strong>{t('gen.byte_warn_title')} ({maxBytes} Bytes)!</strong>
+                <strong>Limit überschritten ({maxBytes} Bytes)!</strong>
                 <p className="mt-0.5 opacity-90">
-                  {t('gen.byte_warn_text')}
+                  Ein DNS-TXT-String darf gemäß RFC 1035 maximal 255 Oktette enthalten. Bitte kürzen.
                 </p>
               </div>
             </div>
           ) : (
             <div className="text-[11px] font-mono text-slate-500 flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>{t('gen.size_label')} {maxBytes} / 255 {t('gen.size_rfc')}</span>
+              <span>Max. RDATA-Länge: {maxBytes} / 255 Oktette (RFC 1035 konform)</span>
             </div>
           )}
+
+          {/* Important Installation Notice */}
+          <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-950 space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold font-mono text-amber-900">
+              <AlertCircle className="w-4 h-4 text-amber-700" />
+              <span>Wichtiger Hinweis zur Aktivierung:</span>
+            </div>
+            <p className="leading-relaxed">
+              Das Kopieren dieser Einträge generiert lediglich die DNS-Syntax. Der Eintrag wird erst aktiv, 
+              wenn du ihn im Zoneneditor deines Registrars/DNS-Hosters als TXT-Eintrag hinterlegst.
+            </p>
+            <div className="pt-2">
+              <Link
+                to={`${langPrefix}/validator?d=${encodeURIComponent(cleanDomain)}&hoster=${activeTab}`}
+                className="inline-flex items-center gap-1.5 font-mono font-bold text-xs text-emerald-800 hover:text-emerald-950 underline underline-offset-4"
+              >
+                <span>Nach dem Speichern: Eintrag für {cleanDomain} im Validator prüfen</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
 
         </div>
 
@@ -413,19 +420,19 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
             {/* Tabs Header */}
             <div className="flex flex-wrap items-center gap-1 pb-3 mb-3 border-b border-slate-800 text-[11px]">
               {[
-                { id: 'bind', label: t('gen.tab_zonefile') },
-                { id: 'cloudflare', label: t('gen.tab_cf') },
-                { id: 'hetzner', label: t('gen.tab_hetzner') },
-                { id: 'inwx', label: t('gen.tab_inwx') },
-                { id: 'terraform', label: t('gen.tab_tf') },
-                { id: 'dnscontrol', label: t('gen.tab_dnscontrol') },
-                { id: 'cli', label: t('gen.tab_cli') },
+                { id: 'bind', label: 'BIND Zonefile' },
+                { id: 'cloudflare', label: 'Cloudflare' },
+                { id: 'hetzner', label: 'Hetzner' },
+                { id: 'inwx', label: 'INWX' },
+                { id: 'netcup', label: 'Netcup' },
+                { id: 'terraform', label: 'Terraform' },
+                { id: 'cli', label: 'CLI / dig' },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-2 py-1 rounded transition-colors ${
+                  className={`px-2.5 py-1 rounded transition-colors ${
                     activeTab === tab.id
                       ? 'bg-slate-800 text-emerald-400 font-bold'
                       : 'text-slate-400 hover:text-white hover:bg-slate-900'
@@ -437,31 +444,31 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
             </div>
 
             {/* Code Output */}
-            <pre className="overflow-x-auto flex-grow text-emerald-300 whitespace-pre leading-relaxed select-all">
+            <pre className="overflow-x-auto flex-grow text-emerald-300 whitespace-pre leading-relaxed select-all font-mono text-xs p-2 bg-slate-900/60 rounded-lg border border-slate-800/80">
               <code>{getExportCode()}</code>
             </pre>
 
             {/* Bottom Actions inside code card */}
             <div className="pt-3 mt-3 border-t border-slate-800 flex items-center justify-between">
-              <span className="text-[10px] text-slate-500">
-                {recordStrings.length} {recordStrings.length === 1 ? 'Record' : 'Records'}
+              <span className="text-[10px] text-slate-400">
+                {recordStrings.length} {recordStrings.length === 1 ? 'TXT-Eintrag' : 'TXT-Einträge (Multi-Record RRset)'}
               </span>
               <button
                 type="button"
                 onClick={copyExport}
-                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm"
+                className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5 text-white" />}
-                <span>{copied ? t('gen.copied') : t('gen.copy_code')}</span>
+                <span>{copied ? 'Kopiert!' : 'Werte kopieren'}</span>
               </button>
             </div>
 
           </div>
 
-          {/* Share Link */}
+          {/* Share / Verification Link */}
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
             <span className="text-xs font-mono text-slate-600 truncate">
-              {t('gen.share_label')} rfc10023.de{language === 'en' ? '/en' : ''}/validator?d={cleanDomain}
+              Link zum Prüfen: rfc10023.de{langPrefix}/validator?d={cleanDomain}
             </span>
             <button
               type="button"
@@ -469,7 +476,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               className="shrink-0 px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-200 text-xs font-mono font-medium flex items-center gap-1 text-slate-800"
             >
               {shareCopied ? <Check className="w-3 h-3 text-emerald-600" /> : <Share2 className="w-3 h-3 text-slate-500" />}
-              <span>{shareCopied ? t('gen.copied') : t('gen.share_link')}</span>
+              <span>{shareCopied ? 'Kopiert!' : 'Link kopieren'}</span>
             </button>
           </div>
 

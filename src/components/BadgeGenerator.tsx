@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, ShieldCheck, Sparkles, ExternalLink, Code2 } from 'lucide-react';
+import { Copy, Check, ShieldCheck, Sparkles, ExternalLink, Code2, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 interface BadgeGeneratorProps {
@@ -8,11 +8,11 @@ interface BadgeGeneratorProps {
 
 export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: BadgeGeneratorProps) {
   const { t, language } = useLanguage();
-  const langPrefix = language === 'en' ? '/en' : '';
-  const [domain, setDomain] = useState(initialDomain === 'deinedomain.de' && language === 'en' ? 'yourdomain.com' : initialDomain);
+  const isEn = language === 'en';
+  const langPrefix = isEn ? '/en' : '';
+  const [domain, setDomain] = useState(initialDomain === 'deinedomain.de' && isEn ? 'yourdomain.com' : initialDomain);
   const [theme, setTheme] = useState<'dark' | 'light' | 'emerald'>('dark');
-  const [showPrice, setShowPrice] = useState(true);
-  const [priceText, setPriceText] = useState(language === 'en' ? '$2,500' : '2.500 €');
+  const [badgeText, setBadgeText] = useState(isEn ? 'Verify DNS For-Sale Record' : 'DNS-Verkaufseintrag prüfen');
   const [copiedHtml, setCopiedHtml] = useState(false);
   const [copiedMd, setCopiedMd] = useState(false);
 
@@ -22,10 +22,11 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
     .replace(/^https?:\/\//, '')
     .replace(/^www\./, '')
     .replace(/^_for-sale\./, '')
-    .split('/')[0] || (language === 'en' ? 'yourdomain.com' : 'deinedomain.de');
+    .split('/')[0] || (isEn ? 'yourdomain.com' : 'deinedomain.de');
 
   const lookupUrl = `https://www.rfc10023.de${langPrefix}/validator?d=${encodeURIComponent(clean)}`;
 
+  // Safe, self-contained HTML/CSS Badge (Zero external requests)
   const badgeHtml = `<a href="${lookupUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:8px; padding:6px 12px; background:${
     theme === 'dark' ? '#0f172a' : theme === 'emerald' ? '#065f46' : '#ffffff'
   }; color:${
@@ -34,11 +35,13 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
     theme === 'light' ? '#e2e8f0' : 'rgba(255,255,255,0.15)'
   }; border-radius:8px; font-family:-apple-system,BlinkMacSystemFont,sans-serif; font-size:12px; font-weight:600; text-decoration:none; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
   <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981;"></span>
-  <span>RFC 10023 Verified</span>
-  ${showPrice && priceText ? `<span style="opacity:0.6;">|</span><span style="color:${theme === 'light' ? '#059669' : '#34d399'}; font-weight:700;">${priceText}</span>` : ''}
+  <span>${badgeText}</span>
 </a>`;
 
-  const badgeMarkdown = `[![RFC 10023 DNS Verified](https://img.shields.io/badge/RFC_10023-DNS_Verified-10b981?style=flat-square&logo=cloudflare)](${lookupUrl})`;
+  // Markdown variant with Shields.io external image
+  const encodedLabel = encodeURIComponent(isEn ? 'RFC 10023' : 'RFC 10023');
+  const encodedMessage = encodeURIComponent(isEn ? 'Check DNS Record' : 'DNS-Eintrag prüfen');
+  const badgeMarkdown = `[![${badgeText}](https://img.shields.io/badge/${encodedLabel}-${encodedMessage}-10b981?style=flat-square)](${lookupUrl})`;
 
   const copyHtml = () => {
     navigator.clipboard.writeText(badgeHtml);
@@ -54,29 +57,32 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
+      
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
-              {t('badge.subbadge')}
+              {isEn ? 'Badge Generator' : 'Badge-Generator'}
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            {t('badge.title')}
+            {isEn ? 'Generate Neutral Verification Badge' : 'Prüf-Badge für Verkaufsseiten erstellen'}
           </h2>
         </div>
-        <div className="text-xs font-mono text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
-          {t('badge.verified_pill')}
+        <div className="text-xs font-mono text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+          <span>{isEn ? 'Neutral Status Link' : 'Neutraler Prüf-Link'}</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        
         {/* Settings */}
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-              {t('badge.domain_label')}
+              {isEn ? 'Domain Name' : 'Domainname'}
             </label>
             <input
               type="text"
@@ -87,132 +93,120 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                {t('badge.theme_label')}
-              </label>
-              <select
-                value={theme}
-                onChange={(e) => setTheme(e.target.value as any)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono focus:bg-white focus:outline-none"
-              >
-                <option value="dark">{t('badge.theme_dark')}</option>
-                <option value="emerald">{t('badge.theme_emerald')}</option>
-                <option value="light">{t('badge.theme_light')}</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                {t('badge.show_price')}
-              </label>
-              <div className="flex items-center gap-2 pt-1.5">
-                <input
-                  type="checkbox"
-                  id="showPriceCheck"
-                  checked={showPrice}
-                  onChange={(e) => setShowPrice(e.target.checked)}
-                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
-                />
-                <label htmlFor="showPriceCheck" className="text-xs text-slate-700 font-medium cursor-pointer">
-                  {t('badge.show_price_box')}
-                </label>
-              </div>
-            </div>
+          <div>
+            <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              {isEn ? 'Badge Label (Neutral by default)' : 'Badge-Beschriftung (standardmäßig neutral)'}
+            </label>
+            <input
+              type="text"
+              value={badgeText}
+              onChange={(e) => setBadgeText(e.target.value)}
+              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono focus:bg-white focus:outline-none"
+            />
+            <span className="text-[11px] text-slate-500 mt-1 block">
+              {isEn
+                ? 'Free text input must not simulate a certified status without actual DNS verification.'
+                : 'Freie Eingaben dürfen kein verifiziertes Siegel vortäuschen. Der Standard verlinkt neutral zur Live-Prüfung.'}
+            </span>
           </div>
 
-          {showPrice && (
-            <div>
-              <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                {t('badge.price_label')}
-              </label>
-              <input
-                type="text"
-                value={priceText}
-                onChange={(e) => setPriceText(e.target.value)}
-                placeholder="2.500 € oder VHB"
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono focus:bg-white focus:outline-none"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Live Preview Box */}
-        <div className="p-6 rounded-xl bg-slate-100 border border-slate-200 space-y-4">
-          <span className="text-[10px] font-mono uppercase font-bold text-slate-500 tracking-wider block">
-            {t('badge.preview_label')}
-          </span>
-          
-          <div className="py-6 flex items-center justify-center bg-slate-50/50 rounded-lg border border-dashed border-slate-300">
-            <a
-              href={lookupUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg font-sans text-xs font-semibold shadow-xs transition-transform hover:scale-105 active:scale-95 ${
-                theme === 'dark'
-                  ? 'bg-slate-900 text-white border border-slate-800'
-                  : theme === 'emerald'
-                  ? 'bg-emerald-800 text-white border border-emerald-700'
-                  : 'bg-white text-slate-900 border border-slate-200'
-              }`}
+          <div>
+            <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              {isEn ? 'Color Theme' : 'Farb-Design'}
+            </label>
+            <select
+              value={theme}
+              onChange={(e) => setTheme(e.target.value as any)}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono focus:bg-white focus:outline-none"
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-              <span>RFC 10023 Verified</span>
-              {showPrice && priceText && (
-                <>
-                  <span className="opacity-40">|</span>
-                  <span className={theme === 'light' ? 'text-emerald-700 font-bold' : 'text-emerald-300 font-bold'}>
-                    {priceText}
-                  </span>
-                </>
-              )}
-            </a>
+              <option value="dark">{isEn ? 'Dark Theme (Slate 900)' : 'Dunkel (Slate 900)'}</option>
+              <option value="emerald">{isEn ? 'Emerald Green' : 'Smaragdgrün (Emerald)'}</option>
+              <option value="light">{isEn ? 'Light Theme (White)' : 'Hell (Weiß)'}</option>
+            </select>
           </div>
 
-          <p className="text-[11px] text-slate-500 leading-relaxed">
-            {t('badge.preview_text')}
-          </p>
-        </div>
-      </div>
+          {/* Legal / Authority Disclaimer */}
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold text-slate-900 font-mono">
+              <AlertCircle className="w-4 h-4 text-slate-600" />
+              <span>Transparenz- &amp; Haftungshinweis:</span>
+            </div>
+            <p className="leading-relaxed">
+              Ein Badge signalisiert Interessenten lediglich, dass ein RFC 10023 Verkaufseintrag im DNS existiert und live geprüft werden kann. 
+              Es stellt <strong>keinen</strong> Identitäts-, Eigentums- oder Berechtigungsnachweis des Verkäufers dar.
+            </p>
+          </div>
 
-      {/* Code Snippets */}
-      <div className="space-y-3 pt-2">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-            <Code2 className="w-4 h-4 text-emerald-600" />
-            <span>{t('badge.code_web_title')}</span>
-          </span>
-          <button
-            type="button"
-            onClick={copyHtml}
-            className="px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 text-xs font-mono font-bold flex items-center gap-1.5"
-          >
-            {copiedHtml ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
-            <span>{t('badge.copy_html')}</span>
-          </button>
-        </div>
-        <div className="p-3 bg-slate-950 rounded-xl text-emerald-300 font-mono text-xs overflow-x-auto">
-          <code>{badgeHtml}</code>
         </div>
 
-        <div className="flex items-center justify-between pt-2">
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
-            {t('badge.code_md_title')}
-          </span>
-          <button
-            type="button"
-            onClick={copyMd}
-            className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-mono font-semibold flex items-center gap-1.5"
-          >
-            {copiedMd ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
-            <span>{t('badge.copy_md')}</span>
-          </button>
+        {/* Live Preview & Code Outputs */}
+        <div className="space-y-5">
+          <div>
+            <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-600 mb-2">
+              {isEn ? 'Live Preview:' : 'Live-Vorschau:'}
+            </label>
+            <div className="p-6 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center min-h-[90px]">
+              <a
+                href={lookupUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold shadow-xs transition-transform hover:scale-105 ${
+                  theme === 'dark'
+                    ? 'bg-slate-900 text-white border border-slate-800'
+                    : theme === 'emerald'
+                    ? 'bg-emerald-800 text-white border border-emerald-700'
+                    : 'bg-white text-slate-900 border border-slate-200'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span>{badgeText}</span>
+              </a>
+            </div>
+          </div>
+
+          {/* HTML Code Box */}
+          <div className="bg-slate-950 rounded-xl border border-slate-800 p-4 font-mono text-xs text-slate-300 space-y-2">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <span className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                <Code2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>HTML / CSS (100% DSGVO-konform, kein externer Request)</span>
+              </span>
+              <button
+                type="button"
+                onClick={copyHtml}
+                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs flex items-center gap-1 transition-colors"
+              >
+                {copiedHtml ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                <span>{copiedHtml ? 'Kopiert!' : 'HTML kopieren'}</span>
+              </button>
+            </div>
+            <pre className="overflow-x-auto text-[11px] text-emerald-300/90 whitespace-pre-wrap select-all">
+              <code>{badgeHtml}</code>
+            </pre>
+          </div>
+
+          {/* Markdown Code Box */}
+          <div className="bg-slate-950 rounded-xl border border-slate-800 p-4 font-mono text-xs text-slate-300 space-y-2">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <span className="text-[11px] text-slate-400">Markdown (nutzt externen Bilddienst Shields.io)</span>
+              <button
+                type="button"
+                onClick={copyMd}
+                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs flex items-center gap-1 transition-colors"
+              >
+                {copiedMd ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                <span>{copiedMd ? 'Kopiert!' : 'Markdown kopieren'}</span>
+              </button>
+            </div>
+            <pre className="overflow-x-auto text-[11px] text-emerald-300/90 whitespace-pre-wrap select-all">
+              <code>{badgeMarkdown}</code>
+            </pre>
+          </div>
+
         </div>
-        <div className="p-3 bg-slate-950 rounded-xl text-slate-300 font-mono text-xs overflow-x-auto">
-          <code>{badgeMarkdown}</code>
-        </div>
+
       </div>
+
     </div>
   );
 }

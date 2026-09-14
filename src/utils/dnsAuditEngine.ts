@@ -1,23 +1,22 @@
-// DNS Health & Email Routing Audit Engine
-// Authoritative multi-query evaluator for RFC 10023, RFC 7505 (Null-MX), SMTP Fallback, SPF, DMARC & DNSSEC
+// DNS Diagnostics Engine (Mail Routing & DNSSEC Transparency)
+// Strictly separated from RFC 10023 sale indicator evaluation.
+// No aggregated "security scores" or sale trustworthiness deductions.
 
-export interface DnsAuditItem {
-  id: 'rfc10023' | 'null_mx' | 'smtp_fallback' | 'spf' | 'dmarc' | 'dnssec';
+export interface DnsDiagnosticItem {
+  id: 'null_mx' | 'mx' | 'smtp_fallback' | 'spf' | 'dmarc' | 'dnssec';
   label: string;
-  category: 'sale' | 'email' | 'security';
-  status: 'pass' | 'warn' | 'fail' | 'info';
+  category: 'email' | 'dnssec';
+  status: 'info' | 'notice';
   value: string;
   summary: string;
   details: string;
 }
 
-export interface DomainHealthAudit {
+export interface DomainDiagnosticsReport {
   domain: string;
-  score: number; // 0 - 100
-  rating: 'optimal' | 'good' | 'warning' | 'critical';
-  ratingLabel: string;
-  summary: string;
-  items: DnsAuditItem[];
+  timestamp: string;
+  resolver: string;
+  items: DnsDiagnosticItem[];
   mxRecords: { exchange: string; preference: number }[];
   hasNullMx: boolean;
   hasFallbackA: boolean;
@@ -25,7 +24,8 @@ export interface DomainHealthAudit {
   aaaaRecords: string[];
   spfRecord: string | null;
   dmarcRecord: string | null;
-  dnssecActive: boolean;
+  dnssecAdFlag: boolean;
+  dnssecMessage: string;
 }
 
 interface DoHAnswer {
@@ -44,38 +44,44 @@ interface DoHResponse {
 /**
  * Fetch DoH query with fallback
  */
-async function queryDoh(name: string, type: string): Promise<DoHResponse> {
-  const url = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=${type}`;
+async function queryDoh(name: string, type: string): Promise<{ res: DoHResponse; resolver: string }> {
+  const cfUrl = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=${type}`;
   try {
-    const res = await fetch(url, { headers: { Accept: 'application/dns-json' } });
+    const res = await fetch(cfUrl, { headers: { Accept: 'application/dns-json' } });
     if (res.ok) {
-      return await res.json();
+      const data = await res.json();
+      return { res: data, resolver: 'Cloudflare Anycast DoH (1.1.1.1)' };
     }
-  } catch (e) {
-    console.warn(`Cloudflare DoH failed for ${name} (${type}), trying Google...`, e);
+  } catch {
+    // try fallback
   }
 
   // Fallback to Google DoH
-  const gUrl = `https://dns.google/resolve?name=${encodeURIComponent(name)}&type=${type}`;
-  const gRes = await fetch(gUrl);
-  if (gRes.ok) {
-    return await gRes.json();
+  try {
+    const gUrl = `https://dns.google/resolve?name=${encodeURIComponent(name)}&type=${type}`;
+    const gRes = await fetch(gUrl);
+    if (gRes.ok) {
+      const gData = await gRes.json();
+      return { res: gData, resolver: 'Google Public DNS DoH (8.8.8.8)' };
+    }
+  } catch {
+    // failed
   }
-  return { Status: 2 };
+
+  return { res: { Status: 2 }, resolver: 'Resolver unreachable' };
 }
 
 /**
- * Executes a comprehensive, parallel DNS health & security audit for the domain
+ * Runs transparent DNS diagnostics for email routing and DNSSEC.
+ * No arbitrary scoring or conflation with domain sales verification.
  */
-export async function performDomainAudit(
+export async function performDomainDiagnostics(
   domain: string,
-  rfc10023Status: 'valid' | 'warning' | 'not_found' | 'error',
   lang: 'de' | 'en' = 'de'
-): Promise<DomainHealthAudit> {
+): Promise<DomainDiagnosticsReport> {
   const isEn = lang === 'en';
 
-  // Parallel queries: MX, A, AAAA, TXT (SPF), TXT (_dmarc)
-  const [mxRes, aRes, aaaaRes, apexTxtRes, dmarcRes] = await Promise.all([
+  const [mxData, aData, aaaaData, apexTxtData, dmarcData] = await Promise.all([
     queryDoh(domain, 'MX'),
     queryDoh(domain, 'A'),
     queryDoh(domain, 'AAAA'),
@@ -83,14 +89,20 @@ export async function performDomainAudit(
     queryDoh(`_dmarc.${domain}`, 'TXT'),
   ]);
 
-  // Parse MX
+  const resolver = mxData.resolver;
+  const mxRes = mxData.res;
+  const aRes = aData.res;
+  const aaaaRes = aaaaData.res;
+  const apexTxtRes = apexTxtData.res;
+  const dmarcRes = dmarcData.res;
+
+  // 1. Parse MX
   const mxRecords: { exchange: string; preference: number }[] = [];
   let hasNullMx = false;
 
   if (mxRes.Answer && Array.isArray(mxRes.Answer)) {
     for (const ans of mxRes.Answer) {
       if (ans.type === 15 && ans.data) {
-        // format: "10 mail.example.com." or "0 ."
         const parts = ans.data.trim().split(/\s+/);
         if (parts.length >= 2) {
           const pref = parseInt(parts[0], 10);
@@ -104,7 +116,7 @@ export async function performDomainAudit(
     }
   }
 
-  // Parse A & AAAA
+  // 2. Parse A & AAAA
   const aRecords: string[] = [];
   if (aRes.Answer && Array.isArray(aRes.Answer)) {
     for (const ans of aRes.Answer) {
@@ -121,7 +133,7 @@ export async function performDomainAudit(
 
   const hasFallbackA = (aRecords.length > 0 || aaaaRecords.length > 0) && mxRecords.length === 0;
 
-  // Parse SPF
+  // 3. Parse SPF
   let spfRecord: string | null = null;
   if (apexTxtRes.Answer && Array.isArray(apexTxtRes.Answer)) {
     for (const ans of apexTxtRes.Answer) {
@@ -135,7 +147,7 @@ export async function performDomainAudit(
     }
   }
 
-  // Parse DMARC
+  // 4. Parse DMARC
   let dmarcRecord: string | null = null;
   if (dmarcRes.Answer && Array.isArray(dmarcRes.Answer)) {
     for (const ans of dmarcRes.Answer) {
@@ -149,251 +161,104 @@ export async function performDomainAudit(
     }
   }
 
-  const dnssecActive = Boolean(mxRes.AD || aRes.AD || apexTxtRes.AD);
+  // 5. DNSSEC Check: Check AD (Authenticated Data) Flag
+  const dnssecAdFlag = Boolean(mxRes.AD || aRes.AD || apexTxtRes.AD);
+  const dnssecMessage = dnssecAdFlag
+    ? (isEn
+        ? 'DNSSEC response: Resolver validated responses (AD flag = true).'
+        : 'DNSSEC-Antwort: Resolver hat Signaturen verifiziert (AD-Flag = true).')
+    : (isEn
+        ? 'AD flag not set by resolver. Authenticity was not validated in this query (does not prove unsigned without authoritative DS verification).'
+        : 'AD-Flag nicht gesetzt. Authentizität wurde durch diesen Resolver nicht validiert (kein Beweis für fehlende Signierung ohne DS-Prüfung).');
 
-  // Scoring Logic (0 - 100)
-  let score = 0;
-  const items: DnsAuditItem[] = [];
+  const items: DnsDiagnosticItem[] = [];
 
-  // 1. RFC 10023 Signal (Max 35 pts)
-  if (rfc10023Status === 'valid') {
-    score += 35;
-    items.push({
-      id: 'rfc10023',
-      label: 'RFC 10023 Sale-Offer',
-      category: 'sale',
-      status: 'pass',
-      value: 'v=FORSALE1 (Active)',
-      summary: isEn ? 'Standard-compliant sale offer published' : 'IETF-konformes Verkaufsangebot im DNS aktiv',
-      details: isEn
-        ? 'Valid _for-sale TXT record is discoverable by automated registry lookups (e.g. SIDN) and prospective buyers.'
-        : 'Gültiger _for-sale TXT-Knoten wird von Registrierungsstellen (z. B. SIDN) und Interessenten maschinenlesbar erkannt.',
-    });
-  } else if (rfc10023Status === 'warning') {
-    score += 20;
-    items.push({
-      id: 'rfc10023',
-      label: 'RFC 10023 Sale-Offer',
-      category: 'sale',
-      status: 'warn',
-      value: 'Deviating Structure',
-      summary: isEn ? 'Record found with format deviations' : 'Eintrag vorhanden, weicht jedoch vom Multi-Record-Standard ab',
-      details: isEn
-        ? 'The DNS record is functional, but uses single-line workarounds or contains minor syntax notices.'
-        : 'Der Eintrag funktioniert, nutzt aber einen Single-Line Workaround oder weist kleinere Syntax-Abweichungen auf.',
-    });
-  } else {
-    items.push({
-      id: 'rfc10023',
-      label: 'RFC 10023 Sale-Offer',
-      category: 'sale',
-      status: 'info',
-      value: 'Inactive',
-      summary: isEn ? 'No sale offer published at _for-sale' : 'Kein Verkaufsangebot unter _for-sale hinterlegt',
-      details: isEn
-        ? 'Domain does not publicly signal acquisition availability in the DNS.'
-        : 'Für diese Domain ist aktuell kein standardisiertes Verkaufsangebot im weltweiten DNS eingetragen.',
-    });
-  }
+  // Item: DNSSEC
+  items.push({
+    id: 'dnssec',
+    label: 'DNSSEC (AD-Flag)',
+    category: 'dnssec',
+    status: 'info',
+    value: dnssecAdFlag ? 'AD=true' : 'AD=false',
+    summary: dnssecMessage,
+    details: isEn
+      ? 'The Authenticated Data (AD) bit indicates whether the validating recursive resolver verified DNSSEC signatures.'
+      : 'Das Authenticated Data (AD) Flag zeigt an, ob der rekursive Resolver DNSSEC-RRSIG-Signaturen bis zum Trust-Anchor verifiziert hat.',
+  });
 
-  // 2. Email / Null-MX Check (Max 25 pts)
+  // Item: Mail / Null-MX
   if (hasNullMx) {
-    score += 25;
     items.push({
       id: 'null_mx',
       label: 'RFC 7505 Null-MX',
       category: 'email',
-      status: 'pass',
-      value: '0 . (Protected)',
-      summary: isEn ? 'Null-MX configured: Explicit mail rejection' : 'Null-MX aktiv: Mails werden sofort abgewiesen',
+      status: 'info',
+      value: '0 . (Null-MX aktiv)',
+      summary: isEn ? 'Null-MX configured: Explicit signal that domain does not accept email.' : 'Null-MX konfiguriert: Signalisiert, dass diese Domain keine E-Mails annimmt.',
       details: isEn
-        ? 'RFC 7505 Null-MX signals that this domain accepts zero email, eliminating backscatter, spam abuse and server load.'
-        : 'Der Null-MX-Eintrag (0 .) signalisiert weltweit, dass die Domain keine E-Mails empfängt. Verhindert Bounce-Spam und Server-Last.',
+        ? 'RFC 7505 defines a single MX record "0 ." to stop MTAs from attempting mail delivery.'
+        : 'RFC 7505 definiert "0 ." als expliziten Standard, damit fremde Mailserver gar nicht erst versuchen, Mails zuzustellen.',
     });
   } else if (mxRecords.length > 0) {
-    score += 20;
     items.push({
-      id: 'null_mx',
+      id: 'mx',
       label: 'Mail Exchange (MX)',
       category: 'email',
       status: 'info',
       value: `${mxRecords.length} MX Server`,
-      summary: isEn ? 'Dedicated mail servers configured' : 'Reguläre Mailserver konfiguriert',
-      details: isEn
-        ? `Domain routes email to designated mail exchanges (${mxRecords.map((m) => m.exchange).join(', ')}).`
-        : `Eingehende E-Mails werden regulär über Mailserver abgewickelt (${mxRecords.map((m) => m.exchange).join(', ')}).`,
+      summary: isEn ? `Configured mail exchanges: ${mxRecords.map((m) => m.exchange).join(', ')}` : `Hinterlegte Mailserver: ${mxRecords.map((m) => m.exchange).join(', ')}`,
+      details: isEn ? 'Domain routes incoming emails to designated mail hosts.' : 'Eingehende E-Mails werden über die angegebenen Nameserver-Routen abgewickelt.',
     });
   } else if (hasFallbackA) {
-    // CRITICAL: RFC 5321 Fallback
     items.push({
       id: 'smtp_fallback',
-      label: 'SMTP Fallback Risk (RFC 5321)',
+      label: 'SMTP Fallback (RFC 5321 § 5.1)',
       category: 'email',
-      status: 'fail',
-      value: 'A/AAAA Fallback Exposed',
+      status: 'notice',
+      value: 'A/AAAA Fallback möglich',
       summary: isEn
-        ? 'Vulnerable: MTA fallbacks route emails directly to web server IP!'
-        : 'Gefahr: Fehlender MX leitet Mails per Fallback direkt an Webserver-IP!',
+        ? 'No MX present: Mail servers may fall back to web server IP addresses (RFC 5321).'
+        : 'Kein MX vorhanden: Mailserver dürfen gemäß RFC 5321 an die Webserver-IPs zustellen.',
       details: isEn
-        ? `According to RFC 5321, mail servers attempt delivery to web host IPs (${aRecords.concat(aaaaRecords).slice(0, 2).join(', ')}) if no MX is defined. Setting RFC 7505 Null-MX is strongly recommended.`
-        : `Gemäß RFC 5321 versuchen absendende Mailserver E-Mails an Ihre Webserver-IPs (${aRecords.concat(aaaaRecords).slice(0, 2).join(', ')}) zuzustellen, da kein MX existiert. Ein RFC 7505 Null-MX schließt diese Lücke.`,
-    });
-  } else {
-    items.push({
-      id: 'null_mx',
-      label: 'Mail Exchange (MX)',
-      category: 'email',
-      status: 'warn',
-      value: 'None',
-      summary: isEn ? 'No MX records defined' : 'Kein MX-Record hinterlegt',
-      details: isEn
-        ? 'Domain has neither MX nor web IP records.'
-        : 'Die Domain besitzt weder MX-Server noch A/AAAA-Web-Einträge.',
+        ? `No MX record is configured, but A/AAAA records exist (${aRecords.concat(aaaaRecords).slice(0, 2).join(', ')}). Setting a Null-MX (0 .) avoids accidental delivery attempts if email is not desired.`
+        : `Es ist kein MX hinterlegt, aber A/AAAA-Einträge sind vorhanden (${aRecords.concat(aaaaRecords).slice(0, 2).join(', ')}). Falls kein Mail-Empfang gewünscht ist, verhindert ein RFC 7505 Null-MX (0 .) Fehlzustellungen.`,
     });
   }
 
-  // 3. SPF Check (Max 15 pts)
+  // Item: SPF
   if (spfRecord) {
-    if (spfRecord.includes('-all')) {
-      score += 15;
-      items.push({
-        id: 'spf',
-        label: 'SPF Record (RFC 7208)',
-        category: 'security',
-        status: 'pass',
-        value: 'Strict Hardfail (-all)',
-        summary: isEn ? 'Spoofing strictly blocked' : 'E-Mail-Spoofing strikt blockiert (-all)',
-        details: isEn ? `SPF record active: ${spfRecord}` : `Gültiger SPF-Schutz aktiv: ${spfRecord}`,
-      });
-    } else {
-      score += 10;
-      items.push({
-        id: 'spf',
-        label: 'SPF Record (RFC 7208)',
-        category: 'security',
-        status: 'warn',
-        value: 'Softfail (~all / ?all)',
-        summary: isEn ? 'Softfail active (recommendation: -all)' : 'Nur Softfail aktiv (Empfehlung: -all)',
-        details: isEn ? `SPF found: ${spfRecord}` : `Hinterlegter SPF-Eintrag: ${spfRecord}`,
-      });
-    }
-  } else {
     items.push({
       id: 'spf',
       label: 'SPF Record (RFC 7208)',
-      category: 'security',
-      status: hasNullMx ? 'warn' : 'info',
-      value: 'Missing',
-      summary: isEn ? 'No SPF policy configured' : 'Kein SPF-Eintrag hinterlegt',
+      category: 'email',
+      status: 'info',
+      value: spfRecord,
+      summary: isEn ? `SPF policy: ${spfRecord}` : `Hinterlegte SPF-Richtlinie: ${spfRecord}`,
       details: isEn
-        ? 'Without SPF, unauthorized parties can forge emails using this domain name.'
-        : 'Ohne SPF können fremde Server missbräuchlich E-Mails mit dieser Domain als Absender versenden.',
+        ? 'Specifies which mail transfer agents are authorized to send email on behalf of the domain.'
+        : 'Definiert, welche Mailserver autorisiert sind, E-Mails im Namen dieser Domain zu versenden.',
     });
   }
 
-  // 4. DMARC Check (Max 15 pts)
+  // Item: DMARC
   if (dmarcRecord) {
-    if (dmarcRecord.includes('p=reject')) {
-      score += 15;
-      items.push({
-        id: 'dmarc',
-        label: 'DMARC Policy (RFC 7489)',
-        category: 'security',
-        status: 'pass',
-        value: 'p=reject (Enforced)',
-        summary: isEn ? 'Full spoofing rejection active' : 'Vollständige Abweisung aktiver Fälschungen (p=reject)',
-        details: isEn ? `DMARC policy: ${dmarcRecord}` : `Aktive DMARC-Richtlinie: ${dmarcRecord}`,
-      });
-    } else {
-      score += 10;
-      items.push({
-        id: 'dmarc',
-        label: 'DMARC Policy (RFC 7489)',
-        category: 'security',
-        status: 'warn',
-        value: 'Monitoring (p=none / quarantine)',
-        summary: isEn ? 'DMARC monitoring active' : 'DMARC im Überwachungsmodus (p=none)',
-        details: isEn ? `DMARC policy: ${dmarcRecord}` : `DMARC gefunden: ${dmarcRecord}`,
-      });
-    }
-  } else {
     items.push({
       id: 'dmarc',
       label: 'DMARC Policy (RFC 7489)',
-      category: 'security',
+      category: 'email',
       status: 'info',
-      value: 'Not configured',
-      summary: isEn ? 'No DMARC record at _dmarc node' : 'Keine DMARC-Richtlinie unter _dmarc hinterlegt',
+      value: dmarcRecord,
+      summary: isEn ? `DMARC policy: ${dmarcRecord}` : `Hinterlegte DMARC-Richtlinie: ${dmarcRecord}`,
       details: isEn
-        ? 'DMARC provides reporting and instructs receiving servers how to handle failed SPF/DKIM.'
-        : 'DMARC schützt vor Phishing und steuert, wie Empfänger-Server bei gefälschten Absendern reagieren.',
+        ? 'Provides sender authentication policies and reporting instructions for receiving mail servers.'
+        : 'Gibt Richtlinien für den Umgang mit nicht authentifizierten Nachrichten vor.',
     });
-  }
-
-  // 5. DNSSEC Check (Max 10 pts)
-  if (dnssecActive) {
-    score += 10;
-    items.push({
-      id: 'dnssec',
-      label: 'DNSSEC Cryptographic Signature',
-      category: 'security',
-      status: 'pass',
-      value: 'Validated (RRSIG)',
-      summary: isEn ? 'DNS answers cryptographically signed' : 'DNS-Antworten kryptografisch signiert & manipulationssicher',
-      details: isEn
-        ? 'AD flag received. Zone is shielded against DNS spoofing and cache poisoning.'
-        : 'AD-Flag bestätigt. Die DNS-Zone ist gegen Cache Poisoning und Manipulation geschützt.',
-    });
-  } else {
-    items.push({
-      id: 'dnssec',
-      label: 'DNSSEC Cryptographic Signature',
-      category: 'security',
-      status: 'info',
-      value: 'Unsigned',
-      summary: isEn ? 'DNSSEC not activated' : 'DNSSEC nicht aktiv',
-      details: isEn
-        ? 'Cryptographic DNSSEC signatures are optional, but recommended for verified sale offers.'
-        : 'DNSSEC ist optional, bietet aber bei hochwertigen Domains zusätzliche Sicherheit für Käufer.',
-    });
-  }
-
-  // Determine overall rating
-  let rating: 'optimal' | 'good' | 'warning' | 'critical' = 'optimal';
-  let ratingLabel = isEn ? 'Optimal Setup' : 'Optimale Konfiguration';
-  let summary = isEn
-    ? 'Domain is thoroughly shielded, standard-compliant and optimally configured.'
-    : 'Die Domain ist vorbildlich abgesichert, standardkonform und sauber konfiguriert.';
-
-  if (hasFallbackA) {
-    rating = 'critical';
-    ratingLabel = isEn ? 'SMTP Fallback Vulnerability' : 'Kritische Fallback-Sicherheitslücke';
-    summary = isEn
-      ? 'Attention: Emails sent to this domain will hit your web server IPs due to missing MX records!'
-      : 'Achtung: E-Mails an diese Domain versuchen ohne MX-Record direkt Ihren Webserver per SMTP zu kontaktieren!';
-  } else if (score >= 80) {
-    rating = 'optimal';
-    ratingLabel = isEn ? 'IETF Excellence' : 'Exzellente IETF-Konfiguration';
-  } else if (score >= 60) {
-    rating = 'good';
-    ratingLabel = isEn ? 'Good Setup' : 'Solide Konfiguration';
-    summary = isEn
-      ? 'Good baseline. Consider tightening email policies or adding RFC 7505 Null-MX.'
-      : 'Gute Basis. Prüfen Sie, ob ein Null-MX oder schärfere E-Mail-Richtlinien ergänzt werden sollten.';
-  } else {
-    rating = 'warning';
-    ratingLabel = isEn ? 'Basic / Needs Optimization' : 'Optimierungspotenzial';
-    summary = isEn
-      ? 'Domain configuration has several optimization opportunities regarding sale signals or email hygiene.'
-      : 'Die Domain-Konfiguration bietet noch deutliche Optimierungsmöglichkeiten bei Verkaufs-Signal oder E-Mail-Schutz.';
   }
 
   return {
     domain,
-    score,
-    rating,
-    ratingLabel,
-    summary,
+    timestamp: new Date().toISOString(),
+    resolver,
     items,
     mxRecords,
     hasNullMx,
@@ -402,6 +267,7 @@ export async function performDomainAudit(
     aaaaRecords,
     spfRecord,
     dmarcRecord,
-    dnssecActive,
+    dnssecAdFlag,
+    dnssecMessage,
   };
 }

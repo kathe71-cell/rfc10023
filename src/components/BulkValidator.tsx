@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
-import { Layers, Play, CheckCircle2, AlertTriangle, XCircle, Download, RefreshCw, ShieldCheck } from 'lucide-react';
-import { cleanDomainInput, detectHosterFromNameservers } from '../utils/dnsIntelligence';
+import { Layers, Play, CheckCircle2, AlertTriangle, XCircle, Download, RefreshCw, ShieldCheck, HelpCircle } from 'lucide-react';
+import { cleanDomainInput, detectHosterFromNameservers, sanitizeCsvCell } from '../utils/dnsIntelligence';
+import { parseRfc10023Records, type RfcValidationReport, type DnsQueryStatus } from '../utils/rfcParserEngine';
 import { useLanguage } from '../context/LanguageContext';
 
 interface BulkItemResult {
   domain: string;
   status: 'valid' | 'warning' | 'not_found' | 'error' | 'pending';
+  dnsStatus: 'NOERROR' | 'NXDOMAIN' | 'NODATA' | 'SERVFAIL' | 'TIMEOUT' | 'ERROR' | 'PENDING';
   fval?: string;
   furi?: string;
   dnssec: boolean;
   hoster: string;
   rawCount: number;
+  warnings: string[];
 }
 
 export default function BulkValidator() {
@@ -28,7 +31,7 @@ export default function BulkValidator() {
       .map((l) => cleanDomainInput(l))
       .filter((d) => d.includes('.') && d.length > 3);
 
-    const domains = Array.from(new Set(rawLines)).slice(0, 30); // Max 30 domains for fast DoH execution
+    const domains = Array.from(new Set(rawLines)).slice(0, 30); // Max 30 domains for DoH concurrency & rate limits
 
     if (domains.length === 0) {
       alert(language === 'en' ? 'Please enter at least one valid domain name (one domain per line).' : 'Bitte gib mindestens einen gültigen Domainnamen ein (eine Domain pro Zeile).');
@@ -40,47 +43,49 @@ export default function BulkValidator() {
     const initialList: BulkItemResult[] = domains.map((d) => ({
       domain: d,
       status: 'pending',
+      dnsStatus: 'PENDING',
       dnssec: false,
       hoster: language === 'en' ? 'Resolving...' : 'Ermittle...',
       rawCount: 0,
+      warnings: [],
     }));
     setResults(initialList);
 
     const updatedList = [...initialList];
+    let completed = 0;
 
-    for (let i = 0; i < domains.length; i++) {
-      const d = domains[i];
+    // Concurrency throttle: process in batches of 3
+    const CONCURRENCY = 3;
+    const queue = domains.map((d, index) => ({ domain: d, index }));
+
+    async function processItem(item: { domain: string; index: number }) {
+      const d = item.domain;
       const nodeName = `_for-sale.${d}`;
+      let detectedHoster = 'Standard DNS';
+      let isDnssec = false;
 
       try {
-        // Query TXT via Cloudflare DoH
-        const cfRes = await fetch(
-          `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(nodeName)}&type=TXT`,
-          { headers: { Accept: 'application/dns-json' } }
-        );
+        // Run NS and TXT lookup in parallel with 6s timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
 
-        let records: string[] = [];
-        let isDnssec = false;
+        const [cfRes, nsRes] = await Promise.allSettled([
+          fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(nodeName)}&type=TXT`, {
+            headers: { Accept: 'application/dns-json' },
+            signal: controller.signal,
+          }),
+          fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(d)}&type=NS`, {
+            headers: { Accept: 'application/dns-json' },
+            signal: controller.signal,
+          }),
+        ]);
 
-        if (cfRes.ok) {
-          const data = await cfRes.json();
-          if (data.AD) isDnssec = true;
-          if (data.Answer && Array.isArray(data.Answer)) {
-            records = data.Answer
-              .filter((a: { type: number }) => a.type === 16)
-              .map((a: { data: string }) => a.data.replace(/^"|"$/g, ''));
-          }
-        }
+        clearTimeout(timeoutId);
 
-        // Check Nameservers
-        let detectedHoster = 'Standard DNS';
-        try {
-          const nsRes = await fetch(
-            `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(d)}&type=NS`,
-            { headers: { Accept: 'application/dns-json' } }
-          );
-          if (nsRes.ok) {
-            const nsData = await nsRes.json();
+        // Process Nameservers
+        if (nsRes.status === 'fulfilled' && nsRes.value.ok) {
+          try {
+            const nsData = await nsRes.value.json();
             if (nsData.Answer && Array.isArray(nsData.Answer)) {
               const nsList = nsData.Answer
                 .filter((a: { type: number }) => a.type === 2)
@@ -90,75 +95,131 @@ export default function BulkValidator() {
                 detectedHoster = hosterProfile.name;
               }
             }
-          }
-        } catch {}
+          } catch {}
+        }
 
-        if (records.length === 0) {
-          updatedList[i] = {
+        // Process TXT record with standard parser engine
+        if (cfRes.status === 'fulfilled') {
+          if (!cfRes.value.ok) {
+            updatedList[item.index] = {
+              domain: d,
+              status: 'error',
+              dnsStatus: 'ERROR',
+              dnssec: false,
+              hoster: detectedHoster,
+              rawCount: 0,
+              warnings: [`HTTP ${cfRes.value.status}`],
+            };
+          } else {
+            const cfData = await cfRes.value.json();
+            if (cfData.AD) isDnssec = true;
+
+            const rcode = cfData.Status ?? 0;
+            let rawRecords: string[] = [];
+
+            if (cfData.Answer && Array.isArray(cfData.Answer)) {
+              rawRecords = cfData.Answer
+                .filter((a: { type: number }) => a.type === 16)
+                .map((a: { data: string }) => {
+                  let str = a.data.trim();
+                  if (str.startsWith('"') && str.endsWith('"')) {
+                    str = str.slice(1, -1);
+                  }
+                  return str.replace(/\\"/g, '"');
+                });
+            }
+
+            let dnsQueryStatus: DnsQueryStatus = 'NOERROR';
+            if (rcode === 3) dnsQueryStatus = 'NXDOMAIN';
+            else if (rcode === 2) dnsQueryStatus = 'SERVFAIL';
+            else if (rawRecords.length === 0) dnsQueryStatus = 'NODATA';
+
+            const parsed: RfcValidationReport = parseRfc10023Records(rawRecords, dnsQueryStatus, language === 'en' ? 'en' : 'de');
+
+            let displayStatus: BulkItemResult['status'] = 'not_found';
+            if (parsed.dnsStatus === 'NXDOMAIN' || parsed.dnsStatus === 'NODATA') {
+              displayStatus = 'not_found';
+            } else if (parsed.dnsStatus === 'SERVFAIL' || parsed.dnsStatus === 'ERROR' || parsed.dnsStatus === 'TIMEOUT') {
+              displayStatus = 'error';
+            } else if (parsed.saleSignalFound) {
+              displayStatus = parsed.status === 'valid' ? 'valid' : 'warning';
+            }
+
+            updatedList[item.index] = {
+              domain: d,
+              status: displayStatus,
+              dnsStatus: parsed.dnsStatus,
+              fval: parsed.parsedMap.fval,
+              furi: parsed.parsedMap.furi,
+              dnssec: isDnssec,
+              hoster: detectedHoster,
+              rawCount: rawRecords.length,
+              warnings: parsed.warnings,
+            };
+          }
+        } else {
+          // Promise rejected (e.g. timeout / abort)
+          updatedList[item.index] = {
             domain: d,
-            status: 'not_found',
-            dnssec: isDnssec,
+            status: 'error',
+            dnsStatus: 'TIMEOUT',
+            dnssec: false,
             hoster: detectedHoster,
             rawCount: 0,
-          };
-        } else {
-          // Parse tags
-          let fval = '';
-          let furi = '';
-          let hasVersion = false;
-
-          records.forEach((rec) => {
-            rec.split(';').forEach((part) => {
-              const eq = part.indexOf('=');
-              if (eq !== -1) {
-                const k = part.substring(0, eq).trim().toLowerCase();
-                const v = part.substring(eq + 1).trim();
-                if (k === 'v' && v.toUpperCase() === 'FORSALE1') hasVersion = true;
-                if (k === 'fval') fval = v;
-                if (k === 'furi') furi = v;
-              }
-            });
-          });
-
-          updatedList[i] = {
-            domain: d,
-            status: hasVersion ? 'valid' : 'warning',
-            fval: fval || '-',
-            furi: furi || '-',
-            dnssec: isDnssec,
-            hoster: detectedHoster,
-            rawCount: records.length,
+            warnings: ['Timeout or network unreachable'],
           };
         }
-      } catch {
-        updatedList[i] = {
+      } catch (err: unknown) {
+        updatedList[item.index] = {
           domain: d,
           status: 'error',
+          dnsStatus: 'ERROR',
           dnssec: false,
-          hoster: language === 'en' ? 'Error' : 'Fehler',
+          hoster: detectedHoster,
           rawCount: 0,
+          warnings: [err instanceof Error ? err.message : 'Unknown error'],
         };
       }
 
-      setProgress(Math.round(((i + 1) / domains.length) * 100));
+      completed++;
+      setProgress(Math.round((completed / domains.length) * 100));
       setResults([...updatedList]);
     }
 
+    // Worker pool execution
+    const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
+      while (queue.length > 0) {
+        const item = queue.shift();
+        if (item) {
+          await processItem(item);
+        }
+      }
+    });
+
+    await Promise.all(workers);
     setIsRunning(false);
   };
 
   const exportCsv = () => {
-    const header = language === 'en' 
-      ? 'Domain;Status;Price (fval);Contact (furi);DNSSEC;Hoster;Record Count\n'
-      : 'Domain;Status;Preis (fval);Kontakt (furi);DNSSEC;Hoster;Anzahl Records\n';
+    const header = language === 'en'
+      ? 'Domain;Status;DNS Status;Price (fval);Contact (furi);DNSSEC;Hoster;Record Count\n'
+      : 'Domain;Status;DNS-Status;Preis (fval);Kontakt (furi);DNSSEC;Hoster;Anzahl Records\n';
+    
     const rows = results
-      .map(
-        (r) =>
-          `"${r.domain}";"${r.status}";"${r.fval || ''}";"${r.furi || ''}";"${r.dnssec ? (language === 'en' ? 'YES' : 'JA') : (language === 'en' ? 'NO' : 'NEIN')}";"${r.hoster}";"${r.rawCount}"`
-      )
+      .map((r) => {
+        const d = sanitizeCsvCell(r.domain);
+        const st = sanitizeCsvCell(r.status);
+        const dnsSt = sanitizeCsvCell(r.dnsStatus);
+        const fval = sanitizeCsvCell(r.fval || '');
+        const furi = sanitizeCsvCell(r.furi || '');
+        const dnssecStr = sanitizeCsvCell(r.dnssec ? (language === 'en' ? 'YES (AD)' : 'JA (AD)') : (language === 'en' ? 'NO' : 'NEIN'));
+        const hoster = sanitizeCsvCell(r.hoster);
+        const count = sanitizeCsvCell(r.rawCount);
+        return `"${d}";"${st}";"${dnsSt}";"${fval}";"${furi}";"${dnssecStr}";"${hoster}";"${count}"`;
+      })
       .join('\n');
 
-    const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\uFEFF' + header + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -271,25 +332,32 @@ export default function BulkValidator() {
                     </a>
                   </td>
                   <td className="px-4 py-3">
-                    {r.status === 'valid' && (
-                      <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> {t('bulk.status_valid')}
-                      </span>
-                    )}
-                    {r.status === 'warning' && (
-                      <span className="inline-flex items-center gap-1 text-amber-800 bg-amber-50 px-2 py-0.5 rounded font-bold">
-                        <AlertTriangle className="w-3.5 h-3.5" /> {t('bulk.status_syntax')}
-                      </span>
-                    )}
-                    {r.status === 'not_found' && (
-                      <span className="text-slate-400">{t('bulk.status_not_found')}</span>
-                    )}
-                    {r.status === 'pending' && (
-                      <span className="text-slate-400 animate-pulse">{t('bulk.status_pending')}</span>
-                    )}
-                    {r.status === 'error' && (
-                      <span className="text-rose-600 font-bold">{t('bulk.status_error')}</span>
-                    )}
+                    <div className="flex flex-col gap-1 items-start">
+                      {r.status === 'valid' && (
+                        <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> {t('bulk.status_valid')}
+                        </span>
+                      )}
+                      {r.status === 'warning' && (
+                        <span className="inline-flex items-center gap-1 text-amber-800 bg-amber-50 px-2 py-0.5 rounded font-bold">
+                          <AlertTriangle className="w-3.5 h-3.5" /> {t('bulk.status_syntax')}
+                        </span>
+                      )}
+                      {r.status === 'not_found' && (
+                        <span className="text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">{t('bulk.status_not_found')}</span>
+                      )}
+                      {r.status === 'pending' && (
+                        <span className="text-slate-400 animate-pulse">{t('bulk.status_pending')}</span>
+                      )}
+                      {r.status === 'error' && (
+                        <span className="text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded">{t('bulk.status_error')}</span>
+                      )}
+                      {r.dnsStatus !== 'PENDING' && (
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          DNS: {r.dnsStatus}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-emerald-700 font-bold">{r.fval || '-'}</td>
                   <td className="px-4 py-3 max-w-xs truncate text-slate-600" title={r.furi}>

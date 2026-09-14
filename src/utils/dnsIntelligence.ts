@@ -1,4 +1,4 @@
-// DNS & Hoster Identification Utility for RFC 10023 DACH Hub
+// DNS & Hoster Identification Utility for RFC 10023 Toolkit
 
 export interface HosterProfile {
   id: string;
@@ -14,20 +14,20 @@ export const HOSTER_PATTERNS: { regex: RegExp; profile: HosterProfile }[] = [
     regex: /hetzner\.(com|de)/i,
     profile: {
       id: 'hetzner',
-      name: 'Hetzner DNS',
-      instructions: 'In der Hetzner DNS Console (dns.hetzner.com) Zone öffnen, Record Typ "TXT", Name "_for-sale" und den generierten String als Wert eintragen.',
+      name: 'Hetzner DNS Console',
+      instructions: 'In der Hetzner DNS Console (dns.hetzner.com) Zone öffnen, Record Typ "TXT", Name "_for-sale" und den generierten Wert eintragen.',
       multiRecordSupported: true,
-      notes: 'Unterstützt vollwertige Multi-Record RRsets problemlos.',
+      notes: 'Hetzner erlaubt führende Unterstriche (RFC 8552) ohne Warnung in der Web-Console sowie per DNS-API.',
     }
   },
   {
     regex: /inwx\.(de|com|net)/i,
     profile: {
       id: 'inwx',
-      name: 'INWX Domän-Center',
-      instructions: 'Im INWX Kundenbereich unter Nameserver die Domain auswählen, neuen TXT-Eintrag anlegen mit Name "_for-sale" und dem Wert.',
+      name: 'INWX (InterNetworX)',
+      instructions: 'Im INWX Domain-Center im Tab DNS-Einträge einen neuen TXT-Eintrag anlegen mit Name "_for-sale" und dem Wert.',
       multiRecordSupported: true,
-      notes: 'Hervorragende DNS-Engine mit DNSSEC-Unterstützung.',
+      notes: 'Multi-Record RRset und DNSSEC werden uneingeschränkt unterstützt.',
     }
   },
   {
@@ -35,19 +35,19 @@ export const HOSTER_PATTERNS: { regex: RegExp; profile: HosterProfile }[] = [
     profile: {
       id: 'cloudflare',
       name: 'Cloudflare DNS',
-      instructions: 'Im Cloudflare Dashboard unter DNS -> Records: Add record -> Typ "TXT", Name "_for-sale", Content eintragen. Anführungszeichen weglassen!',
+      instructions: 'Im Cloudflare Dashboard unter DNS -> Records: Add record -> Typ "TXT", Name "_for-sale", Content eintragen (Content ohne Anführungszeichen einfügen).',
       multiRecordSupported: true,
-      notes: 'Sehr schnelle Anycast-Aktualisierung (unter 5 Sekunden).',
+      notes: 'Anycast-DNS mit schneller weltweiter Propagierung. TTL Auto oder 300s.',
     }
   },
   {
     regex: /(ionos|1und1|ui-dns)\.(de|com|biz)/i,
     profile: {
       id: 'ionos',
-      name: 'IONOS by 1&1',
+      name: 'IONOS (1&1)',
       instructions: 'Im IONOS Kundencenter unter Domain -> DNS -> Eintrag hinzufügen: Typ "TXT", Hostname "_for-sale", Wert einfügen.',
       multiRecordSupported: true,
-      notes: 'TTL steht standardmäßig auf 1h.',
+      notes: 'Falls der Standard-Editor Unterstriche blockiert, die IONOS DNS-API oder Expertenmodus nutzen.',
     }
   },
   {
@@ -57,17 +57,17 @@ export const HOSTER_PATTERNS: { regex: RegExp; profile: HosterProfile }[] = [
       name: 'STRATO',
       instructions: 'Im STRATO Kunden-Login: Domains -> Domainverwaltung -> DNS-Einstellungen -> TXT-Records -> Präfix "_for-sale" eintragen.',
       multiRecordSupported: true,
-      notes: 'Benötigt meist 15-30 Minuten Propagierungszeit.',
+      notes: 'Einige ältere Strato-Pakete erfordern den DNS-Expertenmodus für führende Unterstriche.',
     }
   },
   {
     regex: /netcup\.(de|net)/i,
     profile: {
       id: 'netcup',
-      name: 'netcup CCP',
-      instructions: 'Im netcup Customer Control Panel (CCP) unter Domains -> DNS: Name "_for-sale", Type "TXT", Destination eintragen.',
+      name: 'Netcup CCP',
+      instructions: 'Im Netcup Customer Control Panel (CCP) unter Domains -> DNS: Name/Host "_for-sale", Type "TXT", Destination eintragen.',
       multiRecordSupported: true,
-      notes: 'Multi-Record RRsets voll unterstützt.',
+      notes: 'Der CCP DNS-Editor akzeptiert Unterstriche für TXT-Records uneingeschränkt.',
     }
   },
   {
@@ -75,7 +75,7 @@ export const HOSTER_PATTERNS: { regex: RegExp; profile: HosterProfile }[] = [
     profile: {
       id: 'route53',
       name: 'AWS Route 53',
-      instructions: 'In der AWS Route 53 Management Console: Hosted Zone wählen, Create Record -> Record name "_for-sale", Record type "TXT", Value mit Anführungszeichen.',
+      instructions: 'In Route 53: Hosted Zone -> Create Record -> Name "_for-sale", Type "TXT", Value mit Anführungszeichen.',
       multiRecordSupported: true,
       notes: 'Bei mehreren Records jede Zeile in Anführungszeichen in das Textfeld setzen.',
     }
@@ -84,10 +84,10 @@ export const HOSTER_PATTERNS: { regex: RegExp; profile: HosterProfile }[] = [
     regex: /ovh\.(net|de|com)/i,
     profile: {
       id: 'ovh',
-      name: 'OVHcloud DNS',
+      name: 'OVHcloud',
       instructions: 'Im OVH Manager unter Web Cloud -> Domains -> DNS-Zone -> Eintrag hinzufügen: TXT, Subdomain "_for-sale".',
       multiRecordSupported: true,
-      notes: 'Europäischer Cloud-Hoster mit DNSSEC-Option.',
+      notes: 'OVH Manager DNS-Zoneneditor unterstützt Multi-Record TXT-Einträge.',
     }
   }
 ];
@@ -109,11 +109,25 @@ export function calculateUtf8ByteLength(str: string): number {
 
 export function cleanDomainInput(raw: string): string {
   let d = raw.trim().toLowerCase();
-  d = d.replace(/\s+/g, '');          // strip all internal whitespace (e.g. "rfc 10023.de" → "rfc10023.de")
+  d = d.replace(/\s+/g, '');
   d = d.replace(/^https?:\/\//, '');
   d = d.replace(/^www\./, '');
   d = d.replace(/^_for-sale\./, '');
   d = d.split('/')[0];
   d = d.split(':')[0];
   return d;
+}
+
+/**
+ * Sanitizes a string for CSV export to prevent formula injection attacks.
+ * If the string starts with =, +, -, @, \t, or \r, prepend a single quote.
+ */
+export function sanitizeCsvCell(value: string | number | boolean | null | undefined): string {
+  if (value === null || value === undefined) return '""';
+  let str = String(value);
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = `'${str}`;
+  }
+  // Escape double quotes inside cell
+  return `"${str.replace(/"/g, '""')}"`;
 }

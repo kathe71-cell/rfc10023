@@ -18,6 +18,7 @@ import RechtLeitfadenPage from './pages/RechtLeitfadenPage';
 import EmbedPage from './pages/EmbedPage';
 import Impressum from './pages/Impressum';
 import Datenschutz from './pages/Datenschutz';
+import DokumentationPage from './pages/DokumentationPage';
 import FaqPage from './pages/FaqPage';
 import SearchModal from './components/SearchModal';
 import { ShieldCheck, Cpu } from 'lucide-react';
@@ -27,14 +28,61 @@ function RouteWatcher() {
   const { language, setLanguage } = useLanguage();
 
   React.useEffect(() => {
-    const isEn = location.pathname === '/en' || location.pathname.startsWith('/en/');
+    const pathname = location.pathname;
+    const isEn = pathname === '/en' || pathname.startsWith('/en/');
     if (isEn && language !== 'en') {
       setLanguage('en');
     } else if (!isEn && language !== 'de') {
-      // If navigating directly to a German route without /en, switch to German
       setLanguage('de');
     }
-  }, [location.pathname]);
+
+    // Dynamic Canonical & OpenGraph URL per route
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    const twitterUrl = document.querySelector('meta[name="twitter:url"]');
+    
+    // Normalize path (ensure leading slash, strip trailing slash except root)
+    let cleanPath = pathname;
+    if (cleanPath.length > 1 && cleanPath.endsWith('/')) {
+      cleanPath = cleanPath.slice(0, -1);
+    }
+
+    const fullUrl = `https://www.rfc10023.de${cleanPath === '/' ? '' : cleanPath}`;
+    if (canonicalLink) canonicalLink.setAttribute('href', fullUrl);
+    if (ogUrl) ogUrl.setAttribute('content', fullUrl);
+    if (twitterUrl) twitterUrl.setAttribute('content', fullUrl);
+
+    // Page titles per route
+    if (isEn) {
+      if (pathname.includes('/generator')) {
+        document.title = 'RFC 10023 Record Generator | DNS for-sale RRset Builder';
+      } else if (pathname.includes('/validator')) {
+        document.title = 'RFC 10023 DNS Validator | Live _for-sale Inspection';
+      } else if (pathname.includes('/bulk-scan')) {
+        document.title = 'RFC 10023 Bulk Portfolio Auditor | Multi-Domain Scan';
+      } else if (pathname.includes('/dokumentation') || pathname.includes('/documentation')) {
+        document.title = 'RFC 10023 Documentation & Specification Hub';
+      } else if (pathname.includes('/badge')) {
+        document.title = 'RFC 10023 Status Badge Generator';
+      } else {
+        document.title = 'RFC 10023 | The IETF Informational Publication for Domain Sale Signals';
+      }
+    } else {
+      if (pathname.includes('/generator')) {
+        document.title = 'RFC 10023 Generator | DNS-Verkaufseinträge erstellen';
+      } else if (pathname.includes('/validator')) {
+        document.title = 'RFC 10023 DNS-Validator | Live-Prüfung von _for-sale Einträgen';
+      } else if (pathname.includes('/bulk-scan')) {
+        document.title = 'RFC 10023 Portfolio-Prüfung | Massenabfrage';
+      } else if (pathname.includes('/dokumentation')) {
+        document.title = 'RFC 10023 Dokumentation | Spezifikation & Leitfäden';
+      } else if (pathname.includes('/badge')) {
+        document.title = 'RFC 10023 Badge Generator | DNS-Verkaufsstatus einbinden';
+      } else {
+        document.title = 'RFC 10023 | Zeige im DNS, dass deine Domain zum Verkauf steht';
+      }
+    }
+  }, [location.pathname, language, setLanguage]);
 
   return null;
 }
@@ -103,6 +151,7 @@ export default function App() {
             <Route path="/impressum" element={<Impressum />} />
             <Route path="/datenschutz" element={<Datenschutz />} />
             <Route path="/faq" element={<FaqPage />} />
+            <Route path="/dokumentation" element={<DokumentationPage />} />
 
             {/* English Routes (/en prefix for global SEO and international reach) */}
             <Route path="/en" element={<HomePage />} />
@@ -118,6 +167,8 @@ export default function App() {
             <Route path="/en/spezifikation" element={<SpezifikationPage />} />
             <Route path="/en/specification" element={<SpezifikationPage />} />
             <Route path="/en/faq" element={<FaqPage />} />
+            <Route path="/en/dokumentation" element={<DokumentationPage />} />
+            <Route path="/en/documentation" element={<DokumentationPage />} />
             <Route path="/en/widget-embed" element={<EmbedPage />} />
             <Route path="/en/rechner-embed" element={<EmbedPage />} />
             <Route path="/en/validator-embed" element={<EmbedPage />} />

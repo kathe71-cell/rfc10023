@@ -98,6 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let rawRecords: string[] = [];
   let isDnssec = false;
   let ttl: number | null = null;
+  let rcode = 0;
   const nameservers: string[] = [];
   let resolverUsed = 'Cloudflare 1.1.1.1 Anycast';
 
@@ -124,37 +125,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }).then(async (r) => {
       if (r.ok) {
         const json = await r.json();
+        rcode = json.Status ?? 0;
         if (json.AD) isDnssec = true;
         if (json.Answer && Array.isArray(json.Answer)) {
           const txtAnswers = json.Answer.filter((a: { type: number }) => a.type === 16);
           if (txtAnswers.length > 0 && txtAnswers[0].TTL !== undefined) {
             ttl = txtAnswers[0].TTL;
           }
-          rawRecords = txtAnswers.map((a: { data: string }) => a.data.replace(/^"|"$/g, ''));
+          rawRecords = txtAnswers.map((a: { data: string }) => {
+            let str = a.data.trim();
+            if (str.startsWith('"') && str.endsWith('"')) {
+              str = str.slice(1, -1);
+            }
+            return str.replace(/\\"/g, '"');
+          });
         }
       }
     });
 
     await Promise.all([nsPromise, txtPromise]);
-
-    // Fallback to Google DNS if empty
-    if (rawRecords.length === 0) {
-      resolverUsed = 'Google 8.8.8.8 Anycast';
-      try {
-        const gRes = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(leafNode)}&type=TXT`);
-        if (gRes.ok) {
-          const gData = await gRes.json();
-          if (gData.AD) isDnssec = true;
-          if (gData.Answer && Array.isArray(gData.Answer)) {
-            const txtAnswers = gData.Answer.filter((a: { type: number }) => a.type === 16);
-            if (txtAnswers.length > 0 && txtAnswers[0].TTL !== undefined) {
-              ttl = txtAnswers[0].TTL;
-            }
-            rawRecords = txtAnswers.map((a: { data: string }) => a.data.replace(/^"|"$/g, ''));
-          }
-        }
-      } catch {}
-    }
 
     const latencyMs = Math.round(performance.now() - startTime);
 
@@ -170,15 +159,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     else if (/awsdns/i.test(nsStr)) detectedHoster = 'Amazon Route 53';
     else if (/ovh/i.test(nsStr)) detectedHoster = 'OVHcloud';
 
-    // If Not Found
-    if (rawRecords.length === 0) {
+    // Check DNS status
+    const isNxDomain = rcode === 3;
+    const isServFail = rcode === 2;
+
+    if (rawRecords.length === 0 || isNxDomain || isServFail) {
+      const dnsErrorStatus = isNxDomain ? 'NXDOMAIN' : isServFail ? 'SERVFAIL' : 'NODATA';
       const notFoundPayload: ApiResponseV1 = {
         apiVersion: '1.0',
         standard: 'IETF RFC 10023',
         domain,
         leafNode,
-        status: 'not_found',
-        statusMessage: `No TXT records present under node "${leafNode}".`,
+        status: isServFail ? 'error' : 'not_found',
+        statusMessage: isNxDomain
+          ? `Domain node "${leafNode}" does not exist (NXDOMAIN).`
+          : isServFail
+          ? `Nameserver returned server failure (SERVFAIL) for "${leafNode}".`
+          : `No TXT records present under node "${leafNode}" (NODATA).`,
         architecture: 'unknown',
         dnssec: { authenticated: isDnssec, adFlag: isDnssec },
         wire: { rawRecords: [], recordCount: 0, byteOverhead: 0, ttl: null },
@@ -187,8 +184,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           hasVersionHeader: false,
           validPrice: false,
           validUri: false,
-          warnings: ['No DNS record published.'],
-          errors: ['NXDOMAIN / NODATA at leaf node.'],
+          warnings: isNxDomain || isServFail ? [`DNS resolver status: ${dnsErrorStatus}`] : ['No _for-sale record published.'],
+          errors: isServFail ? ['DNS SERVFAIL encountered.'] : [isNxDomain ? 'NXDOMAIN at leaf node.' : 'NODATA at leaf node.'],
         },
         infrastructure: { detectedHoster, nameservers, resolver: resolverUsed, latencyMs },
         meta: { timestamp: new Date().toISOString(), documentation: 'https://rfc10023.de/api-docs' },

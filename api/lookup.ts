@@ -5,10 +5,13 @@ interface ParsedResult {
   domain: string;
   leafNode: string;
   status: 'valid' | 'warning' | 'not_found' | 'error';
+  dnsStatus: 'NOERROR' | 'NXDOMAIN' | 'NODATA' | 'SERVFAIL' | 'TIMEOUT' | 'ERROR';
   statusMessage: string;
   dnssec: boolean;
   rawRecords: string[];
   tags: Record<string, string>;
+  warnings: string[];
+  errors: string[];
   detectedHoster?: string;
   nameservers: string[];
   timestamp: string;
@@ -55,6 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const leafNode = `_for-sale.${domain}`;
   let rawRecords: string[] = [];
   let isDnssec = false;
+  let rcode = 0;
   const nameservers: string[] = [];
 
   try {
@@ -80,32 +84,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }).then(async (r) => {
       if (r.ok) {
         const json = await r.json();
+        rcode = json.Status ?? 0;
         if (json.AD) isDnssec = true;
         if (json.Answer && Array.isArray(json.Answer)) {
           rawRecords = json.Answer
             .filter((a: { type: number }) => a.type === 16)
-            .map((a: { data: string }) => a.data.replace(/^"|"$/g, ''));
+            .map((a: { data: string }) => {
+              let str = a.data.trim();
+              if (str.startsWith('"') && str.endsWith('"')) {
+                str = str.slice(1, -1);
+              }
+              return str.replace(/\\"/g, '"');
+            });
         }
       }
     });
 
     await Promise.all([nsPromise, txtPromise]);
-
-    // Fallback to Google DNS if no TXT records via Cloudflare
-    if (rawRecords.length === 0) {
-      try {
-        const gRes = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(leafNode)}&type=TXT`);
-        if (gRes.ok) {
-          const gData = await gRes.json();
-          if (gData.AD) isDnssec = true;
-          if (gData.Answer && Array.isArray(gData.Answer)) {
-            rawRecords = gData.Answer
-              .filter((a: { type: number }) => a.type === 16)
-              .map((a: { data: string }) => a.data.replace(/^"|"$/g, ''));
-          }
-        }
-      } catch {}
-    }
 
     // Determine Hoster from NS
     let detectedHoster = 'Unbekannt / Eigener Nameserver';
@@ -119,60 +114,99 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     else if (/awsdns/i.test(nsString)) detectedHoster = 'Amazon Route 53';
     else if (/ovh/i.test(nsString)) detectedHoster = 'OVHcloud';
 
-    if (rawRecords.length === 0) {
+    // Differentiate DNS Status
+    let dnsStatus: ParsedResult['dnsStatus'] = 'NOERROR';
+    if (rcode === 3) dnsStatus = 'NXDOMAIN';
+    else if (rcode === 2) dnsStatus = 'SERVFAIL';
+    else if (rawRecords.length === 0) dnsStatus = 'NODATA';
+
+    if (dnsStatus !== 'NOERROR' || rawRecords.length === 0) {
+      let statusMessage = `Kein TXT-Eintrag unter ${leafNode} gefunden (NODATA).`;
+      if (dnsStatus === 'NXDOMAIN') {
+        statusMessage = `DNS-Knoten ${leafNode} existiert nicht (NXDOMAIN).`;
+      } else if (dnsStatus === 'SERVFAIL') {
+        statusMessage = `Nameserver-Fehler bei der Auflösung von ${leafNode} (SERVFAIL).`;
+      }
+
       const responsePayload: ParsedResult = {
         domain,
         leafNode,
-        status: 'not_found',
-        statusMessage: `Kein TXT-Eintrag unter ${leafNode} gefunden.`,
+        status: dnsStatus === 'SERVFAIL' ? 'error' : 'not_found',
+        dnsStatus,
+        statusMessage,
         dnssec: isDnssec,
         rawRecords: [],
         tags: {},
+        warnings: [],
+        errors: dnsStatus === 'SERVFAIL' ? ['SERVFAIL: Nameserver antwortete mit Serverfehler.'] : [],
         detectedHoster,
         nameservers,
         timestamp: new Date().toISOString(),
-        disclaimer: 'rfc10023.de ist ein unabhängiges DACH-Referenzportal. Daten basieren auf Anycast DNS-Abfragen.'
+        disclaimer: 'rfc10023.de ist ein unabhängiges DACH-Referenzportal. Daten basieren auf Anycast DNS-Abfragen (RFC 10023 Informational).'
       };
       return res.status(200).json(responsePayload);
     }
 
-    // Parse Tags
+    // Parse Tags according to RFC 10023
     const tags: Record<string, string> = {};
-    let hasVersionHeader = false;
+    const warnings: string[] = [];
+    const errors: string[] = [];
+    let hasVersion = false;
 
     rawRecords.forEach((rec) => {
-      const parts = rec.split(';').map((p) => p.trim()).filter(Boolean);
+      const clean = rec.trim();
+      const parts = clean.split(';').map((p) => p.trim()).filter(Boolean);
+      
+      if (parts.length > 2) {
+        warnings.push(`Record "${clean}" bündelt mehrere Tags in einer Zeile. RFC 10023 § 2.1 spezifiziert einen Tag pro TXT-Record.`);
+      }
+
       parts.forEach((p) => {
         const eqIdx = p.indexOf('=');
         if (eqIdx !== -1) {
-          const key = p.substring(0, eqIdx).trim();
+          const key = p.substring(0, eqIdx).trim().toLowerCase();
           const val = p.substring(eqIdx + 1).trim();
-          if (key === 'v' && val.toUpperCase() === 'FORSALE1') {
-            hasVersionHeader = true;
+          if (key === 'v') {
+            if (val.toUpperCase() === 'FORSALE1') {
+              hasVersion = true;
+            } else {
+              errors.push(`Ungültige Version: v=${val} (erwartet: FORSALE1)`);
+            }
           } else {
-            tags[key] = val;
+            if (!tags[key]) {
+              tags[key] = val;
+            } else {
+              warnings.push(`Mehrfaches Vorkommen von Tag "${key}". RFC 10023: Resolver nutzen das erste Vorkommen.`);
+            }
           }
         }
       });
     });
 
-    const status: 'valid' | 'warning' = hasVersionHeader ? 'valid' : 'warning';
-    const statusMessage = hasVersionHeader
-      ? 'Gültiger RFC 10023 Record gefunden.'
-      : 'Eintrag gefunden, jedoch fehlt der erforderliche Versions-Header "v=FORSALE1;".';
+    if (!hasVersion) {
+      errors.push('Pflicht-Header "v=FORSALE1;" fehlt.');
+    }
+
+    const status: 'valid' | 'warning' = (hasVersion && errors.length === 0) ? 'valid' : 'warning';
+    const statusMessage = status === 'valid'
+      ? 'Gültiger RFC 10023 Verkaufseintrag gefunden.'
+      : 'Eintrag gefunden, jedoch mit Abweichungen oder fehlendem Versions-Header.';
 
     const payload: ParsedResult = {
       domain,
       leafNode,
       status,
+      dnsStatus: 'NOERROR',
       statusMessage,
       dnssec: isDnssec,
       rawRecords,
       tags,
+      warnings,
+      errors,
       detectedHoster,
       nameservers,
       timestamp: new Date().toISOString(),
-      disclaimer: 'rfc10023.de ist ein unabhängiges DACH-Referenzportal. Daten basieren auf Anycast DNS-Abfragen.'
+      disclaimer: 'rfc10023.de ist ein unabhängiges DACH-Referenzportal. Daten basieren auf Anycast DNS-Abfragen (RFC 10023 Informational).'
     };
 
     return res.status(200).json(payload);
