@@ -1,35 +1,43 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-// Officially recognized tags under RFC 10023
-const STANDARD_TAGS = ['v', 'fval', 'furi', 'ftxt'] as const;
-const ISO_4217_CODES = new Set([
-  'EUR', 'USD', 'GBP', 'CHF', 'CAD', 'AUD', 'JPY', 'CNY', 'INR', 'BRL',
-  'SGD', 'HKD', 'NZD', 'SEK', 'NOK', 'DKK', 'PLN', 'CZK', 'HUF', 'ILS',
-  'MXN', 'ZAR', 'TRY', 'AED', 'SAR', 'KRW', 'THB', 'IDR', 'MYR', 'PHP'
-]);
+import { parseRfc10023Records, type DnsQueryStatus } from '../../src/utils/rfcParserEngine';
+import { toPunycodeHostname, detectHosterFromNameservers } from '../../src/utils/dnsIntelligence';
 
 interface TagItem {
   tag: string;
   value: string;
+  rawValue?: string;
   sourceRecordIndex: number;
   isStandard: boolean;
   isDuplicate?: boolean;
+  isValid?: boolean;
+  parsedDetails?: {
+    currency?: string;
+    amount?: number;
+    scheme?: string;
+    uLabel?: string;
+    aLabel?: string;
+    isIdn?: boolean;
+    hasMixedScript?: boolean;
+  };
 }
 
 interface ApiResponseV1 {
   apiVersion: '1.0';
   standard: 'IETF RFC 10023';
   domain: string;
+  aLabel?: string;
   leafNode: string;
   status: 'valid' | 'warning' | 'not_found' | 'error';
   statusMessage: string;
-  architecture: 'ietf_multi' | 'single_line' | 'unknown';
+  architecture: 'ietf_multi' | 'single_line_deviation' | 'empty_signal' | 'unknown';
   dnssec: {
     authenticated: boolean;
     adFlag: boolean;
   };
   wire: {
     rawRecords: string[];
+    decodedRecords: string[];
+    hasPresentationEscapes: boolean;
     recordCount: number;
     byteOverhead: number;
     ttl: number | null;
@@ -94,17 +102,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const leafNode = `_for-sale.${domain}`;
+  const punyHost = toPunycodeHostname(domain);
+  const leafNode = `_for-sale.${punyHost}`;
   let rawRecords: string[] = [];
   let isDnssec = false;
   let ttl: number | null = null;
   let rcode = 0;
   const nameservers: string[] = [];
-  let resolverUsed = 'Cloudflare 1.1.1.1 Anycast';
+  const resolverUsed = 'Cloudflare 1.1.1.1 Anycast';
 
   try {
     // 1. Query NS
-    const nsPromise = fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=NS`, {
+    const nsPromise = fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(punyHost)}&type=NS`, {
       headers: { Accept: 'application/dns-json' },
     }).then(async (r) => {
       if (r.ok) {
@@ -132,13 +141,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (txtAnswers.length > 0 && txtAnswers[0].TTL !== undefined) {
             ttl = txtAnswers[0].TTL;
           }
-          rawRecords = txtAnswers.map((a: { data: string }) => {
-            let str = a.data.trim();
-            if (str.startsWith('"') && str.endsWith('"')) {
-              str = str.slice(1, -1);
-            }
-            return str.replace(/\\"/g, '"');
-          });
+          rawRecords = txtAnswers.map((a: { data: string }) => a.data);
         }
       }
     });
@@ -148,143 +151,65 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const latencyMs = Math.round(performance.now() - startTime);
 
     // Hoster detection
-    let detectedHoster = 'Generic / Self-Hosted Nameserver';
-    const nsStr = nameservers.join(' ');
-    if (/hetzner/i.test(nsStr)) detectedHoster = 'Hetzner Online';
-    else if (/inwx/i.test(nsStr)) detectedHoster = 'INWX';
-    else if (/cloudflare/i.test(nsStr)) detectedHoster = 'Cloudflare';
-    else if (/ionos|1und1|ui-dns/i.test(nsStr)) detectedHoster = 'IONOS';
-    else if (/strato/i.test(nsStr)) detectedHoster = 'STRATO';
-    else if (/netcup/i.test(nsStr)) detectedHoster = 'netcup';
-    else if (/awsdns/i.test(nsStr)) detectedHoster = 'Amazon Route 53';
-    else if (/ovh/i.test(nsStr)) detectedHoster = 'OVHcloud';
+    const hosterProfile = detectHosterFromNameservers(nameservers);
+    const detectedHoster = hosterProfile ? hosterProfile.name : 'Generic / Self-Hosted Nameserver';
 
-    // Check DNS status
-    const isNxDomain = rcode === 3;
-    const isServFail = rcode === 2;
+    let dnsStatus: DnsQueryStatus = 'NOERROR';
+    if (rcode === 3) dnsStatus = 'NXDOMAIN';
+    else if (rcode === 2) dnsStatus = 'SERVFAIL';
+    else if (rawRecords.length === 0) dnsStatus = 'NODATA';
 
-    if (rawRecords.length === 0 || isNxDomain || isServFail) {
-      const dnsErrorStatus = isNxDomain ? 'NXDOMAIN' : isServFail ? 'SERVFAIL' : 'NODATA';
-      const notFoundPayload: ApiResponseV1 = {
-        apiVersion: '1.0',
-        standard: 'IETF RFC 10023',
-        domain,
-        leafNode,
-        status: isServFail ? 'error' : 'not_found',
-        statusMessage: isNxDomain
-          ? `Domain node "${leafNode}" does not exist (NXDOMAIN).`
-          : isServFail
-          ? `Nameserver returned server failure (SERVFAIL) for "${leafNode}".`
-          : `No TXT records present under node "${leafNode}" (NODATA).`,
-        architecture: 'unknown',
-        dnssec: { authenticated: isDnssec, adFlag: isDnssec },
-        wire: { rawRecords: [], recordCount: 0, byteOverhead: 0, ttl: null },
-        tags: { parsed: {}, items: [], extensions: [] },
-        compliance: {
-          hasVersionHeader: false,
-          validPrice: false,
-          validUri: false,
-          warnings: isNxDomain || isServFail ? [`DNS resolver status: ${dnsErrorStatus}`] : ['No _for-sale record published.'],
-          errors: isServFail ? ['DNS SERVFAIL encountered.'] : [isNxDomain ? 'NXDOMAIN at leaf node.' : 'NODATA at leaf node.'],
-        },
-        infrastructure: { detectedHoster, nameservers, resolver: resolverUsed, latencyMs },
-        meta: { timestamp: new Date().toISOString(), documentation: 'https://rfc10023.de/api-docs' },
-      };
-      return res.status(200).json(notFoundPayload);
+    // Canonical Engine Analysis (with chunk merging, \DDD decoding, and IDN resolution)
+    const report = parseRfc10023Records(rawRecords, dnsStatus, 'en');
+
+    // Build standard compliance summary
+    const fvalTag = report.tags.find((t) => t.tag === 'fval');
+    const furiTag = report.tags.find((t) => t.tag === 'furi');
+
+    const cleanParsedMap: Record<string, string> = {};
+    for (const [k, v] of Object.entries(report.parsedMap)) {
+      if (v !== undefined) cleanParsedMap[k] = v;
     }
-
-    // Parse Records
-    const items: TagItem[] = [];
-    const parsed: Record<string, string> = {};
-    const tagCounts: Record<string, number> = {};
-    const warnings: string[] = [];
-    const errors: string[] = [];
-    const extensions: string[] = [];
-    let hasVersionHeader = false;
-    let byteOverhead = 0;
-
-    rawRecords.forEach((rec, recIdx) => {
-      const clean = rec.trim();
-      byteOverhead += new TextEncoder().encode(clean).length;
-
-      if (clean.startsWith('v=FORSALE1;') || clean === 'v=FORSALE1' || clean.startsWith('v=FORSALE1')) {
-        hasVersionHeader = true;
-      }
-
-      const parts = clean.split(';').map((p) => p.trim()).filter(Boolean);
-      parts.forEach((p) => {
-        const eq = p.indexOf('=');
-        if (eq !== -1) {
-          const k = p.substring(0, eq).trim().toLowerCase();
-          const v = p.substring(eq + 1).trim();
-          const isStd = (STANDARD_TAGS as readonly string[]).includes(k);
-
-          tagCounts[k] = (tagCounts[k] || 0) + 1;
-          const isDuplicate = tagCounts[k] > 1;
-
-          items.push({ tag: k, value: v, sourceRecordIndex: recIdx, isStandard: isStd, isDuplicate });
-
-          if (!isStd && !extensions.includes(k)) {
-            extensions.push(k);
-          }
-
-          if (!parsed[k]) {
-            parsed[k] = v;
-          } else if (isDuplicate && k !== 'v') {
-            warnings.push(`Duplicate tag "${k}" detected. Resolvers adhere to the first occurrence.`);
-          }
-        }
-      });
-    });
-
-    if (!hasVersionHeader) {
-      errors.push('Mandatory version tag "v=FORSALE1;" is missing.');
-    }
-
-    let validPrice = false;
-    if (parsed.fval) {
-      const cleanVal = parsed.fval.trim().toUpperCase();
-      if (cleanVal === 'VHB') {
-        validPrice = true;
-      } else {
-        const pMatch = cleanVal.match(/^([A-Z]{3}):?(\d+)$/);
-        if (pMatch && ISO_4217_CODES.has(pMatch[1])) {
-          validPrice = true;
-        } else {
-          warnings.push(`Price "${parsed.fval}" does not conform to ISO 4217 integer format (e.g. EUR2500).`);
-        }
-      }
-    }
-
-    let validUri = false;
-    if (parsed.furi) {
-      const u = parsed.furi.trim();
-      if (u.startsWith('mailto:') || u.startsWith('https://') || u.startsWith('http://') || u.startsWith('tel:')) {
-        validUri = true;
-      } else {
-        warnings.push(`Contact URI "${parsed.furi}" is not an absolute RFC 3986 URI.`);
-      }
-    }
-
-    const isMulti = rawRecords.length > 1;
-    const architecture = isMulti ? 'ietf_multi' : 'single_line';
-    const status: 'valid' | 'warning' = (hasVersionHeader && errors.length === 0) ? 'valid' : 'warning';
-    const statusMessage = status === 'valid'
-      ? 'Valid RFC 10023 sale offer confirmed.'
-      : 'Record discovered, but contains validation warnings or missing version header.';
 
     const response: ApiResponseV1 = {
       apiVersion: '1.0',
       standard: 'IETF RFC 10023',
       domain,
+      aLabel: punyHost !== domain ? punyHost : undefined,
       leafNode,
-      status,
-      statusMessage,
-      architecture,
+      status: report.status,
+      statusMessage: report.statusMessage,
+      architecture: report.architecture,
       dnssec: { authenticated: isDnssec, adFlag: isDnssec },
-      wire: { rawRecords, recordCount: rawRecords.length, byteOverhead, ttl },
-      tags: { parsed, items, extensions },
-      compliance: { hasVersionHeader, validPrice, validUri, warnings, errors },
+      wire: {
+        rawRecords: report.rawRecords,
+        decodedRecords: report.decodedRecords,
+        hasPresentationEscapes: report.hasPresentationEscapes,
+        recordCount: report.rawRecords.length,
+        byteOverhead: report.byteOverheadTotal,
+        ttl,
+      },
+      tags: {
+        parsed: cleanParsedMap,
+        items: report.tags.map((t) => ({
+          tag: t.tag,
+          value: t.value,
+          rawValue: t.rawValue,
+          sourceRecordIndex: t.sourceRecordIndex,
+          isStandard: t.isStandard,
+          isDuplicate: t.isDuplicate,
+          isValid: t.isValid,
+          parsedDetails: t.parsedDetails,
+        })),
+        extensions: report.extensionTags,
+      },
+      compliance: {
+        hasVersionHeader: report.saleSignalFound,
+        validPrice: fvalTag ? fvalTag.isValid : false,
+        validUri: furiTag ? furiTag.isValid : false,
+        warnings: report.warnings,
+        errors: report.errors,
+      },
       infrastructure: { detectedHoster, nameservers, resolver: resolverUsed, latencyMs },
       meta: { timestamp: new Date().toISOString(), documentation: 'https://rfc10023.de/api-docs' },
     };
