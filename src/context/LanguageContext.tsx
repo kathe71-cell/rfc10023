@@ -60,6 +60,22 @@ const translations: Record<Language, Record<string, string>> = {
     'feat.api_desc': 'Kostenfreie Schnittstelle für Entwickler, Skripte und Abfrage-Tools.',
     'feat.legal_title': 'Recht und Steuern',
     'feat.legal_desc': 'Impressumspflicht nach § 5 DDG, Vertragsrecht und Preisangaben im DACH-Raum.',
+    'audience.headline': 'Was möchtest du tun?',
+    'audience.sub': 'Wähle deinen Einstieg – direkt zum richtigen Werkzeug.',
+    'audience.domainer_label': 'Einzelne Domain',
+    'audience.domainer_title': 'Eintrag erstellen oder prüfen',
+    'audience.domainer_desc': 'Du möchtest für eine einzelne Domain signalisieren, dass sie zum Verkauf steht. Erstelle einen RFC-10023-konformen DNS-Eintrag oder prüfe, ob ein vorhandener Eintrag korrekt ist.',
+    'audience.domainer_cta1': 'Eintrag erstellen',
+    'audience.domainer_cta2': 'Vorhandenen Eintrag prüfen',
+    'audience.portfolio_label': 'Domainportfolio',
+    'audience.portfolio_title': 'Mehrere Domains prüfen',
+    'audience.portfolio_desc': 'Du verwaltest ein Portfolio mit vielen Domains und möchtest auf einen Blick sehen, welche Domains bereits RFC-10023-Einträge haben und wie konform diese sind.',
+    'audience.portfolio_cta': 'Portfolio prüfen →',
+    'audience.dev_label': 'Entwickler & Registrare',
+    'audience.dev_title': 'Spezifikation & API',
+    'audience.dev_desc': 'Du entwickelst Tooling, einen Registrar-Dienst oder möchtest RFC 10023 technisch integrieren. Lies die vollständige IETF-Spezifikation oder nutze unsere öffentliche REST-API.',
+    'audience.dev_cta1': 'Spezifikation lesen',
+    'audience.dev_cta2': 'REST-API',
 
     // Definition Box
     'def.badge': 'IETF RFC 10023 (Informational)',
@@ -87,7 +103,7 @@ const translations: Record<Language, Record<string, string>> = {
     'bento.row_deindex': 'Einfluss auf Webseiten-Inhalte',
     'bento.row_deindex_val': 'Unabhängig (Webseite bleibt unverändert)',
     'bento.row_dnssec': 'DNSSEC-Signierung',
-    'bento.row_dnssec_val': 'Voll kompatibel',
+    'bento.row_dnssec_val': 'Kompatibel (zonenabhängig)',
     'bento.row_machine': 'Maschinenlesbar',
     'bento.row_machine_val': 'IETF RFC 10023 (Informational)',
     'bento.card2_note': '* Gilt für Direktverkäufe über den im DNS hinterlegten Kontaktlink.',
@@ -517,6 +533,22 @@ const translations: Record<Language, Record<string, string>> = {
     'feat.api_desc': 'Free, high-speed interface for developers, monitoring scripts, and automated bots.',
     'feat.legal_title': 'Legal & Regulations',
     'feat.legal_desc': 'Imprint requirements, contract law, and price disclosure standards in the EU.',
+    'audience.headline': 'What do you want to do?',
+    'audience.sub': 'Choose your starting point – straight to the right tool.',
+    'audience.domainer_label': 'Single Domain',
+    'audience.domainer_title': 'Create or verify a record',
+    'audience.domainer_desc': 'You want to signal that a single domain is for sale. Generate a spec-compliant RFC 10023 DNS record or check whether an existing record is correctly formatted.',
+    'audience.domainer_cta1': 'Create record',
+    'audience.domainer_cta2': 'Verify existing record',
+    'audience.portfolio_label': 'Domain Portfolio',
+    'audience.portfolio_title': 'Scan multiple domains',
+    'audience.portfolio_desc': 'You manage a portfolio of domains and want to see at a glance which ones have RFC 10023 records and how conformant they are.',
+    'audience.portfolio_cta': 'Scan portfolio →',
+    'audience.dev_label': 'Developers & Registrars',
+    'audience.dev_title': 'Specification & API',
+    'audience.dev_desc': 'You are building tooling, a registrar service, or want to integrate RFC 10023 technically. Read the full IETF specification or use our public REST API.',
+    'audience.dev_cta1': 'Read specification',
+    'audience.dev_cta2': 'REST API',
 
     // Definition Box
     'def.badge': 'IETF RFC 10023 (Informational)',
@@ -544,7 +576,7 @@ const translations: Record<Language, Record<string, string>> = {
     'bento.row_deindex': 'Website Content Impact',
     'bento.row_deindex_val': 'Independent (Website remains untouched)',
     'bento.row_dnssec': 'DNSSEC Signatures',
-    'bento.row_dnssec_val': 'Fully compatible',
+    'bento.row_dnssec_val': 'Compatible (zone-dependent)',
     'bento.row_machine': 'Machine-Readable',
     'bento.row_machine_val': 'IETF RFC 10023 (Informational)',
     'bento.card2_note': '* Applies to direct peer-to-peer transactions initiated through the DNS contact URI.',
@@ -967,6 +999,20 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const isEn = language === 'en';
     const ogLocale = document.querySelector('meta[property="og:locale"]');
     if (ogLocale) ogLocale.setAttribute('content', isEn ? 'en_US' : 'de_DE');
+
+    // Route-aware canonical: strip /en prefix for canonical path resolution
+    const pathname = window.location.pathname;
+    const canonicalPath = isEn
+      ? pathname.startsWith('/en') ? pathname : '/en' + pathname
+      : pathname.startsWith('/en') ? pathname.replace(/^\/en/, '') || '/' : pathname;
+    const canonicalUrl = 'https://www.rfc10023.de' + canonicalPath;
+
+    const canonicalEl = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (canonicalEl) canonicalEl.setAttribute('href', canonicalUrl);
+    const ogUrl = document.querySelector('meta[property="og:url"]') as HTMLMetaElement | null;
+    if (ogUrl) ogUrl.setAttribute('content', canonicalUrl);
+    const twitterUrl = document.querySelector('meta[name="twitter:url"]') as HTMLMetaElement | null;
+    if (twitterUrl) twitterUrl.setAttribute('content', canonicalUrl);
   }, [language]);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);

@@ -329,7 +329,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               type="text"
               value={furi}
               onChange={(e) => setFuri(e.target.value)}
-              placeholder="https://dan.com/buy-domain/example.com oder mailto:kontakt@..."
+              placeholder={language === 'en' ? 'https://dan.com/buy-domain/example.com or mailto:contact@...' : 'https://dan.com/buy-domain/example.com oder mailto:kontakt@...'}
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
             />
             <span className="text-[11px] text-slate-500 mt-1 block">
@@ -372,7 +372,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               type="text"
               value={fcod}
               onChange={(e) => setFcod(e.target.value)}
-              placeholder="z. B. EXCO-S2lscm95IHdhcyBoZXJl"
+              placeholder={language === 'en' ? 'e.g. EXCO-S2lscm95IHdhcyBoZXJl' : 'z. B. EXCO-S2lscm95IHdhcyBoZXJl'}
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
             />
             <span className="text-[11px] text-slate-500 mt-1 block">
@@ -401,16 +401,18 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
             <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs font-mono text-rose-900 flex items-start gap-2.5">
               <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
               <div>
-                <strong>Limit überschritten ({maxBytes} Bytes)!</strong>
+                <strong>{language === 'en' ? `Limit exceeded (${maxBytes} bytes)!` : `Limit überschritten (${maxBytes} Bytes)!`}</strong>
                 <p className="mt-0.5 opacity-90">
-                  Ein DNS-TXT-String darf gemäß RFC 1035 maximal 255 Oktette enthalten. Bitte kürzen.
+                  {language === 'en'
+                    ? 'A DNS TXT string may contain at most 255 octets per RFC 1035. Please shorten the value.'
+                    : 'Ein DNS-TXT-String darf gemäß RFC 1035 maximal 255 Oktette enthalten. Bitte kürzen.'}
                 </p>
               </div>
             </div>
           ) : (
             <div className="text-[11px] font-mono text-slate-500 flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Max. RDATA-Länge: {maxBytes} / 255 Oktette (RFC 1035 konform)</span>
+              <span>{language === 'en' ? `Max. RDATA length: ${maxBytes} / 255 octets (RFC 1035 compliant)` : `Max. RDATA-Länge: ${maxBytes} / 255 Oktette (RFC 1035 konform)`}</span>
             </div>
           )}
 
@@ -418,18 +420,19 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-950 space-y-1.5">
             <div className="flex items-center gap-1.5 font-bold font-mono text-amber-900">
               <AlertCircle className="w-4 h-4 text-amber-700" />
-              <span>Wichtiger Hinweis zur Aktivierung:</span>
+              <span>{language === 'en' ? 'Important activation note:' : 'Wichtiger Hinweis zur Aktivierung:'}</span>
             </div>
             <p className="leading-relaxed">
-              Das Kopieren dieser Einträge generiert lediglich die DNS-Syntax. Der Eintrag wird erst aktiv, 
-              wenn du ihn im Zoneneditor deines Registrars/DNS-Hosters als TXT-Eintrag hinterlegst.
+              {language === 'en'
+                ? 'Copying these records only generates the DNS syntax. The record becomes active only after you add it as a TXT record in your registrar\'s or DNS provider\'s zone editor.'
+                : 'Das Kopieren dieser Einträge generiert lediglich die DNS-Syntax. Der Eintrag wird erst aktiv, wenn du ihn im Zoneneditor deines Registrars/DNS-Hosters als TXT-Eintrag hinterlegst.'}
             </p>
             <div className="pt-2">
               <Link
                 to={`${langPrefix}/validator?d=${encodeURIComponent(cleanDomain)}&hoster=${activeTab}`}
                 className="inline-flex items-center gap-1.5 font-mono font-bold text-xs text-emerald-800 hover:text-emerald-950 underline underline-offset-4"
               >
-                <span>Nach dem Speichern: Eintrag für {cleanDomain} im Validator prüfen</span>
+                <span>{language === 'en' ? `After saving: verify record for ${cleanDomain} in Validator` : `Nach dem Speichern: Eintrag für ${cleanDomain} im Validator prüfen`}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -476,7 +479,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
             {/* Bottom Actions inside code card */}
             <div className="pt-3 mt-3 border-t border-slate-800 flex items-center justify-between gap-2">
               <span className="text-[10px] text-slate-400 truncate">
-                {recordStrings.length} {recordStrings.length === 1 ? 'TXT-Eintrag' : 'TXT-Einträge (Multi-Record RRset)'}
+                {recordStrings.length} {language === 'en' ? (recordStrings.length === 1 ? 'TXT Record' : 'TXT Records (Multi-Record RRset)') : (recordStrings.length === 1 ? 'TXT-Eintrag' : 'TXT-Einträge (Multi-Record RRset)')}
               </span>
               <button
                 type="button"
@@ -487,10 +490,10 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
                     ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                     : 'bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white'
                 }`}
-                title={exceeds255Limit ? 'Export gesperrt: Mindestens ein TXT-Record überschreitet das 255-Byte-Limit (RFC 1035).' : ''}
+                title={exceeds255Limit ? (language === 'en' ? 'Export locked: At least one TXT record exceeds the 255 byte limit (RFC 1035).' : 'Export gesperrt: Mindestens ein TXT-Record überschreitet das 255-Byte-Limit (RFC 1035).') : ''}
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Kopiert!' : exceeds255Limit ? 'Limit überschritten' : 'Werte kopieren'}</span>
+                <span>{copied ? (language === 'en' ? 'Copied!' : 'Kopiert!') : exceeds255Limit ? (language === 'en' ? 'Limit exceeded' : 'Limit überschritten') : (language === 'en' ? 'Copy values' : 'Werte kopieren')}</span>
               </button>
             </div>
 
@@ -499,7 +502,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
           {/* Share / Verification Link */}
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
             <span className="text-xs font-mono text-slate-600 truncate">
-              Link zum Prüfen: rfc10023.de{langPrefix}/validator?d={cleanDomain}
+              {language === 'en' ? 'Verification link:' : 'Link zum Prüfen:'} rfc10023.de{langPrefix}/validator?d={cleanDomain}
             </span>
             <button
               type="button"
@@ -507,7 +510,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               className="shrink-0 px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-200 text-xs font-mono font-medium flex items-center gap-1 text-slate-800"
             >
               {shareCopied ? <Check className="w-3 h-3 text-emerald-600" /> : <Share2 className="w-3 h-3 text-slate-500" />}
-              <span>{shareCopied ? 'Kopiert!' : 'Link kopieren'}</span>
+              <span>{shareCopied ? (language === 'en' ? 'Copied!' : 'Kopiert!') : (language === 'en' ? 'Copy link' : 'Link kopieren')}</span>
             </button>
           </div>
 

@@ -25,7 +25,7 @@ export default function DokumentationPage() {
         : 'Schritt-für-Schritt-Anleitungen für Cloudflare, Hetzner, INWX, Netcup, STRATO, IONOS, AWS Route 53 und OVHcloud.',
       path: `${langPrefix}/hoster-matrix`,
       icon: Database,
-      tag: 'Zoneneditoren',
+      tag: isEn ? 'Zone Editors' : 'Zoneneditoren',
     },
     {
       title: isEn ? 'REST API Documentation' : 'REST-API Dokumentation',
@@ -43,7 +43,7 @@ export default function DokumentationPage() {
         : 'Rechtlicher Rahmen im DACH-Raum: Impressumspflicht nach § 5 DDG, PAngV, Vertragsschluss und steuerliche Aspekte beim Domainverkauf.',
       path: isEn ? '/en/legal-guidelines' : '/recht-leitfaden',
       icon: Scale,
-      tag: 'Rechtssicherheit',
+      tag: isEn ? 'Legal Compliance' : 'Rechtssicherheit',
     },
     {
       title: isEn ? 'Frequently Asked Questions (FAQ)' : 'Häufig gestellte Fragen (FAQ)',

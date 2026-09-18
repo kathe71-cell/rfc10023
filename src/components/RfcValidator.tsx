@@ -361,7 +361,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
         </div>
         <div className="flex items-center gap-2 text-xs font-mono text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
           <Terminal className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Knoten: _for-sale.[domain]</span>
+          <span>{isEn ? 'Node: _for-sale.[domain]' : 'Knoten: _for-sale.[domain]'}</span>
         </div>
       </div>
 
@@ -403,7 +403,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
               </>
             ) : (
               <>
-                <span>Prüfen</span>
+                <span>{isEn ? 'Check' : 'Prüfen'}</span>
                 <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
               </>
             )}
@@ -448,16 +448,16 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-mono font-bold text-slate-700 flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-slate-500" />
-              <span>Zuletzt geprüfte Domains (nur lokal im Browser gespeichert):</span>
+              <span>{isEn ? 'Recently checked domains (stored locally in browser):' : 'Zuletzt geprüfte Domains (nur lokal im Browser gespeichert):'}</span>
             </span>
             <button
               type="button"
               onClick={clearHistory}
               className="text-[11px] font-mono text-slate-500 hover:text-rose-600 flex items-center gap-1 transition-colors"
-              title="Lokalen Verlauf löschen"
+              title={isEn ? 'Clear local history' : 'Lokalen Verlauf löschen'}
             >
               <Trash2 className="w-3 h-3" />
-              <span>Historie leeren</span>
+              <span>{isEn ? 'Clear history' : 'Historie leeren'}</span>
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -642,7 +642,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
             <div className="p-4 rounded-xl bg-amber-50/90 border border-amber-200 text-xs font-mono text-amber-950 space-y-1.5">
               <div className="flex items-center gap-2 font-bold text-amber-900">
                 <AlertTriangle className="w-4 h-4 text-amber-700" />
-                <span>Format- und Syntaxhinweise:</span>
+                <span>{isEn ? 'Format & syntax notes:' : 'Format- und Syntaxhinweise:'}</span>
               </div>
               <ul className="list-disc pl-5 space-y-1 text-amber-900">
                 {result.report.warnings.map((w, idx) => (
@@ -698,7 +698,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
               className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-mono font-bold text-xs flex items-center gap-2 transition-all shadow-sm"
             >
               <Cpu className="w-3.5 h-3.5" />
-              <span>Diesen Eintrag im Generator anpassen / korrigieren</span>
+              <span>{isEn ? 'Edit this record in the Generator' : 'Diesen Eintrag im Generator anpassen / korrigieren'}</span>
             </Link>
 
             <Link
@@ -709,7 +709,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
               className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono font-semibold text-xs flex items-center gap-2 transition-colors border border-slate-200"
             >
               <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Badge für {result.domain} erstellen</span>
+              <span>{isEn ? `Create badge for ${result.domain}` : `Badge für ${result.domain} erstellen`}</span>
             </Link>
           </div>
 
@@ -751,13 +751,15 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
 
           {/* 7. Technical Transparency Box */}
           <div className="p-4 rounded-xl bg-slate-100 border border-slate-200 text-[11px] font-mono text-slate-600 space-y-1">
-            <div className="font-bold text-slate-700">Audit-Transparenz &amp; Cache-Hinweis:</div>
-            <div>Prüfzeitpunkt: {new Date(result.timestamp).toLocaleString()} (Lokal)</div>
-            <div>Verwendeter Anycast-Resolver: {result.resolver}</div>
-            <div>Hoster-Heuristik: {result.detectedHoster ? result.detectedHoster.name : 'Individuell / Eigene Nameserver'}</div>
-            {result.nameservers.length > 0 && <div>Autoritative Nameserver: {result.nameservers.join(', ')}</div>}
+            <div className="font-bold text-slate-700">{isEn ? 'Audit Transparency & Cache Notice:' : 'Audit-Transparenz & Cache-Hinweis:'}</div>
+            <div>{isEn ? 'Checked at:' : 'Prüfzeitpunkt:'} {new Date(result.timestamp).toLocaleString(isEn ? 'en-GB' : 'de-DE')} ({isEn ? 'Local' : 'Lokal'})</div>
+            <div>{isEn ? 'Anycast resolver used:' : 'Verwendeter Anycast-Resolver:'} {result.resolver}</div>
+            <div>{isEn ? 'Hoster heuristic:' : 'Hoster-Heuristik:'} {result.detectedHoster ? result.detectedHoster.name : (isEn ? 'Custom / Own nameservers' : 'Individuell / Eigene Nameserver')}</div>
+            {result.nameservers.length > 0 && <div>{isEn ? 'Authoritative nameservers:' : 'Autoritative Nameserver:'} {result.nameservers.join(', ')}</div>}
             <div className="text-slate-500 pt-1">
-              * DNS-Einträge unterliegen TTL-Caching. Kürzlich geänderte Einträge können je nach Resolver einige Minuten bis Stunden Zwischenspeicherung aufweisen.
+              {isEn
+                ? '* DNS records are subject to TTL caching. Recently changed records may be cached by resolvers for a few minutes to several hours.'
+                : '* DNS-Einträge unterliegen TTL-Caching. Kürzlich geänderte Einträge können je nach Resolver einige Minuten bis Stunden Zwischenspeicherung aufweisen.'}
             </div>
           </div>
 

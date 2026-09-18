@@ -101,7 +101,7 @@ function RouteWatcher() {
   return null;
 }
 
-function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { t, language, isSearchOpen, setIsSearchOpen } = useLanguage();
   const isEmbed = location.pathname.includes('-embed');
@@ -140,6 +140,57 @@ function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+export function AppRoutes() {
+  return (
+    <Routes>
+      {/* German Routes (Default) */}
+      <Route path="/" element={<HomePage />} />
+      <Route path="/validator" element={<ValidatorPage />} />
+      <Route path="/generator" element={<GeneratorPage />} />
+      <Route path="/bulk-scan" element={<BulkPage />} />
+      <Route path="/badge-generator" element={<BadgePage />} />
+      <Route path="/api-docs" element={<ApiDocsPage />} />
+      <Route path="/recht-leitfaden" element={<RechtLeitfadenPage />} />
+      <Route path="/hoster-matrix" element={<MatrixPage />} />
+      <Route path="/spezifikation" element={<SpezifikationPage />} />
+      <Route path="/widget-embed" element={<EmbedPage />} />
+      <Route path="/rechner-embed" element={<EmbedPage />} />
+      <Route path="/validator-embed" element={<EmbedPage />} />
+      <Route path="/impressum" element={<Impressum />} />
+      <Route path="/datenschutz" element={<Datenschutz />} />
+      <Route path="/faq" element={<FaqPage />} />
+      <Route path="/dokumentation" element={<DokumentationPage />} />
+
+      {/* English Routes (/en prefix for global SEO and international reach) */}
+      <Route path="/en" element={<HomePage />} />
+      <Route path="/en/validator" element={<ValidatorPage />} />
+      <Route path="/en/generator" element={<GeneratorPage />} />
+      <Route path="/en/bulk-scan" element={<BulkPage />} />
+      <Route path="/en/badge-generator" element={<BadgePage />} />
+      <Route path="/en/api-docs" element={<ApiDocsPage />} />
+      <Route path="/en/recht-leitfaden" element={<RechtLeitfadenPage />} />
+      <Route path="/en/legal-guidelines" element={<RechtLeitfadenPage />} />
+      <Route path="/en/legal-guide" element={<RechtLeitfadenPage />} />
+      <Route path="/en/hoster-matrix" element={<MatrixPage />} />
+      <Route path="/en/spezifikation" element={<SpezifikationPage />} />
+      <Route path="/en/specification" element={<SpezifikationPage />} />
+      <Route path="/en/faq" element={<FaqPage />} />
+      <Route path="/en/dokumentation" element={<DokumentationPage />} />
+      <Route path="/en/documentation" element={<DokumentationPage />} />
+      <Route path="/en/widget-embed" element={<EmbedPage />} />
+      <Route path="/en/rechner-embed" element={<EmbedPage />} />
+      <Route path="/en/validator-embed" element={<EmbedPage />} />
+      <Route path="/en/impressum" element={<Impressum />} />
+      <Route path="/en/imprint" element={<Impressum />} />
+      <Route path="/en/datenschutz" element={<Datenschutz />} />
+      <Route path="/en/privacy" element={<Datenschutz />} />
+
+      {/* Fallback */}
+      <Route path="*" element={<HomePage />} />
+    </Routes>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -148,55 +199,11 @@ export default function App() {
       <LanguageProvider>
         <RouteWatcher />
         <Layout>
-          <Routes>
-            {/* German Routes (Default) */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/validator" element={<ValidatorPage />} />
-            <Route path="/generator" element={<GeneratorPage />} />
-            <Route path="/bulk-scan" element={<BulkPage />} />
-            <Route path="/badge-generator" element={<BadgePage />} />
-            <Route path="/api-docs" element={<ApiDocsPage />} />
-            <Route path="/recht-leitfaden" element={<RechtLeitfadenPage />} />
-            <Route path="/hoster-matrix" element={<MatrixPage />} />
-            <Route path="/spezifikation" element={<SpezifikationPage />} />
-            <Route path="/widget-embed" element={<EmbedPage />} />
-            <Route path="/rechner-embed" element={<EmbedPage />} />
-            <Route path="/validator-embed" element={<EmbedPage />} />
-            <Route path="/impressum" element={<Impressum />} />
-            <Route path="/datenschutz" element={<Datenschutz />} />
-            <Route path="/faq" element={<FaqPage />} />
-            <Route path="/dokumentation" element={<DokumentationPage />} />
-
-            {/* English Routes (/en prefix for global SEO and international reach) */}
-            <Route path="/en" element={<HomePage />} />
-            <Route path="/en/validator" element={<ValidatorPage />} />
-            <Route path="/en/generator" element={<GeneratorPage />} />
-            <Route path="/en/bulk-scan" element={<BulkPage />} />
-            <Route path="/en/badge-generator" element={<BadgePage />} />
-            <Route path="/en/api-docs" element={<ApiDocsPage />} />
-            <Route path="/en/recht-leitfaden" element={<RechtLeitfadenPage />} />
-            <Route path="/en/legal-guidelines" element={<RechtLeitfadenPage />} />
-            <Route path="/en/legal-guide" element={<RechtLeitfadenPage />} />
-            <Route path="/en/hoster-matrix" element={<MatrixPage />} />
-            <Route path="/en/spezifikation" element={<SpezifikationPage />} />
-            <Route path="/en/specification" element={<SpezifikationPage />} />
-            <Route path="/en/faq" element={<FaqPage />} />
-            <Route path="/en/dokumentation" element={<DokumentationPage />} />
-            <Route path="/en/documentation" element={<DokumentationPage />} />
-            <Route path="/en/widget-embed" element={<EmbedPage />} />
-            <Route path="/en/rechner-embed" element={<EmbedPage />} />
-            <Route path="/en/validator-embed" element={<EmbedPage />} />
-            <Route path="/en/impressum" element={<Impressum />} />
-            <Route path="/en/imprint" element={<Impressum />} />
-            <Route path="/en/datenschutz" element={<Datenschutz />} />
-            <Route path="/en/privacy" element={<Datenschutz />} />
-
-            {/* Fallback */}
-            <Route path="*" element={<HomePage />} />
-          </Routes>
+          <AppRoutes />
         </Layout>
       </LanguageProvider>
     </BrowserRouter>
   );
 }
+
 

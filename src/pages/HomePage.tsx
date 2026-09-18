@@ -142,22 +142,22 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="space-y-2 text-slate-300 overflow-x-auto leading-relaxed">
+              <div className="space-y-2 text-slate-300 overflow-x-hidden leading-relaxed">
                 <p className="text-slate-500">{t('hero.terminal_comment')}</p>
-                <p className="text-emerald-400">$ dig TXT _for-sale.forsaledns.net +short</p>
+                <p className="text-emerald-400 break-all">$ dig TXT _for-sale.forsaledns.net +short</p>
                 <div className="p-3 bg-slate-900/90 rounded-lg border border-slate-800 text-slate-200 space-y-1 my-2">
-                  <p className="text-emerald-300">&quot;v=FORSALE1;furi=mailto:sales@sun.com.py&quot;</p>
-                  <p className="text-emerald-300">&quot;v=FORSALE1;fval=USD195000&quot;</p>
+                  <p className="text-emerald-300 break-all">&quot;v=FORSALE1;furi=mailto:sales@sun.com.py&quot;</p>
+                  <p className="text-emerald-300 break-all">&quot;v=FORSALE1;fval=USD195000&quot;</p>
                 </div>
                 <div className="pt-2 text-[11px] text-slate-400 border-t border-slate-800/80 space-y-1">
                   <p><strong className="text-slate-200">{t('hero.terminal_node')}</strong> _for-sale.forsaledns.net.</p>
-                  <p><strong className="text-slate-200">{t('hero.terminal_dnssec')}</strong> AD-Bit = false (Nicht validiert)</p>
+                  <p><strong className="text-slate-200">{t('hero.terminal_dnssec')}</strong> AD-Bit = false ({language === 'en' ? 'Not validated' : 'Nicht validiert'})</p>
                   <p><strong className="text-slate-200">{t('hero.terminal_standard')}</strong> IETF RFC 10023 (Informational)</p>
                 </div>
               </div>
 
               <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px]">
-                <span className="text-slate-500">Live-Referenz: forsaledns.net</span>
+                <span className="text-slate-500">{language === 'en' ? 'Live reference: forsaledns.net' : 'Live-Referenz: forsaledns.net'}</span>
                 <Link to={language === 'en' ? '/en/specification' : '/spezifikation'} className="text-emerald-400 hover:underline flex items-center gap-1 font-bold">
                   {t('hero.terminal_spec_link')}
                 </Link>
@@ -170,60 +170,112 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Feature Navigation Grid */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link
-            to={`${langPrefix}/bulk-scan`}
-            className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all group"
-          >
-            <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700 w-fit mb-3 group-hover:scale-110 transition-transform">
-              <Layers className="w-5 h-5" />
-            </div>
-            <h3 className="font-bold text-slate-900 text-base mb-1">{t('feat.bulk_title')}</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              {t('feat.bulk_desc')}
-            </p>
-          </Link>
+      {/* Audience Entry Cards — direkt unter Hero */}
+      <section className="bg-slate-50 border-b border-slate-200 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-950 tracking-tight">
+              {t('audience.headline')}
+            </h2>
+            <p className="mt-1.5 text-sm text-slate-500">{t('audience.sub')}</p>
+          </div>
 
-          <Link
-            to={`${langPrefix}/badge-generator`}
-            className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all group"
-          >
-            <div className="p-2.5 rounded-xl bg-slate-900 text-emerald-400 w-fit mb-3 group-hover:scale-110 transition-transform">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <h3 className="font-bold text-slate-900 text-base mb-1">{t('feat.badge_title')}</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              {t('feat.badge_desc')}
-            </p>
-          </Link>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-          <Link
-            to={`${langPrefix}/api-docs`}
-            className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all group"
-          >
-            <div className="p-2.5 rounded-xl bg-slate-100 text-slate-800 w-fit mb-3 group-hover:scale-110 transition-transform">
-              <Code2 className="w-5 h-5" />
+            {/* Card 1 — Einzelne Domain */}
+            <div className="bg-white rounded-2xl border border-slate-200 hover:border-emerald-400 hover:shadow-lg transition-all duration-200 p-7 flex flex-col">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                  {t('audience.domainer_label')}
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-950 mb-2 leading-snug">
+                {t('audience.domainer_title')}
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed flex-1 mb-5">
+                {t('audience.domainer_desc')}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 mt-auto">
+                <Link
+                  to={`${langPrefix}/generator`}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-950 text-white font-bold text-sm hover:bg-slate-800 transition-colors"
+                >
+                  <ArrowRight className="w-4 h-4" />
+                  {t('audience.domainer_cta1')}
+                </Link>
+                <Link
+                  to={`${langPrefix}/validator`}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-300 text-slate-800 font-semibold text-sm hover:border-emerald-500 hover:text-emerald-700 transition-colors"
+                >
+                  {t('audience.domainer_cta2')}
+                </Link>
+              </div>
             </div>
-            <h3 className="font-bold text-slate-900 text-base mb-1">{t('feat.api_title')}</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              {t('feat.api_desc')}
-            </p>
-          </Link>
 
-          <Link
-            to={language === 'en' ? '/en/legal-guidelines' : '/recht-leitfaden'}
-            className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500 hover:shadow-md transition-all group"
-          >
-            <div className="p-2.5 rounded-xl bg-amber-100 text-amber-900 w-fit mb-3 group-hover:scale-110 transition-transform">
-              <Scale className="w-5 h-5" />
+            {/* Card 2 — Portfolio */}
+            <div className="bg-white rounded-2xl border border-slate-200 hover:border-amber-400 hover:shadow-lg transition-all duration-200 p-7 flex flex-col">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                  {t('audience.portfolio_label')}
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-950 mb-2 leading-snug">
+                {t('audience.portfolio_title')}
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed flex-1 mb-5">
+                {t('audience.portfolio_desc')}
+              </p>
+              <div className="mt-auto">
+                <Link
+                  to={`${langPrefix}/bulk-scan`}
+                  className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-sm hover:bg-amber-500 transition-colors"
+                >
+                  <Layers className="w-4 h-4" />
+                  {t('audience.portfolio_cta')}
+                </Link>
+              </div>
             </div>
-            <h3 className="font-bold text-slate-900 text-base mb-1">{t('feat.legal_title')}</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              {t('feat.legal_desc')}
-            </p>
-          </Link>
+
+            {/* Card 3 — Entwickler & Registrare */}
+            <div className="bg-white rounded-2xl border border-slate-200 hover:border-slate-400 hover:shadow-lg transition-all duration-200 p-7 flex flex-col">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 rounded-xl bg-slate-900 text-emerald-400">
+                  <Code2 className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+                  {t('audience.dev_label')}
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-950 mb-2 leading-snug">
+                {t('audience.dev_title')}
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed flex-1 mb-5">
+                {t('audience.dev_desc')}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 mt-auto">
+                <Link
+                  to={language === 'en' ? '/en/specification' : '/spezifikation'}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-700 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  {t('audience.dev_cta1')}
+                </Link>
+                <Link
+                  to={`${langPrefix}/api-docs`}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-300 text-slate-800 font-semibold text-sm hover:border-slate-500 transition-colors font-mono"
+                >
+                  {t('audience.dev_cta2')}
+                </Link>
+              </div>
+            </div>
+
+          </div>
         </div>
       </section>
 
