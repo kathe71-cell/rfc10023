@@ -119,6 +119,19 @@ export function cleanDomainInput(raw: string): string {
 }
 
 /**
+ * Converts a domain name (which may be Unicode or Punycode) to canonical Punycode hostname
+ * for RFC 1035 DNS queries (DoH).
+ */
+export function toPunycodeHostname(domain: string): string {
+  try {
+    const clean = cleanDomainInput(domain);
+    return new URL(`https://${clean}`).hostname;
+  } catch {
+    return cleanDomainInput(domain);
+  }
+}
+
+/**
  * Sanitizes a string for CSV export to prevent formula injection attacks.
  * If the string starts with =, +, -, @, \t, or \r, prepend a single quote.
  */
@@ -131,3 +144,4 @@ export function sanitizeCsvCell(value: string | number | boolean | null | undefi
   // Escape double quotes inside cell
   return `"${str.replace(/"/g, '""')}"`;
 }
+

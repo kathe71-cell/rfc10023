@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Layers, Play, CheckCircle2, AlertTriangle, XCircle, Download, RefreshCw, ShieldCheck, HelpCircle } from 'lucide-react';
-import { cleanDomainInput, detectHosterFromNameservers, sanitizeCsvCell } from '../utils/dnsIntelligence';
+import { cleanDomainInput, detectHosterFromNameservers, sanitizeCsvCell, toPunycodeHostname } from '../utils/dnsIntelligence';
 import { parseRfc10023Records, type RfcValidationReport, type DnsQueryStatus } from '../utils/rfcParserEngine';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -97,7 +97,8 @@ export default function BulkValidator() {
 
     async function processItem(item: { domain: string; index: number }) {
       const d = item.domain;
-      const nodeName = `_for-sale.${d}`;
+      const punyHost = toPunycodeHostname(d);
+      const nodeName = `_for-sale.${punyHost}`;
       let detectedHoster = 'Standard DNS';
       let isDnssec = false;
 
@@ -111,7 +112,7 @@ export default function BulkValidator() {
             headers: { Accept: 'application/dns-json' },
             signal: controller.signal,
           }),
-          fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(d)}&type=NS`, {
+          fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(punyHost)}&type=NS`, {
             headers: { Accept: 'application/dns-json' },
             signal: controller.signal,
           }),

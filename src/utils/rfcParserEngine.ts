@@ -10,6 +10,7 @@
 export interface RfcTagItem {
   tag: 'fval' | 'furi' | 'ftxt' | 'fcod' | string;
   value: string;
+  rawValue?: string;
   sourceRecordIndex: number;
   isStandard: boolean;
   isDuplicate?: boolean;
@@ -19,6 +20,10 @@ export interface RfcTagItem {
     currency?: string;
     amount?: number;
     scheme?: string;
+    uLabel?: string;
+    aLabel?: string;
+    isIdn?: boolean;
+    hasMixedScript?: boolean;
   };
 }
 
@@ -27,9 +32,11 @@ export type DnsQueryStatus = 'NOERROR' | 'NXDOMAIN' | 'NODATA' | 'SERVFAIL' | 'T
 export interface RfcRecordAnalysis {
   recordIndex: number;
   rawText: string;
+  decodedText: string;
   byteLength: number;
   exceeds255Bytes: boolean;
   hasVersionTag: boolean;
+  hasDnsEscapes: boolean;
   isSingleLineMultiTag: boolean; // non-conformant deviation
   tags: RfcTagItem[];
   warnings: string[];
@@ -53,6 +60,8 @@ export interface RfcValidationReport {
 
   // 4. Detailed Data
   rawRecords: string[];
+  decodedRecords: string[];
+  hasPresentationEscapes: boolean;
   recordAnalyses: RfcRecordAnalysis[];
   tags: RfcTagItem[];
   parsedMap: {
@@ -84,6 +93,163 @@ export const KNOWN_CURRENCIES = new Set([
  */
 export function getUtf8ByteLength(str: string): number {
   return new TextEncoder().encode(str).length;
+}
+
+/**
+ * Merges RFC 1035 multiple character-strings within a single TXT RR if quotes are present.
+ * E.g. '"string 1" "string 2"' -> 'string 1string 2'
+ */
+export function mergeDnsTxtChunks(rawTxt: string): string {
+  const trimmed = rawTxt.trim();
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    const matches = [...trimmed.matchAll(/"((?:[^"\\]|\\.)*)"/g)];
+    if (matches.length > 0) {
+      return matches.map((m) => m[1]).join('');
+    }
+  }
+  return trimmed;
+}
+
+/**
+ * Decodes RFC 1035 Section 5.1 Presentation Format:
+ * - \DDD (3 decimal digits representing byte octet 000-255)
+ * - \X (escaped literal character, e.g. \", \\, \;, \ )
+ * Reassembles raw octet bytes and decodes them as UTF-8 (RFC 10023 / RFC 1035).
+ */
+export function decodeDnsPresentationFormat(str: string): string {
+  const bytes: number[] = [];
+  let i = 0;
+  const encoder = new TextEncoder();
+
+  while (i < str.length) {
+    if (str[i] === '\\' && i + 1 < str.length) {
+      // Check for \DDD (3 decimal digits)
+      if (i + 3 < str.length && /^\d{3}$/.test(str.substring(i + 1, i + 4))) {
+        const byteVal = parseInt(str.substring(i + 1, i + 4), 10);
+        if (byteVal <= 255) {
+          bytes.push(byteVal);
+          i += 4;
+          continue;
+        }
+      }
+      // Escaped single character \X (e.g. \", \\, \;, \ )
+      const nextChar = str[i + 1];
+      const encoded = encoder.encode(nextChar);
+      for (const b of encoded) bytes.push(b);
+      i += 2;
+    } else {
+      const char = str[i];
+      const encoded = encoder.encode(char);
+      for (const b of encoded) bytes.push(b);
+      i += 1;
+    }
+  }
+
+  return new TextDecoder('utf-8', { fatal: false }).decode(new Uint8Array(bytes));
+}
+
+/**
+ * Decodes a Punycode string (RFC 3492) into Unicode without external dependencies.
+ */
+export function punycodeDecode(input: string): string {
+  const BASE = 36;
+  const TMIN = 1;
+  const TMAX = 26;
+  const SKEW = 38;
+  const DAMP = 700;
+  const INITIAL_BIAS = 72;
+  const INITIAL_N = 128;
+
+  function adapt(delta: number, numpoints: number, firsttime: boolean): number {
+    let k = 0;
+    delta = firsttime ? Math.floor(delta / DAMP) : Math.floor(delta / 2);
+    delta += Math.floor(delta / numpoints);
+    while (delta > Math.floor(((BASE - TMIN) * TMAX) / 2)) {
+      delta = Math.floor(delta / (BASE - TMIN));
+      k += BASE;
+    }
+    return k + Math.floor(((BASE - TMIN + 1) * delta) / (delta + SKEW));
+  }
+
+  const output: number[] = [];
+  const basicMatch = input.lastIndexOf('-');
+  let i = 0;
+  let n = INITIAL_N;
+  let bias = INITIAL_BIAS;
+
+  const basic = basicMatch > 0 ? input.substring(0, basicMatch) : '';
+  for (let j = 0; j < basic.length; j++) {
+    output.push(basic.charCodeAt(j));
+  }
+
+  let index = basicMatch > 0 ? basicMatch + 1 : 0;
+  while (index < input.length) {
+    const oldi = i;
+    let w = 1;
+    let k = BASE;
+    while (true) {
+      if (index >= input.length) return input;
+      const char = input.charCodeAt(index++);
+      let digit: number;
+      if (char >= 48 && char <= 57) digit = char - 22;
+      else if (char >= 65 && char <= 90) digit = char - 65;
+      else if (char >= 97 && char <= 122) digit = char - 97;
+      else return input;
+
+      i += digit * w;
+      const t = k <= bias ? TMIN : k >= bias + TMAX ? TMAX : k - bias;
+      if (digit < t) break;
+      w *= BASE - t;
+      k += BASE;
+    }
+    bias = adapt(i - oldi, output.length + 1, oldi === 0);
+    n += Math.floor(i / (output.length + 1));
+    i %= output.length + 1;
+    output.splice(i, 0, n);
+    i++;
+  }
+  return String.fromCodePoint(...output);
+}
+
+/**
+ * Converts Punycode A-labels (xn--) to Unicode U-labels across a domain or hostname.
+ */
+export function idnToUnicode(domainOrHostname: string): string {
+  return domainOrHostname
+    .split('.')
+    .map((part) => (part.toLowerCase().startsWith('xn--') ? punycodeDecode(part.slice(4)) : part))
+    .join('.');
+}
+
+/**
+ * Converts Unicode U-labels to canonical Punycode A-labels (xn--).
+ */
+export function unicodeToPunycode(domainOrHostname: string): string {
+  try {
+    return new URL(`https://${domainOrHostname}`).hostname;
+  } catch {
+    return domainOrHostname;
+  }
+}
+
+/**
+ * Security defense: Detects mixed-script homograph spoofing risks (RFC 10023 Section 5).
+ * Flags strings that mix Latin with Cyrillic, Greek, or Hebrew, or contain zero-width chars.
+ */
+export function detectMixedScript(str: string): boolean {
+  const hasLatin = /[a-zA-Z]/.test(str);
+  const hasCyrillic = /[\u0400-\u04FF]/.test(str);
+  const hasGreek = /[\u0370-\u03FF]/.test(str);
+  const hasArabic = /[\u0600-\u06FF]/.test(str);
+  const hasHebrew = /[\u0590-\u05FF]/.test(str);
+
+  const scriptCount = [hasLatin, hasCyrillic, hasGreek, hasArabic, hasHebrew].filter(Boolean).length;
+  if (scriptCount > 1) return true;
+
+  // Check for invisible/zero-width/bidi control characters
+  if (/[\u200B-\u200D\uFEFF\u202A-\u202E]/.test(str)) return true;
+
+  return false;
 }
 
 /**
@@ -133,11 +299,16 @@ export function validateFvalTag(value: string): {
  * Validates furi tag according to RFC 10023 Section 2.2.3:
  * furi-value = URI / IRI (RFC 3986 / RFC 3987)
  * Recommended schemes: http, https, mailto, tel. Exactly one URI.
+ * Performs IDN resolution and homograph / mixed-script security checks.
  */
 export function validateFuriTag(value: string): {
   valid: boolean;
   scheme?: string;
   isRecommendedScheme: boolean;
+  uLabel?: string;
+  aLabel?: string;
+  isIdn?: boolean;
+  hasMixedScript?: boolean;
   message?: string;
 } {
   const clean = value.trim();
@@ -149,11 +320,28 @@ export function validateFuriTag(value: string): {
   if (clean.startsWith('mailto:')) {
     const email = clean.substring(7);
     const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const domainPart = email.split('@')[1] || '';
+    const isIdn = domainPart.includes('xn--') || /[^\x00-\x7F]/.test(domainPart);
+    const uLabel = isIdn ? idnToUnicode(domainPart) : undefined;
+    const aLabel = isIdn ? unicodeToPunycode(domainPart) : undefined;
+    const hasMixedScript = isIdn ? detectMixedScript(domainPart) : false;
+
+    let message: string | undefined;
+    if (!validEmail) {
+      message = `Invalid email address in mailto URI: "${email}".`;
+    } else if (hasMixedScript) {
+      message = `Security Alert: Mixed-script IDN detected in mailto domain (${domainPart}). Potential homograph spoofing risk.`;
+    }
+
     return {
       valid: validEmail,
       scheme: 'mailto',
       isRecommendedScheme: true,
-      message: validEmail ? undefined : `Invalid email address in mailto URI: "${email}".`,
+      uLabel,
+      aLabel,
+      isIdn,
+      hasMixedScript,
+      message,
     };
   }
 
@@ -169,17 +357,34 @@ export function validateFuriTag(value: string): {
     };
   }
 
+  // URI / IRI
   try {
     const parsed = new URL(clean);
     const scheme = parsed.protocol.replace(':', '').toLowerCase();
     const isRecommended = scheme === 'https' || scheme === 'http';
+    const hostname = parsed.hostname;
+
+    const isIdn = hostname.includes('xn--') || /[^\x00-\x7F]/.test(clean);
+    const uLabel = isIdn ? idnToUnicode(hostname) : undefined;
+    const aLabel = isIdn ? hostname : undefined;
+    const hasMixedScript = isIdn ? detectMixedScript(uLabel || hostname) : false;
+
+    let message: string | undefined;
+    if (!isRecommended) {
+      message = `URI scheme "${scheme}" is allowed by RFC 3986, but only https, http, mailto, and tel are recommended by RFC 10023.`;
+    } else if (hasMixedScript) {
+      message = `Security Alert: Mixed-script IDN detected (${uLabel}). Potential homograph spoofing risk. Canonical A-label: ${hostname}`;
+    }
+
     return {
       valid: true,
       scheme,
       isRecommendedScheme: isRecommended,
-      message: isRecommended
-        ? undefined
-        : `URI scheme "${scheme}" is allowed by RFC 3986, but only https, http, mailto, and tel are recommended by RFC 10023.`,
+      uLabel,
+      aLabel,
+      isIdn,
+      hasMixedScript,
+      message,
     };
   } catch {
     return {
@@ -239,6 +444,8 @@ export function parseRfc10023Records(
       architecture: 'unknown',
       architectureLabel: isEn ? 'Not applicable' : 'Nicht zutreffend',
       rawRecords: [],
+      decodedRecords: [],
+      hasPresentationEscapes: false,
       recordAnalyses: [],
       tags: [],
       parsedMap: {},
@@ -262,6 +469,8 @@ export function parseRfc10023Records(
       architecture: 'unknown',
       architectureLabel: isEn ? 'Query error' : 'Abfragefehler',
       rawRecords: [],
+      decodedRecords: [],
+      hasPresentationEscapes: false,
       recordAnalyses: [],
       tags: [],
       parsedMap: {},
@@ -288,6 +497,8 @@ export function parseRfc10023Records(
       architecture: 'unknown',
       architectureLabel: isEn ? 'No record' : 'Kein Eintrag',
       rawRecords: [],
+      decodedRecords: [],
+      hasPresentationEscapes: false,
       recordAnalyses: [],
       tags: [],
       parsedMap: {},
@@ -312,7 +523,14 @@ export function parseRfc10023Records(
   let hasSingleLineMultiTagDeviation = false;
 
   rawTxtRecords.forEach((rawStr, recIdx) => {
-    const cleanStr = rawStr.trim();
+    // 1. Merge chunks if multiple quoted strings exist in single RR
+    const mergedStr = mergeDnsTxtChunks(rawStr);
+
+    // 2. Decode RFC 1035 Presentation Format (\DDD octets and \X escapes) into UTF-8
+    const decodedStr = decodeDnsPresentationFormat(mergedStr);
+    const hasDnsEscapes = decodedStr !== mergedStr;
+
+    const cleanStr = decodedStr.trim();
     const byteLength = getUtf8ByteLength(cleanStr);
     totalBytes += byteLength;
     const exceeds255Bytes = byteLength > 255;
@@ -320,6 +538,14 @@ export function parseRfc10023Records(
     const recWarnings: string[] = [];
     const recErrors: string[] = [];
     const recTags: RfcTagItem[] = [];
+
+    if (hasDnsEscapes) {
+      recWarnings.push(
+        isEn
+          ? 'DNS presentation format escapes (RFC 1035 § 5.1 \\DDD) decoded into UTF-8.'
+          : 'DNS-Präsentationsformat-Escapes (RFC 1035 § 5.1 \\DDD) wurden in UTF-8 dekodiert.'
+      );
+    }
 
     if (exceeds255Bytes) {
       recWarnings.push(
@@ -403,7 +629,20 @@ export function parseRfc10023Records(
             const res = validateFuriTag(tagVal);
             isValid = res.valid;
             validationMessage = res.message;
-            parsedDetails = { scheme: res.scheme };
+            parsedDetails = {
+              scheme: res.scheme,
+              uLabel: res.uLabel,
+              aLabel: res.aLabel,
+              isIdn: res.isIdn,
+              hasMixedScript: res.hasMixedScript,
+            };
+            if (res.hasMixedScript) {
+              recWarnings.push(
+                isEn
+                  ? `Security warning: Mixed-script IDN detected in furi URI ("${tagVal}"). Potential homograph spoofing risk.`
+                  : `Sicherheitswarnung: Mixed-Script IDN in furi-URI erkannt ("${tagVal}"). Mögliches Homograph-Angriffsrisiko.`
+              );
+            }
           } else if (tagKey === 'ftxt' || tagKey === 'fcod') {
             const res = validateOctetTag(tagKey, tagVal);
             isValid = res.valid;
@@ -442,9 +681,11 @@ export function parseRfc10023Records(
     recordAnalyses.push({
       recordIndex: recIdx,
       rawText: rawStr,
+      decodedText: decodedStr,
       byteLength,
       exceeds255Bytes,
       hasVersionTag,
+      hasDnsEscapes,
       isSingleLineMultiTag: recWarnings.some((w) => w.includes('Multiple tag-value') || w.includes('mehrere Tags')),
       tags: recTags,
       warnings: recWarnings,
@@ -511,6 +752,8 @@ export function parseRfc10023Records(
       : 'Kein gültiger RFC 10023 Indikator gefunden.';
   }
 
+  const hasPresentationEscapes = recordAnalyses.some((r) => r.hasDnsEscapes);
+
   return {
     dnsStatus: 'NOERROR',
     dnsStatusMessage: isEn ? 'Query completed successfully (NOERROR).' : 'DNS-Abfrage erfolgreich (NOERROR).',
@@ -521,6 +764,8 @@ export function parseRfc10023Records(
     architecture,
     architectureLabel,
     rawRecords: rawTxtRecords,
+    decodedRecords: recordAnalyses.map((r) => r.decodedText),
+    hasPresentationEscapes,
     recordAnalyses,
     tags: allTags,
     parsedMap,

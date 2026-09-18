@@ -20,8 +20,8 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
-import { cleanDomainInput, detectHosterFromNameservers, HosterProfile } from '../utils/dnsIntelligence';
-import { parseRfc10023Records, RfcValidationReport, DnsQueryStatus } from '../utils/rfcParserEngine';
+import { cleanDomainInput, detectHosterFromNameservers, toPunycodeHostname, HosterProfile } from '../utils/dnsIntelligence';
+import { parseRfc10023Records, RfcValidationReport, DnsQueryStatus, idnToUnicode } from '../utils/rfcParserEngine';
 import { performDomainDiagnostics, DomainDiagnosticsReport } from '../utils/dnsAuditEngine';
 
 interface HistoryEntry {
@@ -70,6 +70,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
   const [digCopied, setDigCopied] = useState(false);
   const [jsonCopied, setJsonCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [showWireEscapes, setShowWireEscapes] = useState(false);
   const [recentHistory, setRecentHistory] = useState<HistoryEntry[]>(() => {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -112,7 +113,8 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
     setResult(null);
 
     const startTime = performance.now();
-    const nodeName = `_for-sale.${d}`;
+    const punyHost = toPunycodeHostname(d);
+    const nodeName = `_for-sale.${punyHost}`;
     let rawTxtRecords: string[] = [];
     let resolverUsed = 'Cloudflare Anycast DoH (1.1.1.1)';
     let dnsStatus: DnsQueryStatus = 'NOERROR';
@@ -124,7 +126,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
       // 1. Fetch Authoritative Nameservers
       try {
         const nsRes = await fetch(
-          `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(d)}&type=NS`,
+          `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(punyHost)}&type=NS`,
           { headers: { Accept: 'application/dns-json' } }
         );
         if (nsRes.ok) {
@@ -170,7 +172,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
           if (txtAnswers.length > 0 && txtAnswers[0].TTL !== undefined) {
             ttl = txtAnswers[0].TTL;
           }
-          rawTxtRecords = txtAnswers.map((a: { data: string }) => a.data.replace(/^"|"$/g, ''));
+          rawTxtRecords = txtAnswers.map((a: { data: string }) => a.data);
         }
       } else {
         // Fallback to Google DoH
@@ -191,7 +193,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
               if (txtAnswers.length > 0 && txtAnswers[0].TTL !== undefined) {
                 ttl = txtAnswers[0].TTL;
               }
-              rawTxtRecords = txtAnswers.map((a: { data: string }) => a.data.replace(/^"|"$/g, ''));
+              rawTxtRecords = txtAnswers.map((a: { data: string }) => a.data);
             }
           } else {
             dnsStatus = 'ERROR';
@@ -323,23 +325,54 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
-  // Safe URI Link rendering
+  // Safe URI Link rendering with IDN and Homograph Security Protection (RFC 10023 Section 5)
   const renderSafeUri = (uri: string) => {
     const clean = uri.trim();
     const isSafeScheme = clean.startsWith('https://') || clean.startsWith('http://') || clean.startsWith('mailto:') || clean.startsWith('tel:');
     if (!isSafeScheme) {
       return <span className="font-mono text-slate-800 break-all select-all">{clean}</span>;
     }
+
+    const furiItem = result?.report.tags.find((t) => t.tag === 'furi');
+    const uLabel = furiItem?.parsedDetails?.uLabel;
+    const aLabel = furiItem?.parsedDetails?.aLabel;
+    const hasMixedScript = furiItem?.parsedDetails?.hasMixedScript;
+    const isIdn = furiItem?.parsedDetails?.isIdn;
+
+    // Display Unicode U-label if available, keeping the href safe
+    const displayLabel = uLabel && aLabel ? clean.replace(aLabel, uLabel) : clean;
+
     return (
-      <a
-        href={clean}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-900 underline font-mono text-xs break-all"
-      >
-        <span>{clean}</span>
-        <ExternalLink className="w-3 h-3 shrink-0" />
-      </a>
+      <div className="space-y-1.5">
+        <a
+          href={clean}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-emerald-700 hover:text-emerald-900 underline font-mono text-xs break-all font-medium"
+        >
+          <span>{displayLabel}</span>
+          <ExternalLink className="w-3 h-3 shrink-0" />
+        </a>
+
+        {isIdn && aLabel && (
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono text-slate-500">
+            <span className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700">
+              Kanonisches A-Label: <strong className="select-all">{aLabel}</strong>
+            </span>
+          </div>
+        )}
+
+        {hasMixedScript && (
+          <div className="flex items-center gap-1.5 p-2 rounded bg-amber-50 border border-amber-200 text-[11px] font-mono text-amber-900">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+            <span>
+              {isEn
+                ? 'Homograph warning: Mixed scripts detected. Verify canonical A-label before navigating.'
+                : 'Homograph-Warnung: Gemischte Zeichensätze erkannt. Vor Aufruf kanonisches A-Label prüfen.'}
+            </span>
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -358,25 +391,46 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
             {isEn ? 'Inspect DNS For-Sale Status' : 'DNS-Verkaufseintrag prüfen'}
           </h2>
+          <p className="text-xs sm:text-sm text-slate-600 mt-1">
+            {isEn
+              ? 'Real-time DNS query and format validation according to RFC 10023 standards.'
+              : 'Echtzeit-Abfrage und Konformitätsprüfung nach RFC-10023-Standard.'}
+          </p>
         </div>
-        <div className="flex items-center gap-2 text-xs font-mono text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-          <Terminal className="w-3.5 h-3.5 text-emerald-600" />
-          <span>{isEn ? 'Node: _for-sale.[domain]' : 'Knoten: _for-sale.[domain]'}</span>
+
+        {/* Action badges */}
+        <div className="flex items-center gap-2">
+          {result && (
+            <>
+              <button
+                type="button"
+                onClick={copyShareLink}
+                className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono text-xs font-semibold flex items-center gap-1.5 transition-colors border border-slate-200"
+                title={isEn ? 'Copy shareable URL' : 'Link zum Teilen kopieren'}
+              >
+                <Share2 className="w-3.5 h-3.5 text-slate-600" />
+                <span>{linkCopied ? (isEn ? 'Copied!' : 'Kopiert!') : (isEn ? 'Share link' : 'Teilen')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={copyJsonResult}
+                className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono text-xs font-semibold flex items-center gap-1.5 transition-colors border border-slate-200"
+                title={isEn ? 'Export result as JSON' : 'Ergebnis als JSON exportieren'}
+              >
+                <FileCode className="w-3.5 h-3.5 text-slate-600" />
+                <span>{jsonCopied ? (isEn ? 'Copied!' : 'Kopiert!') : 'JSON'}</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Form Input */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleValidate();
-        }}
-        className="space-y-4"
-      >
+      {/* Input Form */}
+      <form onSubmit={(e) => { e.preventDefault(); handleValidate(); }} className="space-y-3">
         <div className="relative flex items-center">
-          <div className="absolute left-4 text-slate-400 font-mono text-sm pointer-events-none select-none hidden sm:block">
+          <span className="absolute left-4 font-mono text-xs text-slate-400 font-semibold hidden sm:inline select-none">
             _for-sale.
-          </div>
+          </span>
           <input
             ref={inputRef}
             type="text"
@@ -413,8 +467,8 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
         {/* Quick test buttons & CLI dig shortcut */}
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-slate-400">Beispiele:</span>
-            {['forsaledns.net', 'beispieldomain.de'].map((example) => (
+            <span className="font-mono text-slate-400">{isEn ? 'Examples:' : 'Beispiele:'}</span>
+            {['forsaledns.net', 'cours-dns.fr', 'j78.nl', 'परीक्षा.testdns.nl', 'beispieldomain.de'].map((example) => (
               <button
                 key={example}
                 type="button"
@@ -654,31 +708,54 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
 
           {/* 4. Raw Wire DNS Records */}
           <div className="bg-slate-950 rounded-xl border border-slate-800 p-4 font-mono text-xs text-slate-300 space-y-2">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-[11px] text-slate-400">
-              <span>Rohdaten aus dem DNS-Zonendatei-Antwortsatz (RRset):</span>
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800 text-[11px] text-slate-400">
+              <div className="flex items-center gap-2">
+                <span>{isEn ? 'DNS Resource Records (RRset):' : 'DNS-Zonendatei-Antwortsatz (RRset):'}</span>
+                {result.report.hasPresentationEscapes && (
+                  <div className="flex items-center rounded-lg bg-slate-900 border border-slate-800 p-0.5 text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => setShowWireEscapes(false)}
+                      className={`px-2 py-0.5 rounded transition-colors ${!showWireEscapes ? 'bg-slate-800 text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
+                      UTF-8 (dekodiert)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowWireEscapes(true)}
+                      className={`px-2 py-0.5 rounded transition-colors ${showWireEscapes ? 'bg-slate-800 text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
+                      DNS-Wire (\DDD Escapes)
+                    </button>
+                  </div>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => {
-                  navigator.clipboard.writeText(result.report.rawRecords.join('\n'));
+                  const recordsToCopy = showWireEscapes ? result.report.rawRecords : result.report.decodedRecords;
+                  navigator.clipboard.writeText(recordsToCopy.join('\n'));
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 }}
                 className="hover:text-white flex items-center gap-1"
               >
                 {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                <span>{copied ? 'Kopiert!' : 'TXT kopieren'}</span>
+                <span>{copied ? (isEn ? 'Copied!' : 'Kopiert!') : (isEn ? 'Copy TXT' : 'TXT kopieren')}</span>
               </button>
             </div>
             {result.report.rawRecords.length > 0 ? (
               <div className="space-y-1 text-emerald-300">
-                {result.report.rawRecords.map((r, idx) => (
+                {(showWireEscapes ? result.report.rawRecords : result.report.decodedRecords).map((r, idx) => (
                   <div key={idx} className="p-2 rounded bg-slate-900/80 border border-slate-800 break-all select-all">
                     "{r}"
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-slate-500 italic py-2">Keine TXT-Einträge auf diesem Knotennamen empfangen.</div>
+              <div className="text-slate-500 italic py-2">
+                {isEn ? 'No TXT records received on this node name.' : 'Keine TXT-Einträge auf diesem Knotennamen empfangen.'}
+              </div>
             )}
           </div>
 
