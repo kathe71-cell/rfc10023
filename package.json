@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node prerender.js",
+    "build:api": "esbuild api-src/lookup.ts --bundle --platform=node --format=esm --target=node20 --packages=external --outfile=api/lookup.js && esbuild api-src/v1/validate.ts --bundle --platform=node --format=esm --target=node20 --packages=external --outfile=api/v1/validate.js",
+    "build": "npm run build:api && tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node prerender.js",
     "lint": "oxlint",
     "test": "vitest run",
     "preview": "vite preview"
