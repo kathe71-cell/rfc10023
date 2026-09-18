@@ -20,7 +20,7 @@
 
 ## 📖 What is RFC 10023?
 
-Published by the **IETF DNSOP Working Group** in July 2026, **RFC 10023** (*"The `_for-sale` Underscored and Globally Scoped DNS Node Name"*) establishes a standardized, decentralized protocol for domain owners to publish acquisition offers directly within the global Domain Name System.
+Published by the **IETF** in July 2026 (authored by Marco Davids, SIDN Labs), **RFC 10023** (*"The `_for-sale` Underscored and Globally Scoped DNS Node Name"*, Informational) establishes a standardized, decentralized protocol for domain owners to publish acquisition offers directly within the global Domain Name System.
 
 By placing structured TXT records at the leaf node `_for-sale.<domain>`, domain sale signals become:
 1. **Decentralized & Intermediary-Free:** No mandatory 10–15% broker commissions (Sedo, Afternic, Dan).
