@@ -468,7 +468,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-slate-400">{isEn ? 'Examples:' : 'Beispiele:'}</span>
-            {['forsaledns.net', 'cours-dns.fr', 'j78.nl', 'परीक्षा.testdns.nl', 'beispieldomain.de'].map((example) => (
+            {['forsaledns.net', 'cours-dns.fr', 'example.nl', 'परीक्षा.testdns.nl', 'beispieldomain.de'].map((example) => (
               <button
                 key={example}
                 type="button"

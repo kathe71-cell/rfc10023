@@ -125,7 +125,7 @@ describe('RFC 1035 Presentation Format & UTF-8 Escape Decoder', () => {
   });
 
   it('decodes multi-byte UTF-8 emojis and non-Latin scripts from \\DDD escapes', () => {
-    // j78.nl vector: \240\159\142\133 = 🎅, \240\159\142\132 = 🎄
+    // example.nl test vector: \240\159\142\133 = 🎅, \240\159\142\132 = 🎄
     const rawEmoji = 'https://\\240\\159\\142\\133.\\240\\159\\142\\132.sidnlabs.nl';
     expect(decodeDnsPresentationFormat(rawEmoji)).toBe('https://🎅.🎄.sidnlabs.nl');
 
@@ -219,15 +219,15 @@ describe('Real-World RFC 10023 Test Vectors by Author (M. Davids)', () => {
     expect(report.parsedMap.ftxt).toBe('Punycode test');
   });
 
-  it('parses j78.nl edge-case suite with emojis, IDN URIs, and escaped scripts', () => {
-    const j78Rrset = [
+  it('parses example.nl edge-case suite with emojis, IDN URIs, and escaped scripts', () => {
+    const exampleRrset = [
       '"v=FORSALE1;fval=EUR300000"',
       '"v=FORSALE1;ftxt=\\232\\129\\148\\231\\179\\187\\230\\136\\145\\228\\187\\172"',
       '"v=FORSALE1;furi=https://\\240\\159\\142\\133.\\240\\159\\142\\132.sidnlabs.nl"',
       '"v=FORSALE1;furi=https://xn--7j8hb.sidnlabs.nl/"',
     ];
 
-    const report = parseRfc10023Records(j78Rrset);
+    const report = parseRfc10023Records(exampleRrset);
     expect(report.saleSignalFound).toBe(true);
     expect(report.hasPresentationEscapes).toBe(true);
     expect(report.parsedMap.fval).toBe('EUR300000');
