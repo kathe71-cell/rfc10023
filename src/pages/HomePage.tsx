@@ -89,78 +89,80 @@ export default function HomePage() {
                 {t('hero.desc')}
               </p>
 
-              <div className="flex flex-wrap items-center gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-2">
                 <a
                   href="#generator"
-                  className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-mono font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2"
+                  className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-mono font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 text-center"
                 >
                   <Cpu className="w-4 h-4" />
                   <span>{t('hero.cta_generate')}</span>
                 </a>
                 <a
                   href="#validator"
-                  className="px-5 py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-mono font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2"
+                  className="px-5 py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-mono font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 text-center"
                 >
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
                   <span>{t('hero.cta_validate')}</span>
                 </a>
                 <Link
                   to={`${langPrefix}/bulk-scan`}
-                  className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5"
+                  className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-mono text-xs font-semibold rounded-xl transition-colors flex items-center justify-center gap-1.5 text-center"
                 >
                   <Layers className="w-3.5 h-3.5 text-emerald-600" />
                   <span>{t('hero.cta_bulk')}</span>
                 </Link>
               </div>
 
-              <div className="pt-6 border-t border-slate-100 grid grid-cols-3 gap-3 font-mono">
-                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <span className="block text-base font-bold text-slate-900">0 %</span>
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">{t('hero.stat_commission')}</span>
+              <div className="pt-6 border-t border-slate-100 grid grid-cols-3 gap-2 sm:gap-3 font-mono">
+                <div className="p-2 sm:p-2.5 rounded-xl bg-slate-50 border border-slate-200 min-w-0 text-center sm:text-left">
+                  <span className="block text-sm sm:text-base font-bold text-slate-900 truncate">0 %</span>
+                  <span className="text-[9px] sm:text-[10px] text-slate-500 uppercase tracking-wider block truncate">{t('hero.stat_commission')}</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <span className="block text-base font-bold text-slate-900">TXT (16)</span>
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">{t('hero.stat_record')}</span>
+                <div className="p-2 sm:p-2.5 rounded-xl bg-slate-50 border border-slate-200 min-w-0 text-center sm:text-left">
+                  <span className="block text-sm sm:text-base font-bold text-slate-900 truncate">TXT (16)</span>
+                  <span className="text-[9px] sm:text-[10px] text-slate-500 uppercase tracking-wider block truncate">{t('hero.stat_record')}</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <span className="block text-base font-bold text-emerald-700">Informational</span>
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">IETF Status</span>
+                <div className="p-2 sm:p-2.5 rounded-xl bg-slate-50 border border-slate-200 min-w-0 text-center sm:text-left">
+                  <span className="block text-[11px] sm:text-base font-bold text-emerald-700 tracking-tight truncate" title="Informational">Informational</span>
+                  <span className="text-[9px] sm:text-[10px] text-slate-500 uppercase tracking-wider block truncate">IETF Status</span>
                 </div>
               </div>
 
             </div>
 
             {/* Right Col Terminal Panel - Accurately showing live forsaledns.net output without fake claims */}
-            <div className="lg:col-span-5 bg-slate-950 rounded-2xl p-5 border border-slate-800 text-slate-200 font-mono text-xs shadow-xl">
+            <div className="lg:col-span-5 bg-slate-950 rounded-2xl p-4 sm:p-5 border border-slate-800 text-slate-200 font-mono text-xs shadow-xl">
               
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800 text-slate-400">
-                <div className="flex items-center gap-2">
-                  <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-xs font-semibold text-slate-300">{t('hero.terminal_header')}</span>
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800 text-slate-400 gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Terminal className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span className="text-xs font-semibold text-slate-300 truncate">{t('hero.terminal_header')}</span>
                 </div>
-                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-[10px] font-bold">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-[10px] font-bold shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                   <span>Live DNS Query</span>
                 </div>
               </div>
 
-              <div className="space-y-2 text-slate-300 overflow-x-hidden leading-relaxed">
+              <div className="space-y-2 text-slate-300 leading-relaxed text-[11px] sm:text-xs">
                 <p className="text-slate-500">{t('hero.terminal_comment')}</p>
-                <p className="text-emerald-400 break-all">$ dig TXT _for-sale.forsaledns.net +short</p>
-                <div className="p-3 bg-slate-900/90 rounded-lg border border-slate-800 text-slate-200 space-y-1 my-2">
-                  <p className="text-emerald-300 break-all">&quot;v=FORSALE1;furi=mailto:sales@sun.com.py&quot;</p>
-                  <p className="text-emerald-300 break-all">&quot;v=FORSALE1;fval=USD195000&quot;</p>
+                <div className="overflow-x-auto pb-0.5">
+                  <p className="text-emerald-400 whitespace-nowrap">$ dig TXT _for-sale.forsaledns.net +short</p>
                 </div>
-                <div className="pt-2 text-[11px] text-slate-400 border-t border-slate-800/80 space-y-1">
-                  <p><strong className="text-slate-200">{t('hero.terminal_node')}</strong> _for-sale.forsaledns.net.</p>
-                  <p><strong className="text-slate-200">{t('hero.terminal_dnssec')}</strong> AD-Bit = false ({language === 'en' ? 'Not validated' : 'Nicht validiert'})</p>
-                  <p><strong className="text-slate-200">{t('hero.terminal_standard')}</strong> IETF RFC 10023 (Informational)</p>
+                <div className="p-2.5 sm:p-3 bg-slate-900/90 rounded-lg border border-slate-800 text-slate-200 space-y-1 my-2 overflow-x-auto">
+                  <p className="text-emerald-300 whitespace-nowrap sm:whitespace-normal sm:break-all">&quot;v=FORSALE1;furi=mailto:sales@sun.com.py&quot;</p>
+                  <p className="text-emerald-300 whitespace-nowrap sm:whitespace-normal sm:break-all">&quot;v=FORSALE1;fval=USD195000&quot;</p>
+                </div>
+                <div className="pt-2 text-[10px] sm:text-[11px] text-slate-400 border-t border-slate-800/80 space-y-1">
+                  <p className="break-words"><strong className="text-slate-200">{t('hero.terminal_node')}</strong> _for-sale.forsaledns.net.</p>
+                  <p className="break-words"><strong className="text-slate-200">{t('hero.terminal_dnssec')}</strong> AD-Bit = false ({language === 'en' ? 'Not validated' : 'Nicht validiert'})</p>
+                  <p className="break-words"><strong className="text-slate-200">{t('hero.terminal_standard')}</strong> IETF RFC 10023 (Informational)</p>
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px]">
-                <span className="text-slate-500">{language === 'en' ? 'Live reference: forsaledns.net' : 'Live-Referenz: forsaledns.net'}</span>
-                <Link to={language === 'en' ? '/en/specification' : '/spezifikation'} className="text-emerald-400 hover:underline flex items-center gap-1 font-bold">
+              <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] gap-2">
+                <span className="text-slate-500 text-[10px] sm:text-[11px] truncate">{language === 'en' ? 'Live reference: forsaledns.net' : 'Live-Referenz: forsaledns.net'}</span>
+                <Link to={language === 'en' ? '/en/specification' : '/spezifikation'} className="text-emerald-400 hover:underline flex items-center gap-1 font-bold shrink-0 text-[10px] sm:text-[11px]">
                   {t('hero.terminal_spec_link')}
                 </Link>
               </div>

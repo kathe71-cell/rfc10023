@@ -16,7 +16,7 @@ export default function ScrollToTop() {
   // Track scroll position to show/hide floating button
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 280) {
+      if (window.scrollY > 500) {
         setVisible(true);
       } else {
         setVisible(false);
@@ -42,9 +42,9 @@ export default function ScrollToTop() {
       onClick={scrollToTop}
       aria-label={language === 'en' ? 'Scroll to top' : 'Nach oben scrollen'}
       title={language === 'en' ? 'Scroll to top' : 'Nach oben scrollen'}
-      className="fixed bottom-20 md:bottom-8 right-5 sm:right-8 z-40 p-3 rounded-full bg-slate-900/90 hover:bg-slate-950 text-white border border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-200 active:scale-90 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 flex items-center justify-center group"
+      className="fixed bottom-5 right-4 sm:bottom-8 sm:right-8 z-40 p-2.5 sm:p-3 rounded-full bg-slate-900/90 hover:bg-slate-950 text-white border border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-200 active:scale-90 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 flex items-center justify-center group"
     >
-      <ArrowUp className="w-5 h-5 text-emerald-400 group-hover:-translate-y-0.5 transition-transform duration-150" />
+      <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 group-hover:-translate-y-0.5 transition-transform duration-150" />
     </button>
   );
 }
