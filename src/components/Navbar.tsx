@@ -10,7 +10,7 @@ export default function Navbar() {
   const [mobileDocsOpen, setMobileDocsOpen] = useState(false);
   const location = useLocation();
   const { language, setIsSearchOpen } = useLanguage();
-  const isEn = language === 'en';
+  const isEn = location.pathname === '/en' || location.pathname.startsWith('/en/') || language === 'en';
   const langPrefix = isEn ? '/en' : '';
   const docsRef = useRef<HTMLDivElement>(null);
 

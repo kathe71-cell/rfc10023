@@ -981,27 +981,42 @@ const LanguageContext = createContext<LanguageContextType>({
   setIsSearchOpen: () => {},
 });
 
+import { useLocation } from 'react-router-dom';
+
 export const LanguageProvider: React.FC<{ children: React.ReactNode; initialLanguage?: Language }> = ({ children, initialLanguage }) => {
-  const [language, setLanguageState] = useState<Language>(() => {
-    if (initialLanguage) {
-      return initialLanguage;
+  let routeLanguage: Language | null = null;
+  try {
+    const loc = useLocation();
+    if (loc && loc.pathname) {
+      routeLanguage = (loc.pathname === '/en' || loc.pathname.startsWith('/en/')) ? 'en' : 'de';
     }
-    // Initial check from current window URL
+  } catch {
+    // Location not available outside Router context
+  }
+
+  const getEffectiveLanguage = (): Language => {
+    if (initialLanguage) return initialLanguage;
+    if (routeLanguage) return routeLanguage;
     if (typeof window !== 'undefined') {
       const pathname = window.location.pathname;
       if (pathname === '/en' || pathname.startsWith('/en/')) {
         return 'en';
       }
+      try {
+        const saved = localStorage.getItem('rfc10023_lang');
+        if (saved === 'de' || saved === 'en') return saved;
+        const browserLang = navigator.language || (navigator as any).userLanguage || '';
+        if (browserLang.startsWith('en')) return 'en';
+        if (!browserLang.startsWith('de')) return 'en';
+      } catch {}
     }
-    try {
-      const saved = localStorage.getItem('rfc10023_lang');
-      if (saved === 'de' || saved === 'en') return saved;
-      const browserLang = navigator.language || (navigator as any).userLanguage || '';
-      if (browserLang.startsWith('en')) return 'en';
-      if (!browserLang.startsWith('de')) return 'en';
-    } catch {}
     return 'de';
-  });
+  };
+
+  const [language, setLanguageState] = useState<Language>(getEffectiveLanguage);
+
+  // Route URL is the ultimate single source of truth for language
+  const activeLanguage: Language = routeLanguage || language;
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
@@ -1047,11 +1062,11 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode; initialLang
   }, []);
 
   const t = (key: string): string => {
-    return translations[language]?.[key] || translations.de[key] || key;
+    return translations[activeLanguage]?.[key] || translations.de[key] || key;
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, isSearchOpen, setIsSearchOpen }}>
+    <LanguageContext.Provider value={{ language: activeLanguage, setLanguage, t, isSearchOpen, setIsSearchOpen }}>
       {children}
     </LanguageContext.Provider>
   );

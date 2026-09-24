@@ -113,6 +113,83 @@ for (const route of routesToPrerender) {
     if (isEn) {
       rendered = rendered.replace("<html lang=\"de\"", "<html lang=\"en\"");
       rendered = rendered.replace("content=\"de_DE\"", "content=\"en_US\"");
+
+      // Replace global German structured data in head for English routes
+      const enJsonLd = JSON.stringify({
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://www.rfc10023.de/#org",
+            "name": "RFC 10023 Editorial Team",
+            "url": "https://www.rfc10023.de/en",
+            "logo": "https://www.rfc10023.de/favicon.svg"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://www.rfc10023.de/#website",
+            "url": "https://www.rfc10023.de/en",
+            "name": "RFC 10023 Reference Portal",
+            "inLanguage": "en-US",
+            "publisher": { "@id": "https://www.rfc10023.de/#org" },
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "https://www.rfc10023.de/en/validator?d={search_term_string}"
+              },
+              "query-input": "required name=search_term_string"
+            }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://www.rfc10023.de/#validator",
+            "name": "RFC 10023 DNS Live Validator & Generator",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "All",
+            "offers": {
+              "@type": "Offer",
+              "price": "0.00",
+              "priceCurrency": "EUR"
+            }
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://www.rfc10023.de/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What is RFC 10023?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "RFC 10023 is an Informational publication published in July 2026 by the IETF ('The _for-sale Underscored and Globally Scoped DNS Node Name'), authored by Marco Davids (SIDN Labs). It defines a machine-readable convention in the DNS for domain owners to publish availability for sale via _for-sale TXT records."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What is the designated DNS node for RFC 10023?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "The standardized DNS node is '_for-sale.[domain]', such as '_for-sale.example.com'. A TXT record is placed there starting mandatory with 'v=FORSALE1;'."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Which registries already support RFC 10023?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "The Dutch ccTLD registry SIDN (.nl) natively evaluates RFC 10023 during Whois and domain availability searches. The standard is also supported across various registrars, developer tools, and scanners."
+                }
+              }
+            ]
+          }
+        ]
+      }, null, 2);
+
+      rendered = rendered.replace(
+        /<script type="application\/ld\+json">[\s\S]*?<\/script>/,
+        `<script type="application/ld+json">\n${enJsonLd}\n    </script>`
+      );
     }
     const filePath = route.url === "/" ? "dist/index.html" : "dist" + route.url + "/index.html";
     const absolutePath = toAbsolute(filePath);
@@ -121,7 +198,53 @@ for (const route of routesToPrerender) {
     console.log("  ✓ " + route.url + " -> " + filePath + " (" + (rendered.length / 1024).toFixed(1) + " kB)");
   } catch (err) {
     console.error("  ✗ Error prerendering " + route.url + ":", err);
+    process.exit(1);
   }
+}
+
+// Regression Test Assertion for /en/ecosystem
+const enEcosystemPath = toAbsolute("dist/en/ecosystem/index.html");
+if (fs.existsSync(enEcosystemPath)) {
+  const enHtml = fs.readFileSync(enEcosystemPath, "utf-8");
+  const forbiddenGermanPhrases = [
+    "Letzte Aktualisierung",
+    "Erkannte _for-sale Records",
+    "Erkannte",
+    "Quelle öffnen",
+    "Zuletzt geprüft",
+    "Beobachtet seit",
+    "Methodik",
+    "Schritt 1",
+    "RFC 10023 ist ein noch junger Mechanismus",
+    "RFC 10023 Adoption Kennzahlen",
+    "Telemetrische Zeitreihe der Adoption",
+    "Hinweis zur methodischen Integrität",
+    "Drei Arten der RFC-10023-Adoption",
+    "Vom DNS-Signal zur Domain-Suche",
+    "Was ist RFC 10023?",
+    "Wie lautet der DNS-Knoten",
+    "Welche Registries unterstützen"
+  ];
+
+  const foundViolations = [];
+  for (const phrase of forbiddenGermanPhrases) {
+    if (enHtml.includes(phrase)) {
+      foundViolations.push(phrase);
+    }
+  }
+
+  if (foundViolations.length > 0) {
+    console.error("❌ SSG Prerender Regression Error: Found German phrases in dist/en/ecosystem/index.html:");
+    for (const v of foundViolations) {
+      console.error("   - " + v);
+    }
+    process.exit(1);
+  } else {
+    console.log("  ✓ Regression Check: dist/en/ecosystem/index.html contains 0 forbidden German phrases.");
+  }
+} else {
+  console.error("❌ SSG Prerender Error: dist/en/ecosystem/index.html was not generated.");
+  process.exit(1);
 }
 
 console.log("Static Site Prerendering complete!");

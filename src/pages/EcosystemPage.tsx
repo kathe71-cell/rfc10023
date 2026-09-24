@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Globe,
   Layers,
@@ -51,8 +51,9 @@ function formatDisplayDate(dateStr: string, isEn: boolean): string {
 }
 
 export default function EcosystemPage() {
+  const location = useLocation();
   const { language } = useLanguage();
-  const isEn = language === 'en';
+  const isEn = location.pathname === '/en' || location.pathname.startsWith('/en/') || language === 'en';
   const langPrefix = isEn ? '/en' : '';
   const pagePath = isEn ? '/en/ecosystem' : '/oekosystem';
   const canonicalUrl = `https://www.rfc10023.de${pagePath}`;
