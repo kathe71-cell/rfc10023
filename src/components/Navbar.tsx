@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Terminal, ShieldCheck, Cpu, Database, Menu, X, BookOpen, Layers, Sparkles, Code2, Scale, HelpCircle, Search, ChevronDown } from 'lucide-react';
+import { Terminal, ShieldCheck, Cpu, Database, Menu, X, BookOpen, Layers, Sparkles, Code2, Scale, HelpCircle, Search, ChevronDown, Globe } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageToggle from './LanguageToggle';
 
@@ -39,6 +39,7 @@ export default function Navbar() {
     { name: isEn ? 'Create Record' : 'Eintrag erstellen', path: `${langPrefix}/generator`, icon: Cpu },
     { name: isEn ? 'Verify Domain'  : 'Domain prüfen',    path: `${langPrefix}/validator`,  icon: ShieldCheck },
     { name: isEn ? 'Portfolio Scan' : 'Portfolio prüfen', path: `${langPrefix}/bulk-scan`,  icon: Layers },
+    { name: 'Ecosystem',                                  path: `${langPrefix}/ecosystem`,  icon: Globe },
   ];
 
   const docsLinks = [

@@ -25,8 +25,15 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.legal': 'Recht & Praxis',
     'nav.matrix': 'Anbieter-Anleitungen',
     'nav.doh_test': 'DNS prüfen',
+    'nav.ecosystem': 'Ecosystem',
     'nav.mobile_validate': 'Domain prüfen',
     'nav.mobile_generate': 'Eintrag erstellen',
+
+    // Home Teaser
+    'home.teaser_badge': 'Adoption & Ökosystem',
+    'home.teaser_title': 'RFC 10023 wird bereits genutzt',
+    'home.teaser_text': 'Registries, Domain-Intelligence-Dienste, Scanner und Entwickler-Tools unterstützen bereits den _for-sale DNS Record.',
+    'home.teaser_cta': 'Ecosystem & Adoption ansehen',
 
     // Hero Section
     'hero.badge': 'IETF RFC 10023 (Informational) • Knotennamen: _for-sale',
@@ -498,8 +505,15 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.legal': 'Legal & Practice',
     'nav.matrix': 'DNS Provider Guides',
     'nav.doh_test': 'Check DNS',
+    'nav.ecosystem': 'Ecosystem',
     'nav.mobile_validate': 'Verify Domain',
     'nav.mobile_generate': 'Create Record',
+
+    // Home Teaser
+    'home.teaser_badge': 'Adoption & Ecosystem',
+    'home.teaser_title': 'RFC 10023 is Already in Use',
+    'home.teaser_text': 'Registries, domain intelligence services, scanners, and developer tools already support the _for-sale DNS record.',
+    'home.teaser_cta': 'View Ecosystem & Adoption',
 
     // Hero Section
     'hero.badge': 'IETF RFC 10023 (Informational) • DNS Node: _for-sale',

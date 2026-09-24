@@ -1,0 +1,137 @@
+{
+  "lastUpdated": "2026-09-24",
+  "integrations": [
+    {
+      "id": "sidn-labs",
+      "name": "SIDN Labs",
+      "category": "registry",
+      "supportType": "scanner",
+      "status": "production",
+      "description": "Forschungslabor der niederländischen .nl-Registry SIDN. Ko-Autor von RFC 10023 (Marco Davids). Führt automatisierte Scans und Validierungen von _for-sale Records in der .nl-Zone durch.",
+      "descriptionEn": "Research lab of the Dutch .nl registry SIDN. Co-author of RFC 10023 (Marco Davids). Conducts automated scans and validations of _for-sale records in the .nl zone.",
+      "sourceUrl": "https://www.sidnlabs.nl/",
+      "firstObserved": "2026-07-30",
+      "lastVerified": "2026-09-24"
+    },
+    {
+      "id": "inwx",
+      "name": "INWX",
+      "category": "registrar",
+      "supportType": "documentation",
+      "status": "information",
+      "description": "INWX dokumentiert in der Wissensdatenbank die Konfiguration des _for-sale DNS Records im Nameserver-Management.",
+      "descriptionEn": "INWX documents in its knowledge base how the _for-sale DNS record can be configured in nameserver management.",
+      "sourceUrl": "https://www.inwx.de",
+      "firstObserved": "2026-08-05",
+      "lastVerified": "2026-09-24"
+    },
+    {
+      "id": "forsaledns",
+      "name": "ForSaleDNS",
+      "category": "aftermarket-search",
+      "supportType": "discovery",
+      "status": "production",
+      "description": "Suchmaschine und Showcase-Index für Domains, die einen RFC 10023 _for-sale TXT-Record publizieren.",
+      "descriptionEn": "Search engine and showcase index for domains publishing an RFC 10023 _for-sale TXT record.",
+      "sourceUrl": "https://forsaledns.net",
+      "firstObserved": "2026-08-18",
+      "lastVerified": "2026-09-24"
+    },
+    {
+      "id": "ipwhois",
+      "name": "IPWhois",
+      "category": "domain-intelligence",
+      "supportType": "parser",
+      "status": "supported",
+      "description": "Domain-Intelligence- und Whois-API-Dienst, der _for-sale TXT-Signale in DNS-Analyseberichten parst und strukturiert ausweist.",
+      "descriptionEn": "Domain intelligence and Whois API service parsing _for-sale TXT signals in DNS analysis reports.",
+      "sourceUrl": "https://ipwhois.io",
+      "firstObserved": "2026-08-22",
+      "lastVerified": "2026-09-24"
+    },
+    {
+      "id": "ipaddress-to",
+      "name": "IPAddress.to",
+      "category": "domain-intelligence",
+      "supportType": "scanner",
+      "status": "supported",
+      "description": "DNS- und Netzwerk-Analyse-Werkzeug zur Erkennung und Validierung aktiver RFC-10023-Verkaufssignale.",
+      "descriptionEn": "DNS and network analysis utility detecting and validating active RFC 10023 sale signals.",
+      "sourceUrl": "https://ipaddress.to",
+      "firstObserved": "2026-08-25",
+      "lastVerified": "2026-09-24"
+    },
+    {
+      "id": "inspect-my-dns",
+      "name": "Inspect My DNS",
+      "category": "domain-intelligence",
+      "supportType": "scanner",
+      "status": "supported",
+      "description": "Technischer DNS-Diagnosedienst zur tiefen Prüfung von Zonenkonfigurationen inklusive _for-sale Syntax-Audit.",
+      "descriptionEn": "Technical DNS diagnostic utility for deep inspection of zone configurations including _for-sale syntax audit.",
+      "sourceUrl": "https://inspectmydns.com",
+      "firstObserved": "2026-08-29",
+      "lastVerified": "2026-09-24"
+    },
+    {
+      "id": "domaintoolbelt",
+      "name": "DomainToolBelt",
+      "category": "aftermarket-search",
+      "supportType": "discovery",
+      "status": "supported",
+      "description": "Aftermarket-Recherche-Suite für Domain-Investoren mit Unterstützung für DNS-basierte Verkaufssignale.",
+      "descriptionEn": "Aftermarket research suite for domain investors supporting DNS-based sale signals.",
+      "sourceUrl": "https://domaintoolbelt.com",
+      "firstObserved": "2026-09-02",
+      "lastVerified": "2026-09-24"
+    },
+    {
+      "id": "domains-monitor",
+      "name": "Domains Monitor",
+      "category": "dataset-monitoring",
+      "supportType": "dataset",
+      "status": "production",
+      "description": "Monitoring-Projekt zur telemetrischen Erfassung aktiver _for-sale DNS Records über globale Domainzonen.",
+      "descriptionEn": "Monitoring project providing telemetry on active _for-sale DNS records across global domain zones.",
+      "sourceUrl": "https://domains-monitor.com/research/rfc10023",
+      "firstObserved": "2026-08-01",
+      "lastVerified": "2026-09-24"
+    },
+    {
+      "id": "domainkits-mcp",
+      "name": "DomainKits MCP",
+      "category": "developer-ai",
+      "supportType": "MCP",
+      "status": "experimental",
+      "description": "Model Context Protocol Server zur Anbindung von KI-Agenten an automatisierte RFC 10023 DNS-Lookups.",
+      "descriptionEn": "Model Context Protocol server connecting AI agents to automated RFC 10023 DNS lookups.",
+      "sourceUrl": "https://github.com/modelcontextprotocol",
+      "firstObserved": "2026-08-28",
+      "lastVerified": "2026-09-24"
+    },
+    {
+      "id": "rfc-10023-mcp",
+      "name": "RFC-10023 MCP",
+      "category": "developer-ai",
+      "supportType": "MCP",
+      "status": "experimental",
+      "description": "Open-Source-MCP-Werkzeug zur Abfrage und Interpretation von _for-sale Signalen durch autonome LLM-Agenten.",
+      "descriptionEn": "Open-source MCP utility for autonomous LLM agents querying and interpreting _for-sale signals.",
+      "sourceUrl": "https://github.com/topics/rfc10023",
+      "firstObserved": "2026-09-05",
+      "lastVerified": "2026-09-24"
+    },
+    {
+      "id": "dns-for-sale-inspector",
+      "name": "DNS For-Sale Inspector",
+      "category": "browser-utility",
+      "supportType": "browser-extension",
+      "status": "experimental",
+      "description": "Experimentelle Browser-Erweiterung, die besuchte Domains via DoH auf _for-sale TXT-Signale prüft.",
+      "descriptionEn": "Experimental browser extension checking visited domains via DoH for _for-sale TXT signals.",
+      "sourceUrl": "https://github.com/topics/dns-for-sale",
+      "firstObserved": "2026-09-12",
+      "lastVerified": "2026-09-24"
+    }
+  ]
+}

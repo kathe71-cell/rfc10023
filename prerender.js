@@ -20,6 +20,7 @@ const routesToPrerender = [
   { url: "/spezifikation", title: "RFC 10023 ABNF-Spezifikation & Wire Format", desc: "Vollständige technische Spezifikation nach IETF RFC 10023: ABNF-Grammatik, Tag-Definitionen und DNS-Wire-Format." },
   { url: "/faq", title: "RFC 10023 Häufig gestellte Fragen (FAQ)", desc: "Antworten auf alle technischen, praktischen und administrativen Fragen zu RFC 10023 und FORSALE1." },
   { url: "/dokumentation", title: "RFC 10023 Dokumentation | Spezifikation & Leitfäden", desc: "Zentrale Dokumentation zu IETF RFC 10023 (Informational): ABNF-Syntax, Anbieter-Konfigurationen, REST-API und Rechtsfragen." },
+  { url: "/ecosystem", title: "RFC 10023 Adoption & Ecosystem – Tools, Integrationen und Statistiken", desc: "Aktuelle Übersicht zur Verbreitung von RFC 10023 und dem _for-sale DNS Record: Implementierungen, Tools, Registrare, Datensätze und Adoption." },
   { url: "/impressum", title: "Impressum | RFC 10023 Referenzportal", desc: "Impressum und Anbieterkennzeichnung des RFC 10023 Referenzportals." },
   { url: "/datenschutz", title: "Datenschutzerklärung | RFC 10023 Referenzportal", desc: "Datenschutzhinweise und DSGVO-Informationen des RFC 10023 Referenzportals." },
   { url: "/en", title: "RFC 10023 | Signal Domain Sales Directly in the DNS", desc: "Independent reference portal & developer toolkit for IETF RFC 10023 (Informational). Live DNS validator and multi-record builder." },
@@ -34,6 +35,7 @@ const routesToPrerender = [
   { url: "/en/specification", title: "RFC 10023 ABNF Specification & Wire Format", desc: "Complete technical reference for IETF RFC 10023: formal ABNF grammar, parameter registry and parser rules." },
   { url: "/en/faq", title: "RFC 10023 Frequently Asked Questions (FAQ)", desc: "Frequently asked questions regarding IETF RFC 10023 _for-sale DNS records." },
   { url: "/en/documentation", title: "RFC 10023 Documentation Hub", desc: "Central documentation for IETF RFC 10023 (Informational), hoster configuration matrix, and developer API." },
+  { url: "/en/ecosystem", title: "RFC 10023 Adoption & Ecosystem – Tools, Integrations and Statistics", desc: "Comprehensive overview of RFC 10023 and _for-sale DNS record adoption: implementations, tools, registrars, datasets and verified telemetry." },
   { url: "/en/imprint", title: "Imprint | RFC 10023 Reference Portal", desc: "Legal notice and imprint for RFC 10023 Reference Portal." },
   { url: "/en/privacy", title: "Privacy Policy | RFC 10023 Reference Portal", desc: "Privacy policy and GDPR compliance statement for RFC 10023 Reference Portal." }
 ];

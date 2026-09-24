@@ -22,6 +22,26 @@
     <priority>1.0</priority>
   </url>
 
+  <!-- Ecosystem & Adoption Tracker -->
+  <url>
+    <loc>https://www.rfc10023.de/ecosystem</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/ecosystem" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/ecosystem" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/ecosystem" />
+    <lastmod>2026-09-24</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.rfc10023.de/en/ecosystem</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://www.rfc10023.de/ecosystem" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.rfc10023.de/en/ecosystem" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.rfc10023.de/ecosystem" />
+    <lastmod>2026-09-24</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- Live Validator -->
   <url>
     <loc>https://www.rfc10023.de/validator</loc>

@@ -1,0 +1,56 @@
+[
+  {
+    "date": "2026-07-30",
+    "title": "IETF RFC 10023 offiziell publiziert",
+    "titleEn": "IETF RFC 10023 officially published",
+    "category": "RFC",
+    "description": "Die IETF veröffentlicht RFC 10023 (Kategorie: Informational, Autor: Marco Davids / SIDN Labs). Der Standard definiert die betriebliche Konvention für _for-sale TXT-Records.",
+    "descriptionEn": "The IETF publishes RFC 10023 (Category: Informational, Author: Marco Davids / SIDN Labs), defining the operational convention for _for-sale TXT records.",
+    "sourceUrl": "https://www.rfc-editor.org/info/rfc10023"
+  },
+  {
+    "date": "2026-08-01",
+    "title": "Domains Monitor startet globales Tracking",
+    "titleEn": "Domains Monitor launches global tracking",
+    "category": "Monitoring",
+    "description": "Erste systematische Messung aktiver _for-sale Records über gTLD- und ccTLD-Zonen hinweg.",
+    "descriptionEn": "First systematic telemetry of active _for-sale records across gTLDs and ccTLDs.",
+    "sourceUrl": "https://domains-monitor.com/research/rfc10023"
+  },
+  {
+    "date": "2026-08-05",
+    "title": "INWX veröffentlicht DNS-Konfigurationsleitfaden",
+    "titleEn": "INWX publishes DNS configuration guide",
+    "category": "Registrar",
+    "description": "INWX dokumentiert als einer der ersten europäischen Registrare in der Knowledgebase, wie Kunden den _for-sale TXT-Record einrichten.",
+    "descriptionEn": "INWX becomes one of the first European registrars to document how customers can configure the _for-sale TXT record.",
+    "sourceUrl": "https://www.inwx.de"
+  },
+  {
+    "date": "2026-08-18",
+    "title": "Launch von ForSaleDNS Suchmaschine",
+    "titleEn": "Launch of ForSaleDNS search engine",
+    "category": "Aftermarket",
+    "description": "Forsaledns.net startet als spezialisierte Suchmaschine und Index zur Auffindung von Domains mit RFC-10023-Verkaufssignalen.",
+    "descriptionEn": "Forsaledns.net launches as a specialized search engine and discovery index for domains signaling sale via RFC 10023.",
+    "sourceUrl": "https://forsaledns.net"
+  },
+  {
+    "date": "2026-08-28",
+    "title": "Model Context Protocol (MCP) Integration für KI-Agenten",
+    "titleEn": "Model Context Protocol (MCP) integration for AI agents",
+    "category": "Developer / AI",
+    "description": "Erste MCP-Server (DomainKits MCP, RFC-10023-MCP) ermöglichen autonomen KI-Agenten, Domainverkaufsdaten direkt im DNS auszulesen.",
+    "descriptionEn": "First MCP servers (DomainKits MCP, RFC-10023-MCP) enable autonomous AI agents to query domain sales signals directly in the DNS.",
+    "sourceUrl": "https://github.com/modelcontextprotocol"
+  },
+  {
+    "date": "2026-09-24",
+    "title": "Launch des rfc10023.de Ecosystem Trackers",
+    "titleEn": "Launch of rfc10023.de Ecosystem Tracker",
+    "category": "Portal",
+    "description": "rfc10023.de startet den unabhängigen Ecosystem- und Adoptions-Tracker zur quellenbasierten Dokumentation von Tools und Kennzahlen.",
+    "descriptionEn": "rfc10023.de launches the independent Ecosystem & Adoption Tracker documenting verified tools and telemetry.",
+    "sourceUrl": "https://www.rfc10023.de/ecosystem"
+  }
+]

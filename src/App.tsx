@@ -20,6 +20,7 @@ import Impressum from './pages/Impressum';
 import Datenschutz from './pages/Datenschutz';
 import DokumentationPage from './pages/DokumentationPage';
 import FaqPage from './pages/FaqPage';
+import EcosystemPage from './pages/EcosystemPage';
 import SearchModal from './components/SearchModal';
 import { ShieldCheck, Cpu } from 'lucide-react';
 
@@ -71,6 +72,9 @@ function RouteWatcher() {
       } else if (pathname.includes('/badge')) {
         document.title = 'RFC 10023 Status Badge Generator';
         if (metaDesc) metaDesc.setAttribute('content', 'Generate neutral DNS verification links and privacy-compliant HTML/CSS badges for domain sales pages.');
+      } else if (pathname.includes('/ecosystem')) {
+        document.title = 'RFC 10023 Adoption & Ecosystem – Tools, Integrations and Statistics';
+        if (metaDesc) metaDesc.setAttribute('content', 'Comprehensive overview of RFC 10023 and _for-sale DNS record adoption: implementations, tools, registrars, datasets and verified telemetry.');
       } else {
         document.title = 'RFC 10023 | Signal Domain Sales Directly in the DNS';
         if (metaDesc) metaDesc.setAttribute('content', 'Independent reference portal & developer toolkit for IETF RFC 10023 (Informational). Live DNS validator and multi-record builder.');
@@ -91,6 +95,9 @@ function RouteWatcher() {
       } else if (pathname.includes('/badge')) {
         document.title = 'RFC 10023 Badge Generator | DNS-Verkaufsstatus einbinden';
         if (metaDesc) metaDesc.setAttribute('content', 'Erstelle neutrale Prüf-Links und 100% datenschutzkonforme HTML/CSS-Badges für Domain-Verkaufsseiten.');
+      } else if (pathname.includes('/ecosystem')) {
+        document.title = 'RFC 10023 Adoption & Ecosystem – Tools, Integrationen und Statistiken';
+        if (metaDesc) metaDesc.setAttribute('content', 'Aktuelle Übersicht zur Verbreitung von RFC 10023 und dem _for-sale DNS Record: Implementierungen, Tools, Registrare, Datensätze und Adoption.');
       } else {
         document.title = 'RFC 10023 | Zeige im DNS, dass deine Domain zum Verkauf steht';
         if (metaDesc) metaDesc.setAttribute('content', 'Unabhängiges Referenz-Portal und Entwickler-Toolkit für IETF RFC 10023 (Informational). Live DNS-Validator und Record-Generator.');
@@ -160,6 +167,7 @@ export function AppRoutes() {
       <Route path="/datenschutz" element={<Datenschutz />} />
       <Route path="/faq" element={<FaqPage />} />
       <Route path="/dokumentation" element={<DokumentationPage />} />
+      <Route path="/ecosystem" element={<EcosystemPage />} />
 
       {/* English Routes (/en prefix for global SEO and international reach) */}
       <Route path="/en" element={<HomePage />} />
@@ -177,6 +185,7 @@ export function AppRoutes() {
       <Route path="/en/faq" element={<FaqPage />} />
       <Route path="/en/dokumentation" element={<DokumentationPage />} />
       <Route path="/en/documentation" element={<DokumentationPage />} />
+      <Route path="/en/ecosystem" element={<EcosystemPage />} />
       <Route path="/en/widget-embed" element={<EmbedPage />} />
       <Route path="/en/rechner-embed" element={<EmbedPage />} />
       <Route path="/en/validator-embed" element={<EmbedPage />} />

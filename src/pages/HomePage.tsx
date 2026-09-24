@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ShieldCheck, Cpu, Code2, Copy, Check, ArrowRight, ExternalLink, Terminal, CheckCircle2, ArrowUpRight, Zap, Shield, AlertTriangle, Layers, Sparkles, Scale } from 'lucide-react';
+import { ShieldCheck, Cpu, Code2, Copy, Check, ArrowRight, ExternalLink, Terminal, CheckCircle2, ArrowUpRight, Zap, Shield, AlertTriangle, Layers, Sparkles, Scale, Globe } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import RfcValidator from '../components/RfcValidator';
 import RfcGenerator from '../components/RfcGenerator';
 import HosterMatrix from '../components/HosterMatrix';
 import CitationBox from '../components/CitationBox';
+import { computeEcosystemStats } from '../data/ecosystem';
 
 export default function HomePage() {
   const { t, language } = useLanguage();
@@ -13,6 +14,7 @@ export default function HomePage() {
   const [searchParams] = useSearchParams();
   const [copiedEmbed, setCopiedEmbed] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const ecosystemStats = computeEcosystemStats();
 
   useEffect(() => {
     const domainQuery = searchParams.get('d') || searchParams.get('domain');
@@ -426,6 +428,64 @@ export default function HomePage() {
             </a>
           </div>
 
+        </div>
+      </section>
+
+      {/* Ecosystem & Adoption Teaser (Requirement 16) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 text-white border border-slate-800 shadow-md relative overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            <div className="lg:col-span-7 space-y-3">
+              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-md bg-slate-800 border border-slate-700 font-mono text-[10px] font-semibold text-emerald-400">
+                <Globe className="w-3 h-3" />
+                <span>{t('home.teaser_badge')}</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                {t('home.teaser_title')}
+              </h2>
+              <p className="text-sm text-slate-300 leading-relaxed font-normal max-w-2xl">
+                {t('home.teaser_text')}
+              </p>
+              <div className="pt-2">
+                <Link
+                  to={`${langPrefix}/ecosystem`}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs transition-colors shadow-sm"
+                >
+                  <span>{t('home.teaser_cta')}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 grid grid-cols-3 gap-3 font-mono">
+              <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-center">
+                <span className="block text-xl sm:text-2xl font-black text-white">
+                  {(ecosystemStats.detectedDomains / 1000).toFixed(0)}k+
+                </span>
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider block mt-0.5">
+                  {language === 'en' ? 'Records' : 'Records'}
+                </span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-center">
+                <span className="block text-xl sm:text-2xl font-black text-emerald-400">
+                  {ecosystemStats.totalIntegrations}+
+                </span>
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider block mt-0.5">
+                  {language === 'en' ? 'Tools & Integrations' : 'Tools & Dienste'}
+                </span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-center">
+                <span className="block text-xl sm:text-2xl font-black text-white">
+                  2026
+                </span>
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider block mt-0.5">
+                  {language === 'en' ? 'Published' : 'Publiziert'}
+                </span>
+              </div>
+            </div>
+
+          </div>
         </div>
       </section>
 

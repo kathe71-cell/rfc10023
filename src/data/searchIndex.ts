@@ -62,6 +62,18 @@ export const SEARCH_INDEX: SearchItem[] = [
     keywordsEn: ['badge', 'shield', 'svg', 'embed', 'landingpage', 'sedo', 'dan', 'afternic'],
   },
   {
+    id: 'tool-ecosystem',
+    titleDe: 'Ecosystem & Adoption Tracker',
+    titleEn: 'Ecosystem & Adoption Tracker',
+    descDe: 'Transparente Übersicht zu Registries, Registraren, Scannern, KI/MCP-Tools und globalen Adoptions-Zahlen.',
+    descEn: 'Transparent directory of registries, registrars, scanners, AI/MCP tools and global telemetry metrics.',
+    category: 'standards',
+    pathDe: '/ecosystem',
+    pathEn: '/en/ecosystem',
+    keywordsDe: ['ecosystem', 'adoption', 'tracker', 'verbreitung', 'tools', 'inwx', 'sidn', 'forsaledns', 'statistik', 'telemetrie'],
+    keywordsEn: ['ecosystem', 'adoption', 'tracker', 'telemetry', 'tools', 'inwx', 'sidn', 'forsaledns', 'statistics', 'directory'],
+  },
+  {
     id: 'tool-api',
     titleDe: 'REST API v1 Dokumentation',
     titleEn: 'REST API v1 Documentation',

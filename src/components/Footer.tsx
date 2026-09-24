@@ -79,6 +79,11 @@ export default function Footer() {
                   {t('footer.link_matrix')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>
               </li>
+              <li>
+                <Link to={`${langPrefix}/ecosystem`} className="text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1 font-semibold">
+                  <span>Ecosystem &amp; Adoption</span> <ArrowUpRight className="w-3 h-3 text-emerald-500" />
+                </Link>
+              </li>
             </ul>
           </div>
 
