@@ -22,8 +22,10 @@ export default function SpezifikationPage() {
         <p className="mt-4 text-base sm:text-lg text-slate-700 leading-relaxed">
           {t('spec.desc')}
         </p>
-        <div className="mt-6 flex items-center gap-4 text-xs font-mono text-slate-500">
+        <div className="mt-6 flex flex-wrap items-center gap-4 text-xs font-mono text-slate-500">
           <span>{t('spec.cat')}</span>
+          <span>&bull;</span>
+          <span>{isEn ? 'Author: Marco Davids (SIDN Labs)' : 'Autor: Marco Davids (SIDN Labs)'}</span>
           <span>&bull;</span>
           <span>ISSN: 2070-1721</span>
           <span>&bull;</span>
@@ -156,7 +158,11 @@ export default function SpezifikationPage() {
       </section>
 
       {/* Citation Box */}
-      <CitationBox title={t('spec.citation_title')} url="https://www.rfc10023.de/spezifikation" />
+      <CitationBox
+        title={t('spec.citation_title')}
+        url="https://www.rfc10023.de/spezifikation"
+        author="Marco Davids (SIDN Labs)"
+      />
 
     </div>
   );

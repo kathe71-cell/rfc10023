@@ -54,7 +54,7 @@ const translations: Record<Language, Record<string, string>> = {
     'hero.terminal_node': 'DNS-Knoten:',
     'hero.terminal_dnssec': 'DNSSEC:',
     'hero.terminal_dnssec_val': 'Signiert und authentifiziert',
-    'hero.terminal_standard': 'Standard:',
+    'hero.terminal_standard': 'Spezifikation:',
     'hero.terminal_example': 'Praxisbeispiel: Registry SIDN (.nl)',
     'hero.terminal_spec_link': 'Spezifikation lesen →',
 
@@ -86,7 +86,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Definition Box
     'def.badge': 'IETF RFC 10023 (Informational)',
-    'def.text': 'RFC 10023 (Kategorie: Informational, Juli 2026, Autor: M. Davids / SIDN Labs) beschreibt eine rein betriebliche Konvention zur Signalisierung von Verkaufsbereitschaft über einen TXT-Resource-Record am Knotennamen _for-sale.[domain]. Das DNS dient ausschließlich zur Signalübermittlung; Verhandlung, Kaufpreiszahlung, Treuhandabwicklung und Inhaberwechsel erfolgen vollständig außerhalb des DNS und außerhalb dieses Portals.',
+    'def.text': 'RFC 10023 (Kategorie: Informational, Juli 2026, Autor: Marco Davids, SIDN Labs) beschreibt eine betriebliche Konvention zur Signalisierung der Verkaufsbereitschaft einer Domain über einen DNS-Eintrag am reservierten Knotennamen _for-sale.[domain]. Das DNS dient dabei ausschließlich zur Veröffentlichung des Verkaufssignals. Verhandlung, Kaufpreiszahlung, Treuhandabwicklung und Inhaberwechsel erfolgen vollständig außerhalb des DNS und außerhalb dieses Portals.',
     'def.spec_link': 'RFC 10023 Spezifikation lesen →',
 
     // Bento / Comparison Grid
@@ -141,8 +141,8 @@ const translations: Record<Language, Record<string, string>> = {
     'faq.a2': 'Nach RFC 10023 Abschnitt 2.1 lautet die Vorgabe der IETF: Jeder TXT-Eintrag enthält genau ein Tag-Wert-Paar (zum Beispiel Eintrag 1 mit "v=FORSALE1;fval=USD195000" und Eintrag 2 mit "v=FORSALE1;furi=https://..."). Unser Generator unterstützt sowohl dieses offizielle Verfahren als auch die einzeilige Variante für Nameserver mit einfacher Menüführung.',
     'faq.q3': 'Wie erkennen Registrare und Broker, dass eine Domain zum Verkauf steht?',
     'faq.a3': 'Registrare wie die niederländische Registry SIDN für .nl führen bei Verfügbarkeitsabfragen einen DNS-Query auf Typ 16 (TXT) am Knotennamen _for-sale durch. Findet das System den Eintrag "v=FORSALE1", zeigt der Registrar dem Interessenten direkt den Kaufpreis und den Kontakt an.',
-    'faq.q4': 'Welche Kosten entstehen durch den DNS-Standard?',
-    'faq.a4': 'Keine. RFC 10023 ist ein offener Standard der IETF. TXT-Einträge im DNS gehören bei praktisch allen Hostern zum kostenfreien Standardumfang einer Domain.',
+    'faq.q4': 'Welche Kosten entstehen durch die Nutzung von RFC 10023?',
+    'faq.a4': 'Keine. RFC 10023 ist eine frei nutzbare IETF-Spezifikation (Kategorie: Informational). TXT-Einträge im DNS gehören bei praktisch allen Hostern zum kostenfreien Standardumfang einer Domain.',
     'faq.q5': 'Wie schützt man sich vor Spam auf die Kontaktdaten?',
     'faq.a5': 'Im Tag furi sollte man statt einer offenen Mailadresse besser einen Link zu einem geschützten Kontaktformular, einer Projektseite oder einem Treuhandkonto angeben. So bleibt die Domain maschinenlesbar, ohne Angriffsfläche für Adress-Sammler zu bieten.',
     'faq.q6': 'Was bedeutet das Pflichtfeld v=FORSALE1?',
@@ -179,7 +179,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Validator Page standalone
     'valpage.badge': 'DNS-Prüfung',
     'valpage.title': 'RFC 10023 DNS-Validator',
-    'valpage.desc': 'Prüfen Sie Domains weltweit in Echtzeit auf vorhandene _for-sale TXT-Einträge und deren Konformität mit dem IETF-Standard.',
+    'valpage.desc': 'Prüfen Sie Domains weltweit in Echtzeit auf vorhandene _for-sale TXT-Einträge und deren Konformität mit RFC 10023.',
     'valpage.diag_title': 'Wie funktioniert die Prüfung?',
     'valpage.diag_text': 'Die Abfrage läuft direkt aus Ihrem Browser an öffentliche Anycast-Resolver von Cloudflare und Google. Dabei wird der TXT-Eintrag am Namen _for-sale.[domain] abgefragt. Das Skript prüft anschließend den Versionsheader v=FORSALE1; und die Felder fval, furi sowie ftxt.',
 
@@ -256,7 +256,7 @@ const translations: Record<Language, Record<string, string>> = {
     'gen.step3_hint': 'Empfehlung: Link zu einem Treuhanddienst (z. B. Escrow.com), Sedo, Afternic oder einem geschützten Kontaktformular.',
     'gen.step4': '4. Notiz oder Zusatz (ftxt)',
     'gen.format': 'Format:',
-    'gen.format_multi': 'Multi-Record RRset (IETF RFC 10023 Standard)',
+    'gen.format_multi': 'Multi-Record RRset (IETF RFC 10023 Konvention)',
     'gen.copy_code': 'Code kopieren',
     'gen.copied': 'Kopiert!',
     'gen.share_link': 'Link teilen',
@@ -455,14 +455,14 @@ const translations: Record<Language, Record<string, string>> = {
     'legal.c4_title': 'Markenschutz und Markenrechte',
     'legal.c4_text1': 'Ein öffentlicher Verkaufsvermerk im DNS dokumentiert die Absicht, eine Domain gegen Geld abzugeben. Verletzt die Domain fremde Markenrechte oder Firmennamen, kann ein hoher Kaufpreis von Gerichten oder Schiedsstellen als Indiz für Bösgläubigkeit gewertet werden.',
     'legal.c4_box': 'Wichtig: Nutzen Sie RFC 10023 nur für Domains, an denen Sie berechtigte Interessen halten und keine Rechte Dritter verletzen.',
-    'legal.cta_title': 'Standardkonformen Eintrag erstellen',
+    'legal.cta_title': 'RFC-10023-konformen Eintrag erstellen',
     'legal.cta_desc': 'Nutzen Sie unseren Generator mit automatischer Längenprüfung und flexiblen Exportformaten.',
     'legal.cta_btn': 'Zum Generator →',
 
     // Specification Page
     'spec.badge': 'IETF RFC 10023 · Status: Informational',
     'spec.title': 'RFC 10023 Spezifikation',
-    'spec.desc': 'Technische Analyse und deutsche Referenz des IETF-Standards „The \'_for-sale\' Underscored and Globally Scoped DNS Node Name“ (Juli 2026).',
+    'spec.desc': 'Technische Analyse und Referenz der IETF-Spezifikation „The \'_for-sale\' Underscored and Globally Scoped DNS Node Name“ (Informational, Juli 2026).',
     'spec.cat': 'Kategorie: Informational',
     'spec.orig_link': 'IETF Originaltext',
     'spec.s1_title': '1. Motivation und Discovery-Architektur',
@@ -572,7 +572,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Definition Box
     'def.badge': 'IETF RFC 10023 (Informational)',
-    'def.text': 'RFC 10023 (Category: Informational, July 2026, Author: M. Davids / SIDN Labs) describes an operational convention that uses the reserved underscored DNS leaf node name "_for-sale" to indicate a domain name is available for purchase. The DNS serves exclusively as a signal; negotiation, payment, escrow, and domain transfer occur entirely outside the DNS.',
+    'def.text': 'RFC 10023 (Category: Informational, July 2026, author: Marco Davids, SIDN Labs) describes an operational convention for signaling that a domain is offered for sale through a DNS record at the reserved _for-sale.[domain] node. DNS is used solely to publish the sale signal. Negotiation, payment, escrow and transfer of ownership take place entirely outside DNS and outside this portal.',
     'def.spec_link': 'RFC 10023 Specification →',
 
     // Bento / Comparison Grid
@@ -627,8 +627,8 @@ const translations: Record<Language, Record<string, string>> = {
     'faq.a2': 'According to RFC 10023 Section 2.1, the IETF specification states that each TXT record should contain exactly one tag-value pair (e.g. record 1 with "v=FORSALE1;fval=USD195000" and record 2 with "v=FORSALE1;furi=https://..."). Our generator supports both this multi-line standard and a single-line fallback for limited DNS control panels.',
     'faq.q3': 'How do registrars and brokers discover that a domain is for sale?',
     'faq.a3': 'Registrars like SIDN for .nl perform a DNS query for Type 16 (TXT) at the node name _for-sale during domain availability checks. When the resolver finds "v=FORSALE1", the registrar immediately presents the asking price and contact URI to the buyer.',
-    'faq.q4': 'What are the costs of using this DNS standard?',
-    'faq.a4': 'Zero. RFC 10023 is an open IETF standard. Adding TXT records to your DNS zone is a standard, free feature included with virtually every domain registrar worldwide.',
+    'faq.q4': 'What are the costs of using RFC 10023?',
+    'faq.a4': 'None. RFC 10023 is a freely usable IETF specification (Category: Informational). DNS TXT records are included at zero additional cost with virtually every domain registrar and hoster.',
     'faq.q5': 'How do domain owners protect themselves from email spam?',
     'faq.a5': 'In the furi tag, we strongly recommend pointing to a protected contact form, a project landing page, or an escrow service (e.g. Escrow.com) rather than exposing a plain mailto: address. This preserves full machine-readability while blocking spam harvesters.',
     'faq.q6': 'What is the purpose of the mandatory v=FORSALE1 tag?',
@@ -742,7 +742,7 @@ const translations: Record<Language, Record<string, string>> = {
     'gen.step3_hint': 'Recommendation: Link to an escrow provider (e.g. Escrow.com), Sedo, Afternic, or a protected contact form.',
     'gen.step4': '4. Note or Remarks (ftxt)',
     'gen.format': 'Format:',
-    'gen.format_multi': 'Multi-Record RRset (IETF RFC 10023 Standard)',
+    'gen.format_multi': 'Multi-Record RRset (IETF RFC 10023 Convention)',
     'gen.copy_code': 'Copy Code',
     'gen.copied': 'Copied!',
     'gen.share_link': 'Share Link',
@@ -941,14 +941,14 @@ const translations: Record<Language, Record<string, string>> = {
     'legal.c4_title': 'Trademark Law and Brand Protection',
     'legal.c4_text1': 'A public sale record in the DNS explicitly proves commercial intent. If a domain infringes on third-party trademarks or brand names, an inflated asking price can be viewed as evidence of bad faith in UDRP disputes or litigation.',
     'legal.c4_box': 'Important: Only use RFC 10023 for domains where you possess legitimate rights and do not infringe on third-party intellectual property.',
-    'legal.cta_title': 'Build a Standard-Compliant Record',
+    'legal.cta_title': 'Build an RFC 10023 Compliant Record',
     'legal.cta_desc': 'Use our generator featuring automatic character limit validation and copy-ready syntax exports.',
     'legal.cta_btn': 'Open Generator →',
 
     // Specification Page
     'spec.badge': 'IETF RFC 10023 · Status: Informational',
     'spec.title': 'RFC 10023 Specification',
-    'spec.desc': 'Technical analysis and comprehensive reference for the IETF standard "The \'_for-sale\' Underscored and Globally Scoped DNS Node Name" (July 2026).',
+    'spec.desc': 'Technical analysis and reference guide for the IETF Informational specification "The \'_for-sale\' Underscored and Globally Scoped DNS Node Name" (July 2026).',
     'spec.cat': 'Category: Informational',
     'spec.orig_link': 'IETF Original Text',
     'spec.s1_title': '1. Motivation & Discovery Architecture',

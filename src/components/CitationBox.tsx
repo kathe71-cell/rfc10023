@@ -6,12 +6,14 @@ interface CitationBoxProps {
   title?: string;
   url?: string;
   date?: string;
+  author?: string;
 }
 
 export default function CitationBox({
   title,
   url = 'https://www.rfc10023.de/',
   date = '2026-09-24',
+  author,
 }: CitationBoxProps) {
   const { t, language } = useLanguage();
   const [copied, setCopied] = useState(false);
@@ -27,18 +29,19 @@ export default function CitationBox({
   const monthsDe = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
   const monthName = language === 'en' ? (monthsEn[monthNum - 1] || 'September') : (monthsDe[monthNum - 1] || 'September');
 
+  const effectiveAuthor = author || (language === 'en' ? 'RFC 10023 Editorial Board' : 'RFC 10023 Fachredaktion');
+
   const getCitationText = () => {
-    const author = language === 'en' ? 'RFC 10023 Editorial Board' : 'RFC 10023 Fachredaktion';
     const retrieved = language === 'en' ? `Retrieved on ${monthName} ${day}, ${year}, from ${url}` : `Abgerufen am ${day}. ${monthName} ${year}, von ${url}`;
     const available = language === 'en' ? `Available at: <${url}> [Accessed ${day} ${monthName} ${year}].` : `Verfügbar unter: <${url}> [Zugriff am ${day}. ${monthName} ${year}].`;
 
     switch (format) {
       case 'apa':
-        return `${author} (${year}). ${effectiveTitle}. rfc10023.de. ${retrieved}`;
+        return `${effectiveAuthor} (${year}). ${effectiveTitle}. rfc10023.de. ${retrieved}`;
       case 'harvard':
-        return `${author}, ${year}. ${effectiveTitle}. [online] rfc10023.de. ${available}`;
+        return `${effectiveAuthor}, ${year}. ${effectiveTitle}. [online] rfc10023.de. ${available}`;
       case 'bibtex':
-        return `@online{rfc10023_${year},\n  author = {${author}},\n  title = {${effectiveTitle}},\n  year = {${year}},\n  url = {${url}},\n  urldate = {${date}}\n}`;
+        return `@online{rfc10023_${year},\n  author = {${effectiveAuthor}},\n  title = {${effectiveTitle}},\n  year = {${year}},\n  url = {${url}},\n  urldate = {${date}}\n}`;
       default:
         return '';
     }

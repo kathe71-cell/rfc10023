@@ -1,5 +1,5 @@
 // RFC 10023 Reference Parser & Validator Engine
-// Conforming to IETF RFC 10023 (Informational, July 2026 - M. Davids, SIDN Labs)
+// Conforming to IETF RFC 10023 (Informational, July 2026 - Marco Davids, SIDN Labs)
 // Formal ABNF:
 // forsale-record  = forsale-version [forsale-content]
 // forsale-version = %s"v=FORSALE1;"

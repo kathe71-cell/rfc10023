@@ -134,15 +134,16 @@ export default function DokumentationPage() {
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
-            Offizielle Primärquelle
+            {isEn ? 'Official Primary Source' : 'Offizielle Primärquelle'}
           </span>
         </div>
         <h3 className="text-xl font-bold text-white">
           IETF RFC 10023: The '_for-sale' Underscored and Globally Scoped DNS Node Name
         </h3>
         <p className="text-sm text-slate-300 leading-relaxed max-w-3xl">
-          Veröffentlicht im Juli 2026 durch das Internet Engineering Steering Group (IESG) als <strong>Informational RFC</strong>. 
-          Autor: Marco Davids (SIDN Labs). ISSN: 2070-1721.
+          {isEn
+            ? 'Published in July 2026 by the Internet Engineering Steering Group (IESG) as an Informational RFC. Author: Marco Davids (SIDN Labs). ISSN: 2070-1721.'
+            : 'Veröffentlicht im Juli 2026 durch die Internet Engineering Steering Group (IESG) als Informational RFC. Autor: Marco Davids (SIDN Labs). ISSN: 2070-1721.'}
         </p>
         <div className="flex flex-wrap gap-4 pt-2">
           <a

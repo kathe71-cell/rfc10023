@@ -185,7 +185,7 @@ describe('Section 5 Security Defense: Mixed-Script Homograph Detection', () => {
   });
 });
 
-describe('Real-World RFC 10023 Test Vectors by Author (M. Davids)', () => {
+describe('Real-World RFC 10023 Test Vectors by Author (Marco Davids)', () => {
   it('parses cours-dns.fr with presentation escapes and decodes French accents', () => {
     const coursDnsRrset = [
       '"v=FORSALE1;fcod=42"',
