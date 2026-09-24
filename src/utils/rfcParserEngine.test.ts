@@ -12,7 +12,7 @@ import {
   unicodeToPunycode,
   detectMixedScript,
 } from './rfcParserEngine';
-import { sanitizeCsvCell, toPunycodeHostname } from './dnsIntelligence';
+import { sanitizeCsvCell, toPunycodeHostname, validateDomainHostname } from './dnsIntelligence';
 
 describe('RFC 10023 Parser & Validator Engine', () => {
   it('correctly parses a fully valid multi-record RRset', () => {
@@ -250,3 +250,65 @@ describe('CSV Formula Injection Defense', () => {
     expect(sanitizeCsvCell('quotes "inside" string')).toBe(`"quotes ""inside"" string"`);
   });
 });
+
+describe('DNS Domain & Label Validation (RFC 1035 / RFC 2181 / RFC 5890)', () => {
+  it('accepts standard valid domains', () => {
+    expect(validateDomainHostname('example.com').valid).toBe(true);
+    expect(validateDomainHostname('sub.example.com').valid).toBe(true);
+  });
+
+  it('accepts a label with exactly 63 characters', () => {
+    const label63 = 'a'.repeat(63);
+    const res = validateDomainHostname(`${label63}.com`);
+    expect(res.valid).toBe(true);
+    expect(res.punyHost).toBe(`${label63}.com`);
+  });
+
+  it('rejects a label with 64 characters', () => {
+    const label64 = 'a'.repeat(64);
+    const res = validateDomainHostname(`${label64}.com`);
+    expect(res.valid).toBe(false);
+    expect(res.error).toBe('Ungültige Domain: Ein DNS-Label darf maximal 63 Zeichen lang sein.');
+    expect(res.errorEn).toBe('Invalid domain: A DNS label may not exceed 63 characters.');
+  });
+
+  it('accepts valid Punycode and IDN domains', () => {
+    const resPuny = validateDomainHostname('xn--bcher-kva.de');
+    expect(resPuny.valid).toBe(true);
+    expect(resPuny.punyHost).toBe('xn--bcher-kva.de');
+
+    const resIdn = validateDomainHostname('münchen.de');
+    expect(resIdn.valid).toBe(true);
+    expect(resIdn.punyHost).toBe('xn--mnchen-3ya.de');
+  });
+
+  it('rejects an IDN domain whose Punycode label exceeds 63 octets', () => {
+    // 60 non-ASCII characters expand into a Punycode label of 66 octets (> 63)
+    const longUnicode = 'ü'.repeat(60) + '.de';
+    const res = validateDomainHostname(longUnicode);
+    expect(res.valid).toBe(false);
+    expect(res.error).toBe('Ungültige Domain: Ein DNS-Label darf maximal 63 Zeichen lang sein.');
+    expect(res.errorEn).toBe('Invalid domain: A DNS label may not exceed 63 characters.');
+
+    // Also test explicit A-label exceeding 63 chars (4 + 60 = 64 chars)
+    const longALabel = 'xn--' + 'a'.repeat(60) + '.de';
+    const resALabel = validateDomainHostname(longALabel);
+    expect(resALabel.valid).toBe(false);
+    expect(resALabel.error).toBe('Ungültige Domain: Ein DNS-Label darf maximal 63 Zeichen lang sein.');
+    expect(resALabel.errorEn).toBe('Invalid domain: A DNS label may not exceed 63 characters.');
+  });
+
+  it('rejects a domain whose overall normalized host exceeds 253 characters', () => {
+    const part1 = 'a'.repeat(60);
+    const part2 = 'b'.repeat(60);
+    const part3 = 'c'.repeat(60);
+    const part4 = 'd'.repeat(60);
+    const part5 = 'e'.repeat(20);
+    const longHost = `${part1}.${part2}.${part3}.${part4}.${part5}.com`; // 265 chars
+    const res = validateDomainHostname(longHost);
+    expect(res.valid).toBe(false);
+    expect(res.error).toContain('253 Zeichen');
+    expect(res.errorEn).toContain('253 characters');
+  });
+});
+

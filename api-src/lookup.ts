@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { parseRfc10023Records, type DnsQueryStatus } from '../src/utils/rfcParserEngine';
-import { toPunycodeHostname, detectHosterFromNameservers } from '../src/utils/dnsIntelligence';
+import { validateDomainHostname, detectHosterFromNameservers } from '../src/utils/dnsIntelligence';
 
 interface ParsedResult {
   domain: string;
@@ -37,33 +37,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const rawDomain = (req.query.d || req.query.domain || '') as string;
-  if (!rawDomain || rawDomain.length > 253) {
+  if (!rawDomain) {
     return res.status(400).json({
-      error: 'Parameter "domain" oder "d" fehlt oder ist ungültig (max. 253 Zeichen).',
+      error: 'Parameter "domain" oder "d" fehlt. Beispiel: /api/lookup?d=beispieldomain.de',
       status: 'error',
     });
   }
 
-  let domain = rawDomain.trim().toLowerCase();
-  domain = domain.replace(/^https?:\/\//, '');
-  domain = domain.replace(/^www\./, '');
-  domain = domain.replace(/^_for-sale\./, '');
-  domain = domain.split('/')[0].split(':')[0];
-
-  if (!domain.includes('.') || domain.length > 253 || domain.length < 3) {
+  const validation = validateDomainHostname(rawDomain);
+  if (!validation.valid) {
     return res.status(400).json({
-      error: 'Ungültiger Domainname übergeben.',
+      error: validation.error || 'Ungültiger Domainname übergeben.',
       status: 'error',
     });
   }
 
-  const punyHost = toPunycodeHostname(domain);
-  if (!punyHost || punyHost.length > 253) {
-    return res.status(400).json({
-      error: 'Ungültiger Domainname übergeben.',
-      status: 'error',
-    });
-  }
+  const domain = validation.cleanDomain;
+  const punyHost = validation.punyHost;
   const leafNode = `_for-sale.${punyHost}`;
   let rawRecords: string[] = [];
   let isDnssec = false;

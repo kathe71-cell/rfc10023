@@ -131,6 +131,125 @@ export function toPunycodeHostname(domain: string): string {
   }
 }
 
+export interface DnsDomainValidation {
+  valid: boolean;
+  cleanDomain: string;
+  punyHost: string;
+  error?: string;
+  errorEn?: string;
+}
+
+/**
+ * Validates a domain name according to RFC 1035 / RFC 2181 / RFC 5890:
+ * - Total length of normalized Punycode host must not exceed 253 octets.
+ * - Each individual label must not exceed 63 octets after Punycode / IDNA conversion.
+ * - Each label must follow valid DNS syntax (alphanumeric, hyphens not leading or trailing).
+ */
+export function validateDomainHostname(raw: string): DnsDomainValidation {
+  if (!raw || typeof raw !== 'string') {
+    return {
+      valid: false,
+      cleanDomain: '',
+      punyHost: '',
+      error: 'Parameter "domain" oder "d" fehlt oder ist ungültig.',
+      errorEn: 'Missing or invalid domain parameter.',
+    };
+  }
+
+  const trimmed = raw.trim();
+  if (trimmed.length > 253) {
+    return {
+      valid: false,
+      cleanDomain: '',
+      punyHost: '',
+      error: 'Ungültige Domain: Der Domainname darf maximal 253 Zeichen lang sein.',
+      errorEn: 'Invalid domain: Domain name may not exceed 253 characters.',
+    };
+  }
+
+  const clean = cleanDomainInput(trimmed);
+  if (!clean || !clean.includes('.') || clean.length < 3 || clean.length > 253) {
+    return {
+      valid: false,
+      cleanDomain: clean,
+      punyHost: '',
+      error: 'Ungültiger Domainname übergeben.',
+      errorEn: 'Invalid domain syntax. Must contain a valid TLD.',
+    };
+  }
+
+  let punyHost = '';
+  try {
+    punyHost = new URL(`https://${clean}`).hostname;
+  } catch {
+    punyHost = clean;
+  }
+
+  // Check Punycode ASCII octet length (RFC 1035: max 253 octets)
+  const hostOctetLength = new TextEncoder().encode(punyHost).length;
+
+  if (!punyHost || hostOctetLength > 253 || hostOctetLength < 3) {
+    return {
+      valid: false,
+      cleanDomain: clean,
+      punyHost,
+      error: 'Ungültige Domain: Der Domainname darf maximal 253 Zeichen lang sein.',
+      errorEn: 'Invalid domain: Domain name may not exceed 253 characters.',
+    };
+  }
+
+  const labels = punyHost.split('.');
+  if (labels.length < 2) {
+    return {
+      valid: false,
+      cleanDomain: clean,
+      punyHost,
+      error: 'Ungültiger Domainname übergeben.',
+      errorEn: 'Invalid domain syntax. Must contain a valid TLD.',
+    };
+  }
+
+  for (const label of labels) {
+    if (!label || label.length === 0) {
+      return {
+        valid: false,
+        cleanDomain: clean,
+        punyHost,
+        error: 'Ungültige Domain: Leeres DNS-Label erkannt.',
+        errorEn: 'Invalid domain: Empty DNS label detected.',
+      };
+    }
+
+    const labelOctetLength = new TextEncoder().encode(label).length;
+
+    if (labelOctetLength > 63) {
+      return {
+        valid: false,
+        cleanDomain: clean,
+        punyHost,
+        error: 'Ungültige Domain: Ein DNS-Label darf maximal 63 Zeichen lang sein.',
+        errorEn: 'Invalid domain: A DNS label may not exceed 63 characters.',
+      };
+    }
+
+    if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/i.test(label)) {
+      return {
+        valid: false,
+        cleanDomain: clean,
+        punyHost,
+        error: 'Ungültige Domain: DNS-Label enthält ungültige Zeichen.',
+        errorEn: 'Invalid domain: DNS label contains invalid characters.',
+      };
+    }
+  }
+
+  return {
+    valid: true,
+    cleanDomain: clean,
+    punyHost,
+  };
+}
+
 /**
  * Sanitizes a string for CSV export to prevent formula injection attacks.
  * If the string starts with =, +, -, @, \t, or \r, prepend a single quote.

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { parseRfc10023Records, type DnsQueryStatus } from '../../src/utils/rfcParserEngine';
-import { toPunycodeHostname, detectHosterFromNameservers } from '../../src/utils/dnsIntelligence';
+import { validateDomainHostname, detectHosterFromNameservers } from '../../src/utils/dnsIntelligence';
 
 interface TagItem {
   tag: string;
@@ -82,34 +82,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startTime = performance.now();
   const rawDomain = (req.query.d || req.query.domain || '') as string;
 
-  if (!rawDomain || rawDomain.length > 253) {
+  if (!rawDomain) {
     return res.status(400).json({
       apiVersion: '1.0',
-      error: 'Missing or invalid domain parameter (max 253 chars). Usage: /api/v1/validate?domain=example.com',
+      error: 'Missing domain parameter. Usage: /api/v1/validate?domain=example.com',
       status: 'error',
     });
   }
 
-  let domain = rawDomain.trim().toLowerCase();
-  domain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/^_for-sale\./, '');
-  domain = domain.split('/')[0].split(':')[0];
-
-  if (!domain.includes('.') || domain.length > 253 || domain.length < 3) {
+  const validation = validateDomainHostname(rawDomain);
+  if (!validation.valid) {
     return res.status(400).json({
       apiVersion: '1.0',
-      error: 'Invalid domain syntax. Must contain a valid TLD.',
+      error: validation.errorEn || 'Invalid domain syntax. Must contain a valid TLD.',
       status: 'error',
     });
   }
 
-  const punyHost = toPunycodeHostname(domain);
-  if (!punyHost || punyHost.length > 253) {
-    return res.status(400).json({
-      apiVersion: '1.0',
-      error: 'Invalid domain syntax.',
-      status: 'error',
-    });
-  }
+  const domain = validation.cleanDomain;
+  const punyHost = validation.punyHost;
   const leafNode = `_for-sale.${punyHost}`;
   let rawRecords: string[] = [];
   let isDnssec = false;

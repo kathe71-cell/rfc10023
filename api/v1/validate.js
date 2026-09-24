@@ -635,13 +635,97 @@ function cleanDomainInput(raw) {
   d = d.split(":")[0];
   return d;
 }
-function toPunycodeHostname(domain) {
-  try {
-    const clean = cleanDomainInput(domain);
-    return new URL(`https://${clean}`).hostname;
-  } catch {
-    return cleanDomainInput(domain);
+function validateDomainHostname(raw) {
+  if (!raw || typeof raw !== "string") {
+    return {
+      valid: false,
+      cleanDomain: "",
+      punyHost: "",
+      error: 'Parameter "domain" oder "d" fehlt oder ist ung\xFCltig.',
+      errorEn: "Missing or invalid domain parameter."
+    };
   }
+  const trimmed = raw.trim();
+  if (trimmed.length > 253) {
+    return {
+      valid: false,
+      cleanDomain: "",
+      punyHost: "",
+      error: "Ung\xFCltige Domain: Der Domainname darf maximal 253 Zeichen lang sein.",
+      errorEn: "Invalid domain: Domain name may not exceed 253 characters."
+    };
+  }
+  const clean = cleanDomainInput(trimmed);
+  if (!clean || !clean.includes(".") || clean.length < 3 || clean.length > 253) {
+    return {
+      valid: false,
+      cleanDomain: clean,
+      punyHost: "",
+      error: "Ung\xFCltiger Domainname \xFCbergeben.",
+      errorEn: "Invalid domain syntax. Must contain a valid TLD."
+    };
+  }
+  let punyHost = "";
+  try {
+    punyHost = new URL(`https://${clean}`).hostname;
+  } catch {
+    punyHost = clean;
+  }
+  const hostOctetLength = new TextEncoder().encode(punyHost).length;
+  if (!punyHost || hostOctetLength > 253 || hostOctetLength < 3) {
+    return {
+      valid: false,
+      cleanDomain: clean,
+      punyHost,
+      error: "Ung\xFCltige Domain: Der Domainname darf maximal 253 Zeichen lang sein.",
+      errorEn: "Invalid domain: Domain name may not exceed 253 characters."
+    };
+  }
+  const labels = punyHost.split(".");
+  if (labels.length < 2) {
+    return {
+      valid: false,
+      cleanDomain: clean,
+      punyHost,
+      error: "Ung\xFCltiger Domainname \xFCbergeben.",
+      errorEn: "Invalid domain syntax. Must contain a valid TLD."
+    };
+  }
+  for (const label of labels) {
+    if (!label || label.length === 0) {
+      return {
+        valid: false,
+        cleanDomain: clean,
+        punyHost,
+        error: "Ung\xFCltige Domain: Leeres DNS-Label erkannt.",
+        errorEn: "Invalid domain: Empty DNS label detected."
+      };
+    }
+    const labelOctetLength = new TextEncoder().encode(label).length;
+    if (labelOctetLength > 63) {
+      return {
+        valid: false,
+        cleanDomain: clean,
+        punyHost,
+        error: "Ung\xFCltige Domain: Ein DNS-Label darf maximal 63 Zeichen lang sein.",
+        errorEn: "Invalid domain: A DNS label may not exceed 63 characters."
+      };
+    }
+    if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/i.test(label)) {
+      return {
+        valid: false,
+        cleanDomain: clean,
+        punyHost,
+        error: "Ung\xFCltige Domain: DNS-Label enth\xE4lt ung\xFCltige Zeichen.",
+        errorEn: "Invalid domain: DNS label contains invalid characters."
+      };
+    }
+  }
+  return {
+    valid: true,
+    cleanDomain: clean,
+    punyHost
+  };
 }
 
 // api-src/v1/validate.ts
@@ -657,31 +741,23 @@ async function handler(req, res) {
   }
   const startTime = performance.now();
   const rawDomain = req.query.d || req.query.domain || "";
-  if (!rawDomain || rawDomain.length > 253) {
+  if (!rawDomain) {
     return res.status(400).json({
       apiVersion: "1.0",
-      error: "Missing or invalid domain parameter (max 253 chars). Usage: /api/v1/validate?domain=example.com",
+      error: "Missing domain parameter. Usage: /api/v1/validate?domain=example.com",
       status: "error"
     });
   }
-  let domain = rawDomain.trim().toLowerCase();
-  domain = domain.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/^_for-sale\./, "");
-  domain = domain.split("/")[0].split(":")[0];
-  if (!domain.includes(".") || domain.length > 253 || domain.length < 3) {
+  const validation = validateDomainHostname(rawDomain);
+  if (!validation.valid) {
     return res.status(400).json({
       apiVersion: "1.0",
-      error: "Invalid domain syntax. Must contain a valid TLD.",
+      error: validation.errorEn || "Invalid domain syntax. Must contain a valid TLD.",
       status: "error"
     });
   }
-  const punyHost = toPunycodeHostname(domain);
-  if (!punyHost || punyHost.length > 253) {
-    return res.status(400).json({
-      apiVersion: "1.0",
-      error: "Invalid domain syntax.",
-      status: "error"
-    });
-  }
+  const domain = validation.cleanDomain;
+  const punyHost = validation.punyHost;
   const leafNode = `_for-sale.${punyHost}`;
   let rawRecords = [];
   let isDnssec = false;
