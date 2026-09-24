@@ -981,8 +981,11 @@ const LanguageContext = createContext<LanguageContextType>({
   setIsSearchOpen: () => {},
 });
 
-export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const LanguageProvider: React.FC<{ children: React.ReactNode; initialLanguage?: Language }> = ({ children, initialLanguage }) => {
   const [language, setLanguageState] = useState<Language>(() => {
+    if (initialLanguage) {
+      return initialLanguage;
+    }
     // Initial check from current window URL
     if (typeof window !== 'undefined') {
       const pathname = window.location.pathname;

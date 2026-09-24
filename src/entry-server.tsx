@@ -8,7 +8,7 @@ export function render(url: string) {
   const isEn = url === '/en' || url.startsWith('/en/');
   const html = renderToString(
     <StaticRouter location={url}>
-      <LanguageProvider>
+      <LanguageProvider initialLanguage={isEn ? 'en' : 'de'}>
         <Layout>
           <AppRoutes />
         </Layout>
