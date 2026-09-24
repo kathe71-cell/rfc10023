@@ -84,63 +84,53 @@ export default function HosterMatrix() {
     }
   };
 
-  const renderVerificationBadge = (h: ProviderCompatibility) => {
-    switch (h.verificationType) {
-      case 'hands-on-test':
-        return (
-          <div className="flex flex-col gap-0.5">
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800">
-              <FlaskConical className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>{t('matrix.vtype_hands_on_test')}</span>
-            </span>
-            {h.testedAt && (
-              <span className="text-[10px] text-slate-500 font-mono">
-                {t('matrix.tested_at')}: {formatVerificationDate(h.testedAt, isEn ? 'en' : 'de')}
-              </span>
-            )}
-          </div>
-        );
-      case 'official-docs':
-        return (
-          <div className="flex flex-col gap-0.5">
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-800">
-              <FileText className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-              <span>{t('matrix.vtype_official_docs')}</span>
-            </span>
-          </div>
-        );
-      case 'provider-statement':
-        return (
-          <div className="flex flex-col gap-0.5">
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-900">
-              <MessageSquare className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>{t('matrix.vtype_provider_statement')}</span>
-            </span>
-          </div>
-        );
-      case 'community-report':
-        return (
-          <div className="flex flex-col gap-0.5">
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700">
-              <Users className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-              <span>{t('matrix.vtype_community_report')}</span>
-            </span>
-          </div>
-        );
-      case 'inferred':
-        return (
-          <div className="flex flex-col gap-0.5">
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500">
-              <HelpCircle className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <span>{t('matrix.vtype_inferred')}</span>
-            </span>
-          </div>
-        );
+  const renderVerificationDetails = (h: ProviderCompatibility) => {
+    let typeIcon = <FileText className="w-3.5 h-3.5 text-slate-600 shrink-0" />;
+    let typeLabel = t('matrix.vtype_official_docs');
+
+    if (h.verificationType === 'hands-on-test') {
+      typeIcon = <FlaskConical className="w-3.5 h-3.5 text-emerald-600 shrink-0" />;
+      typeLabel = t('matrix.vtype_hands_on_test');
+    } else if (h.verificationType === 'provider-statement') {
+      typeIcon = <MessageSquare className="w-3.5 h-3.5 text-emerald-600 shrink-0" />;
+      typeLabel = t('matrix.vtype_provider_statement');
+    } else if (h.verificationType === 'community-report') {
+      typeIcon = <Users className="w-3.5 h-3.5 text-slate-500 shrink-0" />;
+      typeLabel = t('matrix.vtype_community_report');
+    } else if (h.verificationType === 'inferred') {
+      typeIcon = <HelpCircle className="w-3.5 h-3.5 text-slate-400 shrink-0" />;
+      typeLabel = t('matrix.vtype_inferred');
     }
+
+    const isStale = isVerificationStale(h.lastVerified, 180);
+
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-800">
+          {typeIcon}
+          <span>{typeLabel}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-500 font-mono">
+          <span>{t('matrix.last_verified')}: {formatVerificationDate(h.lastVerified, isEn ? 'en' : 'de')}</span>
+          {h.testedAt && (
+            <span>· {t('matrix.tested_at')}: {formatVerificationDate(h.testedAt, isEn ? 'en' : 'de')}</span>
+          )}
+        </div>
+        {isStale && (
+          <div
+            className="inline-flex items-center gap-1 text-[10px] text-amber-800 font-medium bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200"
+            title={t('matrix.stale_tooltip')}
+          >
+            <AlertTriangle className="w-2.5 h-2.5 shrink-0 text-amber-600" />
+            <span>{t('matrix.stale_warning')}</span>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
-    <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6 lg:p-8 space-y-6 overflow-hidden">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -188,92 +178,67 @@ export default function HosterMatrix() {
         <p>{t('matrix.transparency_note')}</p>
       </div>
 
-      {/* Desktop Table View (>= lg) */}
-      <div className="hidden lg:block overflow-x-auto border border-slate-200 rounded-xl">
-        <table className="w-full text-left text-sm border-collapse">
+      {/* Fixed Desktop Table View (>= md) - Strictly 100% width with table-fixed, zero horizontal overflow */}
+      <div className="hidden md:block w-full border border-slate-200 rounded-xl overflow-hidden">
+        <table className="w-full table-fixed text-left text-sm border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-xs font-mono uppercase text-slate-500">
-              <th className="py-3 px-3.5 font-bold">{t('matrix.col_provider')}</th>
-              <th className="py-3 px-3 font-bold">{t('matrix.col_origin')}</th>
-              <th className="py-3 px-3 font-bold">{t('matrix.col_status')}</th>
-              <th className="py-3 px-3 font-bold">{t('matrix.col_verification')}</th>
-              <th className="py-3 px-3.5 font-bold">{t('matrix.col_syntax')}</th>
-              <th className="py-3 px-3.5 font-bold">{t('matrix.col_notes')}</th>
-              <th className="py-3 px-3 font-bold">{t('matrix.col_last_verified')}</th>
-              <th className="py-3 px-3 font-bold text-right">{t('matrix.col_source')}</th>
+              <th className="py-3 px-4 font-bold w-[23%]">{t('matrix.col_provider_origin')}</th>
+              <th className="py-3 px-4 font-bold w-[24%]">{t('matrix.col_status_verification')}</th>
+              <th className="py-3 px-4 font-bold w-[23%]">{t('matrix.col_syntax')}</th>
+              <th className="py-3 px-4 font-bold w-[30%]">{t('matrix.col_notes')}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 bg-white">
             {filteredHosters.map((hoster) => {
               const country = isEn ? hoster.regionEn : hoster.region;
               const notes = isEn ? hoster.notesEn : hoster.notes;
-              const isStale = isVerificationStale(hoster.lastVerified, 180);
 
               return (
-                <tr key={hoster.id} className="hover:bg-slate-50/70 transition-colors">
+                <tr key={hoster.id} className="hover:bg-slate-50/70 transition-colors align-top">
                   
-                  {/* Name */}
-                  <td className="py-3.5 px-3.5 font-extrabold text-slate-900 whitespace-nowrap">
-                    {hoster.name}
+                  {/* Column 1: Provider, Region & Source Link */}
+                  <td className="py-3.5 px-4 space-y-1.5">
+                    <div>
+                      <span className="block font-extrabold text-slate-900 leading-snug">
+                        {hoster.name}
+                      </span>
+                      <span className="text-xs text-slate-500 font-medium">
+                        {country}
+                      </span>
+                    </div>
+                    <div>
+                      <a
+                        href={hoster.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 hover:underline"
+                        title={hoster.sourceUrl}
+                      >
+                        <span>{t('matrix.view_source')}</span>
+                        <ExternalLink className="w-3 h-3 shrink-0" />
+                      </a>
+                    </div>
                   </td>
 
-                  {/* Region */}
-                  <td className="py-3.5 px-3 text-slate-600 text-xs whitespace-nowrap">
-                    {country}
+                  {/* Column 2: Status & Verification Meta */}
+                  <td className="py-3.5 px-4 space-y-2">
+                    <div>
+                      {renderStatusBadge(hoster.status)}
+                    </div>
+                    {renderVerificationDetails(hoster)}
                   </td>
 
-                  {/* Status */}
-                  <td className="py-3.5 px-3 whitespace-nowrap">
-                    {renderStatusBadge(hoster.status)}
-                  </td>
-
-                  {/* Verification */}
-                  <td className="py-3.5 px-3 whitespace-nowrap">
-                    {renderVerificationBadge(hoster)}
-                  </td>
-
-                  {/* Syntax */}
-                  <td className="py-3.5 px-3.5 font-mono text-xs text-slate-700">
-                    <code className="px-2 py-1 bg-slate-100 rounded border border-slate-200 block max-w-[220px] truncate" title={hoster.editorSyntax}>
+                  {/* Column 3: Zone Editor Syntax */}
+                  <td className="py-3.5 px-4">
+                    <code className="p-2 bg-slate-100 rounded-lg border border-slate-200 block text-xs font-mono text-slate-800 break-words leading-relaxed">
                       {hoster.editorSyntax}
                     </code>
                   </td>
 
-                  {/* Notes */}
-                  <td className="py-3.5 px-3.5 text-xs text-slate-600 leading-relaxed max-w-xs">
+                  {/* Column 4: Notes */}
+                  <td className="py-3.5 px-4 text-xs text-slate-600 leading-relaxed break-words">
                     {notes}
-                  </td>
-
-                  {/* Last Verified */}
-                  <td className="py-3.5 px-3 whitespace-nowrap text-xs">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-mono text-slate-700 font-medium">
-                        {formatVerificationDate(hoster.lastVerified, isEn ? 'en' : 'de')}
-                      </span>
-                      {isStale && (
-                        <span
-                          className="inline-flex items-center gap-1 text-[10px] text-amber-700 font-medium"
-                          title={t('matrix.stale_tooltip')}
-                        >
-                          <AlertTriangle className="w-2.5 h-2.5 shrink-0" />
-                          <span>{t('matrix.stale_warning')}</span>
-                        </span>
-                      )}
-                    </div>
-                  </td>
-
-                  {/* Source */}
-                  <td className="py-3.5 px-3 text-right whitespace-nowrap">
-                    <a
-                      href={hoster.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-800 hover:bg-emerald-50 hover:text-emerald-800 border border-slate-200 transition-colors"
-                      title={hoster.sourceUrl}
-                    >
-                      <span>{t('matrix.col_source')}</span>
-                      <ExternalLink className="w-3 h-3 text-slate-500 shrink-0" />
-                    </a>
                   </td>
 
                 </tr>
@@ -283,19 +248,18 @@ export default function HosterMatrix() {
         </table>
       </div>
 
-      {/* Mobile & Tablet Card View (< lg) */}
-      <div className="block lg:hidden space-y-4">
+      {/* Mobile Card View (< md) - Full width cards, zero horizontal overflow */}
+      <div className="block md:hidden space-y-4">
         {filteredHosters.map((hoster) => {
           const country = isEn ? hoster.regionEn : hoster.region;
           const notes = isEn ? hoster.notesEn : hoster.notes;
-          const isStale = isVerificationStale(hoster.lastVerified, 180);
 
           return (
             <div
               key={hoster.id}
               className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3"
             >
-              {/* Card Header */}
+              {/* Card Header: Name + Status */}
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <h3 className="text-base font-extrabold text-slate-900 leading-tight">
@@ -305,35 +269,17 @@ export default function HosterMatrix() {
                     {country}
                   </span>
                 </div>
-                <div>
+                <div className="shrink-0">
                   {renderStatusBadge(hoster.status)}
                 </div>
               </div>
 
-              {/* Verification & Last Verified Row */}
-              <div className="pt-2 border-t border-slate-200 grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="block text-[10px] font-mono uppercase text-slate-400 font-bold mb-0.5">
-                    {t('matrix.col_verification')}
-                  </span>
-                  {renderVerificationBadge(hoster)}
-                </div>
-                <div>
-                  <span className="block text-[10px] font-mono uppercase text-slate-400 font-bold mb-0.5">
-                    {t('matrix.col_last_verified')}
-                  </span>
-                  <div className="flex flex-col">
-                    <span className="font-mono text-slate-700 font-semibold">
-                      {formatVerificationDate(hoster.lastVerified, isEn ? 'en' : 'de')}
-                    </span>
-                    {isStale && (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 font-medium">
-                        <AlertTriangle className="w-2.5 h-2.5 shrink-0" />
-                        <span>{t('matrix.stale_warning')}</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
+              {/* Verification & Last Verified */}
+              <div className="pt-2 border-t border-slate-200">
+                <span className="block text-[10px] font-mono uppercase text-slate-400 font-bold mb-1">
+                  {t('matrix.col_status_verification')}
+                </span>
+                {renderVerificationDetails(hoster)}
               </div>
 
               {/* Editor Syntax */}
@@ -341,7 +287,7 @@ export default function HosterMatrix() {
                 <span className="block text-[10px] font-mono uppercase text-slate-400 font-bold mb-1">
                   {t('matrix.col_syntax')}
                 </span>
-                <code className="px-2.5 py-1.5 bg-slate-100 rounded-md border border-slate-200 block text-xs font-mono text-slate-800 break-words">
+                <code className="p-2 bg-slate-100 rounded-md border border-slate-200 block text-xs font-mono text-slate-800 break-words">
                   {hoster.editorSyntax}
                 </code>
               </div>
@@ -351,12 +297,12 @@ export default function HosterMatrix() {
                 <span className="block text-[10px] font-mono uppercase text-slate-400 font-bold mb-1">
                   {t('matrix.col_notes')}
                 </span>
-                <p className="text-xs text-slate-600 leading-relaxed">
+                <p className="text-xs text-slate-600 leading-relaxed break-words">
                   {notes}
                 </p>
               </div>
 
-              {/* Card Footer: Source Action */}
+              {/* Source Button */}
               <div className="pt-2 border-t border-slate-200 flex justify-end">
                 <a
                   href={hoster.sourceUrl}
