@@ -94,6 +94,11 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
+                <Link to={language === 'en' ? '/en/documentation' : '/dokumentation'} className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
+                  {language === 'en' ? 'Documentation' : 'Dokumentation'} <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                </Link>
+              </li>
+              <li>
                 <Link to={language === 'en' ? '/en/legal-guidelines' : '/recht-leitfaden'} className="text-slate-300 hover:text-white transition-colors flex items-center gap-1">
                   {t('footer.link_legal')} <ArrowUpRight className="w-3 h-3 text-slate-500" />
                 </Link>

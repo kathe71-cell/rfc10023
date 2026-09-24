@@ -43,12 +43,13 @@ export default function Navbar() {
   ];
 
   const docsLinks = [
-    { name: isEn ? 'Specification (ABNF)' : 'Spezifikation (ABNF)', path: specPath,                       icon: BookOpen  },
-    { name: isEn ? 'Hoster Guides'        : 'Hoster-Anleitungen',   path: `${langPrefix}/hoster-matrix`,  icon: Database  },
-    { name: isEn ? 'REST API'             : 'REST API',             path: `${langPrefix}/api-docs`,       icon: Code2     },
-    { name: isEn ? 'Badge Generator'      : 'Prüf-Badge',           path: `${langPrefix}/badge-generator`,icon: Sparkles  },
-    { name: isEn ? 'Legal & Taxes'        : 'Recht & Praxis',       path: legalPath,                      icon: Scale     },
-    { name: 'FAQ',                                                   path: `${langPrefix}/faq`,            icon: HelpCircle},
+    { name: isEn ? 'Documentation Hub'    : 'Dokumentation (Übersicht)', path: docsPath,                       icon: BookOpen  },
+    { name: isEn ? 'Specification (ABNF)' : 'Spezifikation (ABNF)',      path: specPath,                       icon: BookOpen  },
+    { name: isEn ? 'Hoster Guides'        : 'Hoster-Anleitungen',        path: `${langPrefix}/hoster-matrix`,  icon: Database  },
+    { name: isEn ? 'REST API'             : 'REST API',                  path: `${langPrefix}/api-docs`,       icon: Code2     },
+    { name: isEn ? 'Badge Generator'      : 'Prüf-Badge',                path: `${langPrefix}/badge-generator`,icon: Sparkles  },
+    { name: isEn ? 'Legal & Taxes'        : 'Recht & Praxis',            path: legalPath,                      icon: Scale     },
+    { name: 'FAQ',                                                       path: `${langPrefix}/faq`,            icon: HelpCircle},
   ];
 
   const isDocsActive = docsLinks.some(l => location.pathname === l.path) || location.pathname === docsPath;
@@ -109,25 +110,44 @@ export default function Navbar() {
               );
             })}
 
-            {/* Dokumentation Dropdown */}
-            <div className="relative" ref={docsRef}>
-              <button
-                onClick={() => setDocsOpen(prev => !prev)}
-                aria-expanded={docsOpen}
-                aria-haspopup="true"
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-mono font-bold transition-colors ${
-                  isDocsActive
-                    ? 'bg-slate-900 text-white shadow-2xs'
-                    : 'text-slate-700 hover:text-slate-950 hover:bg-slate-100'
-                }`}
+            {/* Dokumentation Link & Dropdown */}
+            <div
+              className={`relative flex items-center rounded-lg transition-colors ${
+                isDocsActive
+                  ? 'bg-slate-900 text-white shadow-2xs'
+                  : 'text-slate-700 hover:bg-slate-100'
+              }`}
+              ref={docsRef}
+              onMouseEnter={() => setDocsOpen(true)}
+              onMouseLeave={() => setDocsOpen(false)}
+            >
+              <Link
+                to={docsPath}
+                className="flex items-center gap-1.5 pl-3 pr-1.5 py-2 text-xs font-mono font-bold transition-colors hover:text-emerald-500"
               >
                 <BookOpen className={`w-3.5 h-3.5 ${isDocsActive ? 'text-emerald-400' : 'text-slate-500'}`} />
                 <span>{isEn ? 'Documentation' : 'Dokumentation'}</span>
-                <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${docsOpen ? 'rotate-180' : ''} ${isDocsActive ? 'text-emerald-300' : 'text-slate-400'}`} />
+              </Link>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDocsOpen(prev => !prev);
+                }}
+                aria-expanded={docsOpen}
+                aria-haspopup="true"
+                aria-label={isEn ? 'Toggle documentation menu' : 'Dokumentationsmenü umschalten'}
+                className={`pr-2.5 pl-1 py-2 text-xs font-mono font-bold transition-colors ${
+                  isDocsActive
+                    ? 'text-white hover:text-emerald-300'
+                    : 'text-slate-400 hover:text-slate-900'
+                }`}
+              >
+                <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${docsOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {docsOpen && (
-                <div className="absolute top-full right-0 mt-1.5 w-52 bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50">
+                <div className="absolute top-full right-0 mt-1.5 w-60 bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50">
                   {docsLinks.map((link) => {
                     const Icon = link.icon;
                     const isActive = location.pathname === link.path;
@@ -216,19 +236,29 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Dokumentation collapsible */}
+          {/* Dokumentation collapsible & direct link */}
           <div className="pt-2 border-t border-slate-100 space-y-0.5">
-            <button
-              onClick={() => setMobileDocsOpen(prev => !prev)}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-bold font-mono text-slate-800 hover:bg-slate-100 transition-colors"
-              aria-expanded={mobileDocsOpen}
-            >
-              <span className="flex items-center gap-2.5">
-                <BookOpen className="w-4 h-4 text-emerald-600" />
-                {isEn ? 'Documentation' : 'Dokumentation'}
-              </span>
-              <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-150 ${mobileDocsOpen ? 'rotate-180' : ''}`} />
-            </button>
+            <div className="flex items-center justify-between gap-1">
+              <Link
+                to={docsPath}
+                onClick={() => setIsOpen(false)}
+                className={`flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-bold font-mono ${
+                  location.pathname === docsPath ? 'bg-slate-900 text-white' : 'text-slate-800 hover:bg-slate-100'
+                }`}
+              >
+                <BookOpen className={`w-4 h-4 ${location.pathname === docsPath ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                <span>{isEn ? 'Documentation' : 'Dokumentation'}</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setMobileDocsOpen(prev => !prev)}
+                className="p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors"
+                aria-expanded={mobileDocsOpen}
+                aria-label={mobileDocsOpen ? 'Submenü schließen' : 'Submenü öffnen'}
+              >
+                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-150 ${mobileDocsOpen ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
 
             {mobileDocsOpen && (
               <div className="pl-3 space-y-0.5 pb-1">
