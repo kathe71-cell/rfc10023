@@ -4,8 +4,8 @@
     "title": "IETF RFC 10023 offiziell publiziert",
     "titleEn": "IETF RFC 10023 officially published",
     "category": "RFC",
-    "description": "Die IETF veröffentlicht RFC 10023 (Kategorie: Informational, Autor: Marco Davids, SIDN Labs). RFC 10023 beschreibt die betriebliche Konvention für _for-sale TXT-Records.",
-    "descriptionEn": "The IETF publishes RFC 10023 (Category: Informational, author: Marco Davids, SIDN Labs), describing an operational convention for _for-sale TXT records.",
+    "description": "Der RFC Editor veröffentlicht RFC 10023 als IETF-Publikation (Kategorie: Informational, Autor: Marco Davids, SIDN Labs). RFC 10023 beschreibt die betriebliche Konvention für _for-sale TXT-Records.",
+    "descriptionEn": "The RFC Editor publishes RFC 10023 as an IETF publication (Category: Informational, author: Marco Davids, SIDN Labs), describing an operational convention for _for-sale TXT records.",
     "sourceUrl": "https://www.rfc-editor.org/info/rfc10023"
   },
   {
