@@ -1,112 +1,91 @@
-export interface HosterSupport {
+import rawProviders from '../../data/provider-compatibility.json';
+
+export type CompatibilityStatus =
+  | 'verified-supported'
+  | 'verified-limited'
+  | 'unclear'
+  | 'not-supported'
+  | 'not-retested';
+
+export type VerificationType =
+  | 'hands-on-test'
+  | 'official-docs'
+  | 'provider-statement'
+  | 'community-report'
+  | 'inferred';
+
+export interface ProviderCompatibility {
   id: string;
   name: string;
-  country: string;
-  countryEn?: string;
-  status: 'supported' | 'partial' | 'workaround';
-  statusText: string;
-  uiField: string;
+  region: string;
+  regionEn: string;
+  status: CompatibilityStatus;
+  verificationType: VerificationType;
+  testedAt: string | null;
+  lastVerified: string;
+  sourceUrl: string;
+  editorSyntax: string;
   sampleRecord: string;
   notes: string;
-  notesEn?: string;
-  docsUrl?: string;
+  notesEn: string;
+
+  // Backward compatibility aliases
+  country: string;
+  countryEn: string;
+  uiField: string;
+  statusText: string;
 }
 
-export const HOSTERS_DATA: HosterSupport[] = [
-  {
-    id: 'hetzner',
-    name: 'Hetzner DNS Console',
-    country: '🇩🇪 Deutschland',
-    countryEn: '🇩🇪 Germany',
-    status: 'supported',
-    statusText: 'Voll unterstützt',
-    uiField: 'Name: _for-sale | Typ: TXT | Wert: v=FORSALE1;fval=EUR2500',
-    sampleRecord: '_for-sale  3600  IN  TXT  "v=FORSALE1;fval=EUR2500"',
-    notes: 'Hetzner erlaubt führende Unterstriche (RFC 8552) ohne Warnung in der Web-Console sowie per DNS-API.',
-    notesEn: 'Hetzner supports leading underscores (RFC 8552) without warning in both the web console and DNS API.',
-  },
-  {
-    id: 'cloudflare',
-    name: 'Cloudflare DNS',
-    country: '🌐 Global',
-    countryEn: '🌐 Global',
-    status: 'supported',
-    statusText: 'Voll unterstützt',
-    uiField: 'Type: TXT | Name: _for-sale | Content: v=FORSALE1;fval=EUR2500',
-    sampleRecord: '_for-sale  300  IN  TXT  "v=FORSALE1;fval=EUR2500"',
-    notes: 'Exzellente DoH-Verbreitung. Content ohne Anführungszeichen in die Weboberfläche eintragen. TTL Auto oder 300s.',
-    notesEn: 'Superb DoH propagation. Enter content without quotes in the dashboard. TTL Auto or 300s.',
-  },
-  {
-    id: 'inwx',
-    name: 'INWX (InterNetworX)',
-    country: '🇩🇪 Deutschland',
-    countryEn: '🇩🇪 Germany',
-    status: 'supported',
-    statusText: 'Voll unterstützt',
-    uiField: 'Name: _for-sale | Typ: TXT | Wert: v=FORSALE1;fval=EUR2500',
-    sampleRecord: '_for-sale  3600  IN  TXT  "v=FORSALE1;fval=EUR2500"',
-    notes: 'Im INWX Domain-Center im Tab DNS-Einträge ohne Einschränkung hinterlegbar. Multi-Record RRset voll unterstützt.',
-    notesEn: 'Can be configured in INWX Domain Center under DNS Records without restrictions. Multi-record RRset fully supported.',
-  },
-  {
-    id: 'netcup',
-    name: 'Netcup CCP / DNS-Editor',
-    country: '🇩🇪 Deutschland',
-    countryEn: '🇩🇪 Germany',
-    status: 'supported',
-    statusText: 'Voll unterstützt',
-    uiField: 'Host: _for-sale | Type: TXT | Destination: v=FORSALE1;fval=EUR2500',
-    sampleRecord: '_for-sale  3600  IN  TXT  "v=FORSALE1;fval=EUR2500"',
-    notes: 'Der Netcup Customer Control Panel DNS-Editor akzeptiert Unterstriche für TXT-Records uneingeschränkt.',
-    notesEn: 'The Netcup Customer Control Panel DNS editor accepts underscores for TXT records without restrictions.',
-  },
-  {
-    id: 'desec',
-    name: 'deSEC.io',
-    country: '🇩🇪 Deutschland (Open Source)',
-    countryEn: '🇩🇪 Germany (Open Source)',
-    status: 'supported',
-    statusText: 'Voll unterstützt (DNSSEC nativ)',
-    uiField: 'Subname: _for-sale | Type: TXT | Value: "v=FORSALE1;fval=EUR2500"',
-    sampleRecord: '_for-sale  3600  IN  TXT  "\"v=FORSALE1;fval=EUR2500\""',
-    notes: 'Kostenfreier Non-Profit DNS-Provider mit automatischer DNSSEC-Signierung des RFC 10023 Records.',
-    notesEn: 'Free non-profit DNS provider with automatic DNSSEC signing of the RFC 10023 record.',
-  },
-  {
-    id: 'strato',
-    name: 'Strato',
-    country: '🇩🇪 Deutschland',
-    countryEn: '🇩🇪 Germany',
-    status: 'partial',
-    statusText: 'Eingeschränkt / Tarifabhängig',
-    uiField: 'TXT-Präfix: _for-sale',
-    sampleRecord: '_for-sale  TXT  "v=FORSALE1;fval=EUR2500"',
-    notes: 'Einige ältere Strato-Pakete validieren Hostnamen strikt nach Hostname-Syntax (RFC 1035) und lehnen "_" ab. Lösung: Strato DNS-Expertenmodus oder Nameserver-Delegierung.',
-    notesEn: 'Some legacy Strato packages validate hostnames strictly against RFC 1035 hostname syntax and reject "_". Workaround: Strato DNS expert mode or nameserver delegation.',
-  },
-  {
-    id: 'ionos',
-    name: 'IONOS (1&1)',
-    country: '🇩🇪 Deutschland',
-    countryEn: '🇩🇪 Germany',
-    status: 'partial',
-    statusText: 'Eingeschränkt / UI-Prüfung',
-    uiField: 'Subdomain: _for-sale | Record: TXT',
-    sampleRecord: '_for-sale  TXT  "v=FORSALE1;fval=EUR2500"',
-    notes: 'Im Standard-Dashboard blockiert IONOS gelegentlich Unterstriche bei manuellen Subdomains. Über die IONOS DNS-API oder mit externen Nameservern funktioniert es.',
-    notesEn: 'The default dashboard occasionally blocks underscores for manual subdomains. Works cleanly via IONOS DNS API or external nameservers.',
-  },
-  {
-    id: 'ovh',
-    name: 'OVHcloud',
-    country: '🇫🇷 / 🇩🇪 Europa',
-    countryEn: '🇫🇷 / 🇩🇪 Europe',
-    status: 'supported',
-    statusText: 'Voll unterstützt',
-    uiField: 'Subdomaine: _for-sale | Type: TXT | Valeur: "v=FORSALE1;fval=EUR2500"',
-    sampleRecord: '_for-sale  3600  IN  TXT  "v=FORSALE1;fval=EUR2500"',
-    notes: 'OVH Manager DNS-Zoneneditor unterstützt RFC 10023 Records ohne Restriktionen.',
-    notesEn: 'OVH Manager DNS zone editor supports RFC 10023 records without restrictions.',
+export type HosterSupport = ProviderCompatibility;
+
+const STATUS_TEXT_DE: Record<CompatibilityStatus, string> = {
+  'verified-supported': 'Verifiziert unterstützt',
+  'verified-limited': 'Verifiziert eingeschränkt',
+  'unclear': 'Unklar / nicht eindeutig belegt',
+  'not-supported': 'Nicht unterstützt',
+  'not-retested': 'Nicht erneut geprüft',
+};
+
+export const HOSTERS_DATA: ProviderCompatibility[] = (
+  rawProviders as Array<Omit<ProviderCompatibility, 'country' | 'countryEn' | 'uiField' | 'statusText'>>
+).map((p) => ({
+  ...p,
+  country: p.region,
+  countryEn: p.regionEn,
+  uiField: p.editorSyntax,
+  statusText: STATUS_TEXT_DE[p.status] || p.status,
+}));
+
+/**
+ * Checks whether the last verification date is older than `maxDays` (default 180 days = ~6 months).
+ */
+export function isVerificationStale(lastVerified: string, maxDays = 180): boolean {
+  if (!lastVerified) return true;
+  const verifiedDate = new Date(lastVerified).getTime();
+  if (isNaN(verifiedDate)) return true;
+  const diffDays = (Date.now() - verifiedDate) / (1000 * 60 * 60 * 24);
+  return diffDays > maxDays;
+}
+
+/**
+ * Formats an ISO date string (YYYY-MM-DD) into locale-specific display format:
+ * - DE: 24.09.2026
+ * - EN: Sep 24, 2026
+ */
+export function formatVerificationDate(dateStr: string | null, language: 'de' | 'en'): string {
+  if (!dateStr) return '—';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10);
+  const day = parseInt(parts[2], 10);
+
+  if (language === 'de') {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${pad(day)}.${pad(month)}.${year}`;
   }
-];
+
+  const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthName = MONTHS_EN[month - 1] || parts[1];
+  return `${monthName} ${day}, ${year}`;
+}
