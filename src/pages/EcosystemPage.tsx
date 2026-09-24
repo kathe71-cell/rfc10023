@@ -34,6 +34,7 @@ import {
   getCategoryLabel,
   computeEcosystemStats,
 } from '../data/ecosystem';
+import { computeDynamicYScale, calculateSvgY } from '../utils/chartScaling';
 
 function formatDisplayDate(dateStr: string, isEn: boolean): string {
   if (!dateStr) return '';
@@ -162,23 +163,31 @@ export default function EcosystemPage() {
 
   // Telemetry time series: Domains Monitor (Own baseline started 2026-09-24)
   const historyPoints = ADOPTION_HISTORY;
-  const dmMinVal = 300000;
-  const dmMaxVal = 420000;
   const dmSvgWidth = 600;
   const dmSvgHeight = 120;
   const dmPaddingX = 40;
   const dmPaddingY = 20;
 
-  const dmPointsString = historyPoints.length > 1
-    ? historyPoints
-        .map((pt, idx) => {
-          const x = dmPaddingX + (idx / (historyPoints.length - 1)) * (dmSvgWidth - dmPaddingX * 2);
-          const y =
-            dmSvgHeight - dmPaddingY - ((pt.value - dmMinVal) / (dmMaxVal - dmMinVal)) * (dmSvgHeight - dmPaddingY * 2);
-          return `${x.toFixed(1)},${y.toFixed(1)}`;
-        })
-        .join(' ')
-    : '';
+  // Dynamic Y-scale calculation for Domains Monitor
+  const dmScale = useMemo(() => {
+    const values = historyPoints.map((p) => p.value);
+    return computeDynamicYScale(values, {
+      minPaddingRatio: 0.02,
+      rangePaddingRatio: 0.15,
+      gridLineCount: 2,
+    });
+  }, [historyPoints]);
+
+  const dmPointsString = useMemo(() => {
+    if (historyPoints.length < 2) return '';
+    return historyPoints
+      .map((pt, idx) => {
+        const x = dmPaddingX + (idx / (historyPoints.length - 1)) * (dmSvgWidth - dmPaddingX * 2);
+        const y = calculateSvgY(pt.value, dmScale, dmSvgHeight, dmPaddingY);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(' ');
+  }, [historyPoints, dmScale]);
 
   // Telemetry time series: ForSaleDNS (Verified public API: 41 daily observations)
   const forSalePoints = ADOPTION_HISTORY_FORSALEDNS;
@@ -210,18 +219,23 @@ export default function EcosystemPage() {
   const fsSvgHeight = 200;
   const fsPaddingX = 55;
   const fsPaddingY = 25;
-  const fsMinY = 295000;
-  const fsMaxY = 350000;
 
-  // Full polyline string
+  // Dynamic Y-scale calculation for ForSaleDNS
+  const fsScale = useMemo(() => {
+    const values = forSalePoints.map((p) => p.activeListings);
+    return computeDynamicYScale(values, {
+      minPaddingRatio: 0.02,
+      rangePaddingRatio: 0.15,
+      gridLineCount: 3,
+    });
+  }, [forSalePoints]);
+
+  // Full polyline points with safe dynamic coordinates
   const fsAllPoints = useMemo(() => {
     if (!forSalePoints || forSalePoints.length === 0) return [];
     return forSalePoints.map((pt, idx) => {
       const x = fsPaddingX + (idx / (forSalePoints.length - 1)) * (fsSvgWidth - fsPaddingX * 2);
-      const y =
-        fsSvgHeight -
-        fsPaddingY -
-        ((pt.activeListings - fsMinY) / (fsMaxY - fsMinY)) * (fsSvgHeight - fsPaddingY * 2);
+      const y = calculateSvgY(pt.activeListings, fsScale, fsSvgHeight, fsPaddingY);
       return {
         ...pt,
         idx,
@@ -229,7 +243,7 @@ export default function EcosystemPage() {
         y: Number(y.toFixed(1)),
       };
     });
-  }, [forSalePoints]);
+  }, [forSalePoints, fsScale]);
 
   // Polyline for complete sweeps (indices where sweepComplete is true)
   const fsCompletePointsString = useMemo(() => {
@@ -483,9 +497,9 @@ export default function EcosystemPage() {
                   </linearGradient>
                 </defs>
 
-                {/* Horizontal grid lines & Y-axis labels */}
-                {[300000, 320000, 340000].map((val) => {
-                  const y = fsSvgHeight - fsPaddingY - ((val - fsMinY) / (fsMaxY - fsMinY)) * (fsSvgHeight - fsPaddingY * 2);
+                {/* Dynamic horizontal grid lines & Y-axis labels */}
+                {fsScale.gridLines.map((val) => {
+                  const y = calculateSvgY(val, fsScale, fsSvgHeight, fsPaddingY);
                   return (
                     <g key={val}>
                       <line
@@ -555,8 +569,8 @@ export default function EcosystemPage() {
                         r={isKeyPoint ? 4.5 : 2.5}
                         className={
                           isPartial
-                            ? 'fill-white stroke-amber-600 stroke-2 group-hover:scale-150 transition-transform'
-                            : 'fill-white stroke-emerald-700 stroke-2 group-hover:scale-150 transition-transform'
+                            ? 'fill-white stroke-amber-600 stroke-2 group-hover:stroke-[3.5px] transition-all'
+                            : 'fill-white stroke-emerald-700 stroke-2 group-hover:stroke-[3.5px] transition-all'
                         }
                       />
                       {/* Value callout on key points */}
@@ -768,17 +782,14 @@ export default function EcosystemPage() {
                   />
                   {historyPoints.map((pt, idx) => {
                     const x = dmPaddingX + (idx / (historyPoints.length - 1)) * (dmSvgWidth - dmPaddingX * 2);
-                    const y =
-                      dmSvgHeight -
-                      dmPaddingY -
-                      ((pt.value - dmMinVal) / (dmMaxVal - dmMinVal)) * (dmSvgHeight - dmPaddingY * 2);
+                    const y = calculateSvgY(pt.value, dmScale, dmSvgHeight, dmPaddingY);
                     return (
                       <g key={pt.date} className="group">
                         <circle
                           cx={x}
                           cy={y}
                           r="4.5"
-                          className="fill-white stroke-emerald-700 stroke-2 group-hover:scale-125 transition-transform"
+                          className="fill-white stroke-emerald-700 stroke-2 group-hover:stroke-[3.5px] transition-all"
                         />
                         <text
                           x={x}
