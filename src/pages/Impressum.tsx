@@ -50,7 +50,7 @@ export default function Impressum() {
             <p className="flex items-center gap-2 text-slate-700">
               <Phone className="w-4 h-4 text-slate-400 shrink-0" />
               {language === 'en' ? 'Phone:' : 'Telefon:'}{' '}
-              <a href="tel:+4917866526230" className="text-slate-900 font-semibold hover:underline font-mono">
+              <a href="tel:+491786652623" className="text-slate-900 font-semibold hover:underline font-mono">
                 +49 178 6652623
               </a>
             </p>
