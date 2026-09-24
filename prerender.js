@@ -37,7 +37,13 @@ const routesToPrerender = [
   { url: "/en/documentation", title: "RFC 10023 Documentation Hub", desc: "Central documentation for IETF RFC 10023 (Informational), hoster configuration matrix, and developer API." },
   { url: "/en/ecosystem", title: "RFC 10023 Adoption & Ecosystem – Tools, Integrations and Statistics", desc: "Comprehensive overview of RFC 10023 and _for-sale DNS record adoption: implementations, tools, registrars, datasets and verified telemetry." },
   { url: "/en/imprint", title: "Imprint | RFC 10023 Reference Portal", desc: "Legal notice and imprint for RFC 10023 Reference Portal." },
-  { url: "/en/privacy", title: "Privacy Policy | RFC 10023 Reference Portal", desc: "Privacy policy and GDPR compliance statement for RFC 10023 Reference Portal." }
+  { url: "/en/privacy", title: "Privacy Policy | RFC 10023 Reference Portal", desc: "Privacy policy and GDPR compliance statement for RFC 10023 Reference Portal." },
+  { url: "/widget-embed", title: "RFC 10023 Widget Embed", desc: "RFC 10023 Live Widget Embed" },
+  { url: "/rechner-embed", title: "RFC 10023 Rechner Embed", desc: "RFC 10023 Rechner Embed" },
+  { url: "/validator-embed", title: "RFC 10023 Validator Embed", desc: "RFC 10023 Validator Embed" },
+  { url: "/en/widget-embed", title: "RFC 10023 Widget Embed", desc: "RFC 10023 Live Widget Embed" },
+  { url: "/en/rechner-embed", title: "RFC 10023 Calculator Embed", desc: "RFC 10023 Calculator Embed" },
+  { url: "/en/validator-embed", title: "RFC 10023 Validator Embed", desc: "RFC 10023 Validator Embed" }
 ];
 
 const deToEnRouteMap = {
