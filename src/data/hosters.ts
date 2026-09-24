@@ -29,6 +29,11 @@ export interface ProviderCompatibility {
   notes: string;
   notesEn: string;
 
+  // Granular capability flags
+  dnsSyntaxSupported: boolean;
+  rfc10023Tested: boolean;
+  nativeRfc10023Integration: boolean;
+
   // Backward compatibility aliases
   country: string;
   countryEn: string;

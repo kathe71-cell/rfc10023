@@ -97,12 +97,18 @@ describe('RFC 10023 Provider Compatibility Data Model', () => {
     expect(ionos?.status).toBe('unclear');
     expect(ionos?.testedAt).toBeNull();
     expect(ionos?.verificationType).toBe('official-docs');
+    expect(ionos?.dnsSyntaxSupported).toBe(true);
+    expect(ionos?.rfc10023Tested).toBe(false);
+    expect(ionos?.nativeRfc10023Integration).toBe(false);
+    expect(ionos?.notes).toContain('_dmarc');
 
     const strato = providersData.find((p) => p.id === 'strato');
     expect(strato).toBeDefined();
     expect(strato?.status).toBe('unclear');
     expect(strato?.testedAt).toBeNull();
     expect(strato?.verificationType).toBe('official-docs');
+    expect(strato?.dnsSyntaxSupported).toBe(true);
+    expect(strato?.rfc10023Tested).toBe(false);
   });
 
   it('verifies INWX distinguishes DNS protocol support from marketplace features', () => {

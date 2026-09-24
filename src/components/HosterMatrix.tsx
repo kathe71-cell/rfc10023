@@ -44,8 +44,18 @@ export default function HosterMatrix() {
     return matchesSearch && matchesStatus;
   });
 
-  const renderStatusBadge = (status: CompatibilityStatus) => {
-    switch (status) {
+  const renderStatusBadge = (h: ProviderCompatibility) => {
+    // Specifically when DNS syntax is confirmed via docs, but RFC-10023 specific hands-on test is not yet performed:
+    if (h.id === 'ionos' || (h.dnsSyntaxSupported && !h.rfc10023Tested && h.status === 'unclear')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-sky-50 text-sky-950 border border-sky-300">
+          <CheckCircle2 className="w-3.5 h-3.5 text-sky-700 shrink-0" />
+          <span>{t('matrix.status_dns_syntax_supported')}</span>
+        </span>
+      );
+    }
+
+    switch (h.status) {
       case 'verified-supported':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-emerald-50 text-emerald-900 border border-emerald-300">
@@ -116,6 +126,12 @@ export default function HosterMatrix() {
             <span>· {t('matrix.tested_at')}: {formatVerificationDate(h.testedAt, isEn ? 'en' : 'de')}</span>
           )}
         </div>
+        {!h.rfc10023Tested && (
+          <div className="flex flex-col gap-0.5 text-[10px] font-mono text-slate-500 pt-0.5">
+            <span className="text-slate-600">· {t('matrix.test_not_performed')}</span>
+            <span className="text-slate-500">· {t('matrix.native_integration_unconfirmed')}</span>
+          </div>
+        )}
         {isStale && (
           <div
             className="inline-flex items-center gap-1 text-[10px] text-amber-800 font-medium bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200"
@@ -224,7 +240,7 @@ export default function HosterMatrix() {
                   {/* Column 2: Status & Verification Meta */}
                   <td className="py-3.5 px-4 space-y-2">
                     <div>
-                      {renderStatusBadge(hoster.status)}
+                      {renderStatusBadge(hoster)}
                     </div>
                     {renderVerificationDetails(hoster)}
                   </td>
@@ -270,7 +286,7 @@ export default function HosterMatrix() {
                   </span>
                 </div>
                 <div className="shrink-0">
-                  {renderStatusBadge(hoster.status)}
+                  {renderStatusBadge(hoster)}
                 </div>
               </div>
 
