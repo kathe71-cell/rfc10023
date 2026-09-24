@@ -1,6 +1,7 @@
 import rawEcosystem from '../../data/ecosystem.json';
 import rawCurrent from '../../data/adoption-current.json';
 import rawHistory from '../../data/adoption-history.json';
+import rawForSaleDnsHistory from '../../data/adoption-history-forsaledns.json';
 import rawTimeline from '../../data/timeline.json';
 
 export type EcosystemCategory =
@@ -71,6 +72,18 @@ export interface AdoptionHistoryEntry {
   value: number;
 }
 
+export interface ForSaleDnsHistoryEntry {
+  date: string;
+  activeListings: number;
+  conformant: number;
+  priced: number;
+  dnssec: number;
+  inventoryCompleted: number;
+  inventoryTotal: number;
+  baselineComplete: boolean;
+  sweepComplete: boolean;
+}
+
 export interface TimelineEntry {
   date: string;
   title: string;
@@ -84,6 +97,7 @@ export interface TimelineEntry {
 export const ECOSYSTEM_DATA = rawEcosystem as EcosystemData;
 export const ADOPTION_CURRENT = rawCurrent as AdoptionCurrentData;
 export const ADOPTION_HISTORY = rawHistory as AdoptionHistoryEntry[];
+export const ADOPTION_HISTORY_FORSALEDNS = rawForSaleDnsHistory as ForSaleDnsHistoryEntry[];
 export const TIMELINE_DATA = rawTimeline as TimelineEntry[];
 
 /**

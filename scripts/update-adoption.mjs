@@ -228,7 +228,21 @@ async function main() {
     fs.writeFileSync(HISTORY_FILE, JSON.stringify(result.history, null, 2) + '\n', 'utf-8');
     console.log('✓ Successfully wrote updated adoption files.');
   } else {
-    console.log('ℹ No data changes recorded. Files left intact.');
+    console.log('ℹ No data changes recorded for Domains Monitor. Files left intact.');
+  }
+
+  // Also update ForSaleDNS adoption history as a separate data source
+  console.log('\n--- Checking ForSaleDNS Adoption History ---');
+  try {
+    const { updateForSaleDnsHistory, FORSALEDNS_FILE } = await import('./import-forsaledns-history.mjs');
+    const forSaleResult = await updateForSaleDnsHistory();
+    forSaleResult.logs.forEach((log) => console.log(log));
+    if (forSaleResult.changed && forSaleResult.data) {
+      fs.writeFileSync(FORSALEDNS_FILE, JSON.stringify(forSaleResult.data, null, 2) + '\n', 'utf-8');
+      console.log('✓ Successfully wrote updated ForSaleDNS history.');
+    }
+  } catch (forSaleErr) {
+    console.error('⚠ Error updating ForSaleDNS history (retaining existing data):', forSaleErr.message);
   }
 
   console.log('=== Execution finished ===');

@@ -25,6 +25,8 @@ import CitationBox from '../components/CitationBox';
 import {
   ECOSYSTEM_DATA,
   ADOPTION_HISTORY,
+  ADOPTION_HISTORY_FORSALEDNS,
+  ForSaleDnsHistoryEntry,
   TIMELINE_DATA,
   getMetaAdoptionTier,
   getTierBadgeInfo,
@@ -158,23 +160,89 @@ export default function EcosystemPage() {
     ],
   };
 
-  // Sparkline data calculation for historical trend
+  // Telemetry time series: Domains Monitor (Own baseline started 2026-09-24)
   const historyPoints = ADOPTION_HISTORY;
-  const minVal = 300000;
-  const maxVal = 420000;
-  const svgWidth = 600;
-  const svgHeight = 120;
-  const paddingX = 40;
-  const paddingY = 20;
+  const dmMinVal = 300000;
+  const dmMaxVal = 420000;
+  const dmSvgWidth = 600;
+  const dmSvgHeight = 120;
+  const dmPaddingX = 40;
+  const dmPaddingY = 20;
 
-  const pointsString = historyPoints
-    .map((pt, idx) => {
-      const x = paddingX + (idx / (historyPoints.length - 1)) * (svgWidth - paddingX * 2);
+  const dmPointsString = historyPoints.length > 1
+    ? historyPoints
+        .map((pt, idx) => {
+          const x = dmPaddingX + (idx / (historyPoints.length - 1)) * (dmSvgWidth - dmPaddingX * 2);
+          const y =
+            dmSvgHeight - dmPaddingY - ((pt.value - dmMinVal) / (dmMaxVal - dmMinVal)) * (dmSvgHeight - dmPaddingY * 2);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        })
+        .join(' ')
+    : '';
+
+  // Telemetry time series: ForSaleDNS (Verified public API: 41 daily observations)
+  const forSalePoints = ADOPTION_HISTORY_FORSALEDNS;
+  const completeSweepPoints = useMemo(
+    () => forSalePoints.filter((p) => p.sweepComplete),
+    [forSalePoints]
+  );
+  const latestForSale = forSalePoints[forSalePoints.length - 1] || null;
+
+  // Growth within the complete-sweep ForSaleDNS observation dataset
+  const forSaleGrowth = useMemo(() => {
+    if (completeSweepPoints.length < 2) return null;
+    const first = completeSweepPoints[0].activeListings;
+    const last = completeSweepPoints[completeSweepPoints.length - 1].activeListings;
+    const diff = last - first;
+    const pct = ((diff / first) * 100).toFixed(1);
+    return {
+      firstDate: completeSweepPoints[0].date,
+      lastDate: completeSweepPoints[completeSweepPoints.length - 1].date,
+      firstVal: first,
+      lastVal: last,
+      diff,
+      pct,
+    };
+  }, [completeSweepPoints]);
+
+  // ForSaleDNS SVG Chart coordinates
+  const fsSvgWidth = 720;
+  const fsSvgHeight = 200;
+  const fsPaddingX = 55;
+  const fsPaddingY = 25;
+  const fsMinY = 295000;
+  const fsMaxY = 350000;
+
+  // Full polyline string
+  const fsAllPoints = useMemo(() => {
+    if (!forSalePoints || forSalePoints.length === 0) return [];
+    return forSalePoints.map((pt, idx) => {
+      const x = fsPaddingX + (idx / (forSalePoints.length - 1)) * (fsSvgWidth - fsPaddingX * 2);
       const y =
-        svgHeight - paddingY - ((pt.value - minVal) / (maxVal - minVal)) * (svgHeight - paddingY * 2);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(' ');
+        fsSvgHeight -
+        fsPaddingY -
+        ((pt.activeListings - fsMinY) / (fsMaxY - fsMinY)) * (fsSvgHeight - fsPaddingY * 2);
+      return {
+        ...pt,
+        idx,
+        x: Number(x.toFixed(1)),
+        y: Number(y.toFixed(1)),
+      };
+    });
+  }, [forSalePoints]);
+
+  // Polyline for complete sweeps (indices where sweepComplete is true)
+  const fsCompletePointsString = useMemo(() => {
+    const sweepPts = fsAllPoints.filter((p) => p.sweepComplete);
+    if (sweepPts.length < 2) return '';
+    return sweepPts.map((p) => `${p.x},${p.y}`).join(' ');
+  }, [fsAllPoints]);
+
+  // Polyline for partial sweeps bridge (indices 0, 1, 2)
+  const fsPartialPointsString = useMemo(() => {
+    if (fsAllPoints.length < 3) return '';
+    return fsAllPoints.slice(0, 3).map((p) => `${p.x},${p.y}`).join(' ');
+  }, [fsAllPoints]);
 
   return (
     <div className="space-y-16 pb-16">
@@ -250,7 +318,7 @@ export default function EcosystemPage() {
                   {isEn ? 'Detected _for-sale Records' : 'Erkannte _for-sale Records'}
                 </span>
                 <div className="text-3xl font-extrabold text-slate-950 font-mono tracking-tight">
-                  {stats.detectedDomains.toLocaleString('de-DE')}+
+                  {stats.detectedDomains.toLocaleString(isEn ? 'en-US' : 'de-DE')}+
                 </div>
                 <div className="mt-3 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-mono text-slate-500">
                   <span>{isEn ? 'Source: Domains Monitor' : 'Quelle: Domains Monitor'}</span>
@@ -327,23 +395,346 @@ export default function EcosystemPage() {
         </div>
       </section>
 
-      {/* Historical Adoption Trajectory (Requirement 26) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-emerald-800 mb-1">
-                <TrendingUp className="w-3.5 h-3.5" />
-                <span>{isEn ? 'Adoption Trajectory & Telemetry' : 'Adoptions-Verlauf & Telemetrie'}</span>
-              </div>
-              <h2 className="text-xl font-bold text-slate-950">
-                {isEn ? 'Longitudinal Adoption Recording' : 'Telemetrische Zeitreihe der Adoption'}
-              </h2>
+      {/* Historical Adoption Trajectory (Requirement 8, 9, 10, 11, 12) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        
+        {/* Main Section Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-5">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-emerald-800">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>{isEn ? 'Independent Telemetry & Time Series' : 'Unabhängige Telemetrie & Zeitreihen'}</span>
             </div>
-            <div className="text-xs font-mono text-slate-500 text-left sm:text-right">
-              <span>{isEn ? 'Primary source: Domains Monitor' : 'Primärquelle: Domains Monitor'}</span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
+              {isEn ? 'RFC 10023 Adoption over time' : 'RFC 10023 Adoption im Zeitverlauf'}
+            </h2>
+            <p className="text-sm text-slate-600 max-w-3xl leading-relaxed">
+              {isEn
+                ? 'Independent telemetry networks continuously monitor the DNS deployment of RFC 10023 and _for-sale records. To maintain scientific and methodological rigor, data sources with differing scanning methodologies are always presented separately.'
+                : 'Unabhängige Messsysteme erfassen fortlaufend die Verteilung von RFC 10023 und _for-sale-Records im weltweiten DNS. Zur Wahrung wissenschaftlicher und methodischer Exaktheit werden Datenquellen mit unterschiedlichen Scan-Verfahren stets getrennt ausgewiesen.'}
+            </p>
+          </div>
+          <div className="text-xs font-mono text-slate-500 shrink-0">
+            <span className="inline-block px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 font-semibold text-slate-700">
+              {isEn ? '2 Independent Data Sources' : '2 unabhängige Datenreihen'}
+            </span>
+          </div>
+        </div>
+
+        {/* DATA SERIES 1: ForSaleDNS Historical Trend (Requirements 3, 4, 8, 11, 12) */}
+        <div className="p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold uppercase tracking-wider bg-emerald-100 text-emerald-950 border border-emerald-300">
+                  {isEn ? 'ForSaleDNS – Active Listings' : 'ForSaleDNS – Aktive Listings'}
+                </span>
+                <span className="text-xs font-mono text-slate-500">
+                  {forSalePoints.length} {isEn ? 'daily observations' : 'tägliche Messpunkte'}
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-950">
+                {isEn ? 'Observation History: Active RFC 10023 Listings' : 'Beobachtungs-Historie: Aktive RFC-10023-Listings'}
+              </h3>
+            </div>
+            <div className="text-left sm:text-right font-mono text-xs text-slate-500">
+              <span className="font-bold text-slate-900 text-sm">
+                {latestForSale ? latestForSale.activeListings.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '334,576' : '334.576')}
+              </span>
               <span className="block text-[11px] text-slate-400">
-                {isEn ? 'Automated daily recording via GitHub Actions' : 'Tägliche Erfassung via GitHub Actions'}
+                {isEn ? 'Observed active listings (24 Sep 2026)' : 'Beobachtete aktive Listings (24.09.2026)'}
+              </span>
+            </div>
+          </div>
+
+          {/* Legend and completeness indicators */}
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <span className="w-5 h-0.5 bg-emerald-600 rounded"></span>
+                <span className="text-slate-700 font-semibold">
+                  {isEn ? 'Full sweep (100% of 343.8M inventory, 39 days)' : 'Vollständiger Scan (100 % von 343,8M Inventar, 39 Tage)'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-5 h-0.5 border-b-2 border-dashed border-amber-600"></span>
+                <span className="text-amber-900 font-semibold">
+                  {isEn ? 'Preliminary partial sweeps (15 & 16 Aug)' : 'Vorläufige Teil-Scans (15. & 16.08.)'}
+                </span>
+              </div>
+            </div>
+            {forSaleGrowth && (
+              <div className="text-slate-600 font-semibold">
+                {isEn
+                  ? `Change within dataset: ${forSaleGrowth.pct}% (${forSaleGrowth.diff.toLocaleString('en-US')} listings)`
+                  : `Veränderung im Datensatz: ${forSaleGrowth.pct.replace('.', ',')} % (${forSaleGrowth.diff.toLocaleString('de-DE')} Listings)`}
+              </div>
+            )}
+          </div>
+
+          {/* SVG Chart for ForSaleDNS */}
+          <div className="w-full overflow-x-auto bg-slate-50/70 p-4 sm:p-6 rounded-xl border border-slate-200">
+            <div className="min-w-[640px]">
+              <svg viewBox={`0 0 ${fsSvgWidth} ${fsSvgHeight}`} className="w-full h-44 sm:h-52 overflow-visible">
+                <defs>
+                  <linearGradient id="fsGradientAdoption" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.20" />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+
+                {/* Horizontal grid lines & Y-axis labels */}
+                {[300000, 320000, 340000].map((val) => {
+                  const y = fsSvgHeight - fsPaddingY - ((val - fsMinY) / (fsMaxY - fsMinY)) * (fsSvgHeight - fsPaddingY * 2);
+                  return (
+                    <g key={val}>
+                      <line
+                        x1={fsPaddingX}
+                        y1={y}
+                        x2={fsSvgWidth - fsPaddingX}
+                        y2={y}
+                        stroke="#cbd5e1"
+                        strokeDasharray="4 4"
+                      />
+                      <text
+                        x={fsPaddingX - 10}
+                        y={y + 3}
+                        textAnchor="end"
+                        className="text-[10px] font-mono fill-slate-500 font-medium"
+                      >
+                        {(val / 1000).toFixed(0)}k
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {/* Base axis line */}
+                <line
+                  x1={fsPaddingX}
+                  y1={fsSvgHeight - fsPaddingY}
+                  x2={fsSvgWidth - fsPaddingX}
+                  y2={fsSvgHeight - fsPaddingY}
+                  stroke="#cbd5e1"
+                />
+
+                {/* Partial sweep line segment (index 0, 1, 2) */}
+                {fsPartialPointsString && (
+                  <polyline
+                    fill="none"
+                    stroke="#d97706"
+                    strokeWidth="2"
+                    strokeDasharray="4 4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    points={fsPartialPointsString}
+                  />
+                )}
+
+                {/* Complete sweep line segment (index 2 to 40) */}
+                {fsCompletePointsString && (
+                  <polyline
+                    fill="none"
+                    stroke="#059669"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    points={fsCompletePointsString}
+                  />
+                )}
+
+                {/* Render individual points */}
+                {fsAllPoints.map((pt) => {
+                  const isPartial = !pt.sweepComplete;
+                  const isKeyPoint = [0, 2, 9, 16, 23, 30, 37, 40].includes(pt.idx);
+
+                  return (
+                    <g key={pt.date} className="group cursor-pointer">
+                      <circle
+                        cx={pt.x}
+                        cy={pt.y}
+                        r={isKeyPoint ? 4.5 : 2.5}
+                        className={
+                          isPartial
+                            ? 'fill-white stroke-amber-600 stroke-2 group-hover:scale-150 transition-transform'
+                            : 'fill-white stroke-emerald-700 stroke-2 group-hover:scale-150 transition-transform'
+                        }
+                      />
+                      {/* Value callout on key points */}
+                      {isKeyPoint && (
+                        <text
+                          x={pt.x}
+                          y={pt.y - 8}
+                          textAnchor="middle"
+                          className={`text-[9px] font-mono font-bold ${
+                            isPartial ? 'fill-amber-900' : 'fill-slate-800'
+                          }`}
+                        >
+                          {(pt.activeListings / 1000).toFixed(0)}k
+                        </text>
+                      )}
+                      {/* X-axis date labels on key points */}
+                      {isKeyPoint && (
+                        <text
+                          x={pt.x}
+                          y={fsSvgHeight - fsPaddingY + 14}
+                          textAnchor="middle"
+                          className="text-[9px] font-mono fill-slate-500 font-medium"
+                        >
+                          {pt.date.slice(5).replace('-', '.')}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+          </div>
+
+          {/* KPI Summary Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
+                {isEn ? 'Active Listings' : 'Aktive Listings'}
+              </span>
+              <div className="text-lg font-bold font-mono text-slate-950">
+                {latestForSale ? latestForSale.activeListings.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '334,576' : '334.576')}
+              </div>
+              <span className="text-[10px] font-mono text-slate-500">
+                {isEn ? '24 Sep 2026' : '24.09.2026'}
+              </span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
+                {isEn ? 'Conformant' : 'RFC-10023-konform'}
+              </span>
+              <div className="text-lg font-bold font-mono text-emerald-800">
+                {latestForSale ? latestForSale.conformant.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '334,565' : '334.565')}
+              </div>
+              <span className="text-[10px] font-mono text-emerald-700 font-semibold">
+                99.99% {isEn ? 'valid' : 'valide'}
+              </span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
+                {isEn ? 'DNSSEC Secured' : 'Mit DNSSEC'}
+              </span>
+              <div className="text-lg font-bold font-mono text-slate-900">
+                {latestForSale ? latestForSale.dnssec.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '161,897' : '161.897')}
+              </div>
+              <span className="text-[10px] font-mono text-slate-600">
+                48.4% {isEn ? 'signed' : 'signiert'}
+              </span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
+                {isEn ? 'Priced Listings' : 'Mit Preisangabe'}
+              </span>
+              <div className="text-lg font-bold font-mono text-slate-900">
+                {latestForSale ? latestForSale.priced.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '75,038' : '75.038')}
+              </div>
+              <span className="text-[10px] font-mono text-slate-600">
+                22.4% {isEn ? 'with price' : 'mit Festpreis'}
+              </span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
+                {isEn ? 'Inventory Scope' : 'Scan-Umfang'}
+              </span>
+              <div className="text-lg font-bold font-mono text-slate-900">
+                343,8M
+              </div>
+              <span className="text-[10px] font-mono text-emerald-700 font-semibold">
+                100 % {isEn ? 'sweepComplete' : 'vollständig'}
+              </span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
+                {isEn ? 'Baseline Status' : 'Baseline-Status'}
+              </span>
+              <div className="text-lg font-bold font-mono text-slate-700">
+                false
+              </div>
+              <span className="text-[10px] font-mono text-slate-500">
+                {isEn ? 'Audit in progress' : 'Audit in Prüfung'}
+              </span>
+            </div>
+          </div>
+
+          {/* Historical Transparency & Baseline Explanation (Requirements 4, 11, 12) */}
+          <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-950 leading-relaxed font-sans space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold font-mono text-amber-900 uppercase tracking-wider">
+              <Info className="w-4 h-4 text-amber-700 shrink-0" />
+              <span>{isEn ? 'Methodological Note: ForSaleDNS Sweep Completeness & Baseline' : 'Methodischer Hinweis: ForSaleDNS Scan-Vollständigkeit & Baseline'}</span>
+            </div>
+            <p>
+              {isEn
+                ? 'The first two measurement days (15 & 16 Aug 2026) were preliminary partial sweeps with 72.2% and 97.6% inventory coverage (indicated with dashed lines). Since 17 Aug 2026, daily sweep completeness (sweepComplete) has remained continuously at 100.0% (343,818,996 of 343,818,996 domains). The multi-month baseline audit cycle (baselineComplete) is currently documented as in progress (false). The calculated growth rate (-1.6%) refers strictly to the observed ForSaleDNS dataset across complete sweeps and does not represent global adoption growth.'
+                : 'Die ersten beiden Messtage (15. & 16.08.2026) waren vorläufige Teil-Scans mit 72,2 % bzw. 97,6 % Inventarabdeckung (gestrichelt dargestellt). Seit dem 17.08.2026 beträgt die tägliche Scan-Vollständigkeit (sweepComplete) durchgehend 100,0 % (343.818.996 von 343.818.996 Domains). Der multi-monatliche Baseline-Audit-Zyklus (baselineComplete) ist laut API noch in Bearbeitung (false). Die berechnete Wachstumsrate (-1,6 %) bezieht sich streng auf den beobachteten ForSaleDNS-Datenbestand bei vollständigen Scans und stellt kein globales Adoptionswachstum dar.'}
+            </p>
+          </div>
+
+          {/* Source Citation for ForSaleDNS (Requirement 10) */}
+          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 font-mono gap-2">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-700">{isEn ? 'Source: ForSaleDNS Observation History' : 'Quelle: ForSaleDNS Beobachtungshistorie'}</span>
+              <span>•</span>
+              <a
+                href="https://forsaledns.net/api/v1/adoption-history"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-emerald-700 hover:underline flex items-center gap-1 font-semibold"
+              >
+                <span>GET /api/v1/adoption-history</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+            <div className="text-slate-600">
+              <span>{isEn ? 'Latest verified snapshot: 24 Sep 2026' : 'Letzter erfolgreicher Abruf: 24.09.2026'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* METHODOLOGY NOTICE DIRECTLY BENEATH THE CHART (Requirement 9) */}
+        <div className="p-5 rounded-2xl bg-slate-100/90 border border-slate-200 text-xs text-slate-700 leading-relaxed font-sans space-y-2">
+          <p className="font-bold text-slate-900 text-sm">
+            {isEn
+              ? 'The series shown originate from different independent scan and discovery systems. Values from different providers are not directly comparable due to differing data sources and scanning methodologies.'
+              : 'Die dargestellten Reihen stammen aus unterschiedlichen unabhängigen Scan- und Discovery-Systemen. Werte verschiedener Anbieter sind aufgrund unterschiedlicher Datenquellen und Scanmethoden nicht unmittelbar miteinander vergleichbar.'}
+          </p>
+          <p className="text-slate-600">
+            {isEn
+              ? 'Historical ForSaleDNS values are retrieved directly from the documented Adoption History API. Our own Domains Monitor measurements on rfc10023.de are continuously recorded since September 24, 2026.'
+              : 'Historische ForSaleDNS-Werte werden direkt aus der dokumentierten Adoption-History-API übernommen. Eigene Domains-Monitor-Messungen von rfc10023.de werden seit dem 24.09.2026 fortlaufend gespeichert.'}
+          </p>
+        </div>
+
+        {/* DATA SERIES 2: Domains Monitor Baseline (Requirements 2, 8, 10, 13) */}
+        <div className="p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold uppercase tracking-wider bg-slate-100 text-slate-900 border border-slate-300">
+                  {isEn ? 'Domains Monitor – Detected Domains' : 'Domains Monitor – Erkannte Domains'}
+                </span>
+                <span className="text-xs font-mono text-slate-500">
+                  {isEn ? 'Own measurement series started 24 Sep 2026' : 'Eigene Messreihe ab 24.09.2026'}
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-950">
+                {isEn ? 'Longitudinal Zone Scan Recording' : 'Telemetrische Erfassung aus Zonen-Scans'}
+              </h3>
+            </div>
+            <div className="text-left sm:text-right font-mono text-xs text-slate-500">
+              <span className="font-bold text-slate-900 text-sm">
+                392.683
+              </span>
+              <span className="block text-[11px] text-slate-400">
+                {isEn ? 'Baseline snapshot (24 Sep 2026)' : 'Basiswert (24.09.2026)'}
               </span>
             </div>
           </div>
@@ -351,26 +742,20 @@ export default function EcosystemPage() {
           {historyPoints.length >= 3 ? (
             <div className="w-full overflow-x-auto">
               <div className="min-w-[500px]">
-                <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-32 overflow-visible">
-                  <defs>
-                    <linearGradient id="gradientAdoption" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
-                      <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
+                <svg viewBox={`0 0 ${dmSvgWidth} ${dmSvgHeight}`} className="w-full h-32 overflow-visible">
                   <line
-                    x1={paddingX}
-                    y1={paddingY}
-                    x2={svgWidth - paddingX}
-                    y2={paddingY}
+                    x1={dmPaddingX}
+                    y1={dmPaddingY}
+                    x2={dmSvgWidth - dmPaddingX}
+                    y2={dmPaddingY}
                     stroke="#e2e8f0"
                     strokeDasharray="4 4"
                   />
                   <line
-                    x1={paddingX}
-                    y1={svgHeight - paddingY}
-                    x2={svgWidth - paddingX}
-                    y2={svgHeight - paddingY}
+                    x1={dmPaddingX}
+                    y1={dmSvgHeight - dmPaddingY}
+                    x2={dmSvgWidth - dmPaddingX}
+                    y2={dmSvgHeight - dmPaddingY}
                     stroke="#e2e8f0"
                   />
                   <polyline
@@ -379,14 +764,14 @@ export default function EcosystemPage() {
                     strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    points={pointsString}
+                    points={dmPointsString}
                   />
                   {historyPoints.map((pt, idx) => {
-                    const x = paddingX + (idx / (historyPoints.length - 1)) * (svgWidth - paddingX * 2);
+                    const x = dmPaddingX + (idx / (historyPoints.length - 1)) * (dmSvgWidth - dmPaddingX * 2);
                     const y =
-                      svgHeight -
-                      paddingY -
-                      ((pt.value - minVal) / (maxVal - minVal)) * (svgHeight - paddingY * 2);
+                      dmSvgHeight -
+                      dmPaddingY -
+                      ((pt.value - dmMinVal) / (dmMaxVal - dmMinVal)) * (dmSvgHeight - dmPaddingY * 2);
                     return (
                       <g key={pt.date} className="group">
                         <circle
@@ -405,7 +790,7 @@ export default function EcosystemPage() {
                         </text>
                         <text
                           x={x}
-                          y={svgHeight}
+                          y={dmSvgHeight}
                           textAnchor="middle"
                           className="text-[9px] font-mono fill-slate-400"
                         >
@@ -419,7 +804,7 @@ export default function EcosystemPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed font-sans space-y-2">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed font-sans space-y-1.5">
                 <div className="flex items-center gap-2 font-bold text-slate-900 font-mono text-xs uppercase tracking-wider">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
                   <span>{isEn ? 'Methodological Integrity Note' : 'Hinweis zur methodischen Integrität'}</span>
@@ -431,8 +816,8 @@ export default function EcosystemPage() {
                 </p>
                 <p className="text-[11px] text-slate-500 font-mono">
                   {isEn
-                    ? 'Trend charts and percentage deltas will dynamically render once multiple verified daily measurement snapshots are captured.'
-                    : 'Eine grafische Trendlinie und Zuwachskurven werden dynamisch visualisiert, sobald mehrere tagesaktuelle Messpunkte vorliegen.'}
+                    ? 'A dedicated trend curve for Domains Monitor will dynamically render once multiple verified daily measurement snapshots are captured.'
+                    : 'Eine grafische Trendlinie für Domains Monitor wird dynamisch visualisiert, sobald mehrere tagesaktuelle Messpunkte vorliegen.'}
                 </p>
               </div>
 
@@ -453,7 +838,7 @@ export default function EcosystemPage() {
                       <tr key={idx} className="hover:bg-slate-50/50">
                         <td className="py-2.5 px-4 font-bold text-slate-900">{item.date}</td>
                         <td className="py-2.5 px-4 text-slate-600">{item.source}</td>
-                        <td className="py-2.5 px-4 font-bold text-emerald-800">{item.value.toLocaleString('de-DE')}</td>
+                        <td className="py-2.5 px-4 font-bold text-emerald-800">{item.value.toLocaleString(isEn ? 'en-US' : 'de-DE')}</td>
                         <td className="py-2.5 px-4 text-slate-500">Telemetry Snapshot</td>
                         <td className="py-2.5 px-4 text-emerald-700 font-semibold flex items-center gap-1">
                           <CheckCircle2 className="w-3.5 h-3.5" />
@@ -467,17 +852,29 @@ export default function EcosystemPage() {
             </div>
           )}
 
+          {/* Source Citation for Domains Monitor (Requirement 10) */}
           <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 font-mono gap-2">
-            <span>
-              {isEn
-                ? 'Baseline snapshot: 392,683 domains (Domains Monitor, 24.09.2026)'
-                : 'Verifizierter Basiswert: 392.683 Domains (Domains Monitor, 24.09.2026)'}
-            </span>
-            <span className="text-slate-600 font-bold">
-              {isEn ? 'Daily cron: 05:17 UTC' : 'Täglicher Abgleich: 05:17 UTC'}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-700">{isEn ? 'Source: Domains Monitor' : 'Quelle: Domains Monitor'}</span>
+              <span>•</span>
+              <a
+                href="https://domains-monitor.com/research/rfc10023"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-emerald-700 hover:underline flex items-center gap-1 font-semibold"
+              >
+                <span>domains-monitor.com/research/rfc10023</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+            <div className="flex items-center gap-3 text-slate-600">
+              <span>{isEn ? 'Start: 24 Sep 2026' : 'Start: 24.09.2026'}</span>
+              <span>•</span>
+              <span>{isEn ? 'Daily cron: 05:17 UTC' : 'Täglicher Abgleich: 05:17 UTC'}</span>
+            </div>
           </div>
         </div>
+
       </section>
 
       {/* 3 Adoption Tiers Explanation (Requirement 6) */}
