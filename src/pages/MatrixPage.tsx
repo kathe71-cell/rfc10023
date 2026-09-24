@@ -1,11 +1,13 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import HosterMatrix from '../components/HosterMatrix';
 import CitationBox from '../components/CitationBox';
 import { Database, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function MatrixPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isEn = language === 'en';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
@@ -48,6 +50,21 @@ export default function MatrixPage() {
             {t('matrix.workaround_text')}
           </p>
         </div>
+      </div>
+
+      {/* Ecosystem Reference */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700">
+        <span>
+          {isEn
+            ? 'Find additional RFC 10023 implementations and providers in the Ecosystem Tracker.'
+            : 'Weitere RFC-10023-Implementierungen und Anbieter findest du im Ökosystem-Tracker.'}
+        </span>
+        <Link
+          to={isEn ? '/en/ecosystem' : '/oekosystem'}
+          className="text-xs font-mono font-bold text-emerald-700 hover:text-emerald-800 hover:underline shrink-0"
+        >
+          {isEn ? 'Ecosystem Tracker →' : 'Ökosystem-Tracker →'}
+        </Link>
       </div>
 
       {/* Citation Box */}

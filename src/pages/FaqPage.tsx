@@ -9,11 +9,14 @@ interface FaqItem {
   category: 'general' | 'technical' | 'legal' | 'hoster';
   q: string;
   a: string;
+  link?: string;
+  linkLabel?: string;
 }
 
 export default function FaqPage() {
   const { t, language } = useLanguage();
-  const langPrefix = language === 'en' ? '/en' : '';
+  const isEn = language === 'en';
+  const langPrefix = isEn ? '/en' : '';
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [openIds, setOpenIds] = useState<Record<string, boolean>>({
@@ -36,7 +39,31 @@ export default function FaqPage() {
     { id: 'q12', category: 'hoster', q: t('faq.q12'), a: t('faq.a12') },
     { id: 'q13', category: 'technical', q: t('faq.q13'), a: t('faq.a13') },
     { id: 'q14', category: 'general', q: t('faq.q14'), a: t('faq.a14') },
-  ], [t]);
+    {
+      id: 'q15',
+      category: 'general',
+      q: t('faq.q15'),
+      a: t('faq.a15'),
+      link: isEn ? '/en/ecosystem' : '/oekosystem',
+      linkLabel: isEn ? 'RFC 10023 Ecosystem & Adoption Tracker' : 'RFC 10023 Ökosystem & Adoption',
+    },
+    {
+      id: 'q16',
+      category: 'general',
+      q: t('faq.q16'),
+      a: t('faq.a16'),
+      link: isEn ? '/en/ecosystem' : '/oekosystem',
+      linkLabel: isEn ? 'RFC 10023 Adoption Tracker' : 'RFC 10023 Adoption Tracker',
+    },
+    {
+      id: 'q17',
+      category: 'general',
+      q: t('faq.q17'),
+      a: t('faq.a17'),
+      link: isEn ? '/en/ecosystem' : '/oekosystem',
+      linkLabel: isEn ? 'RFC 10023 Ecosystem & Adoption Tracker' : 'RFC 10023 Ecosystem & Adoption Tracker',
+    },
+  ], [t, isEn]);
 
   const toggleFaq = (id: string) => {
     setOpenIds(prev => ({ ...prev, [id]: !prev[id] }));
@@ -143,8 +170,18 @@ export default function FaqPage() {
                   />
                 </button>
                 {isOpen && (
-                  <div className="p-5 sm:p-6 pt-0 text-sm sm:text-base text-slate-700 leading-relaxed border-t border-slate-100 bg-slate-50/40">
+                  <div className="p-5 sm:p-6 pt-0 text-sm sm:text-base text-slate-700 leading-relaxed border-t border-slate-100 bg-slate-50/40 space-y-2">
                     <p>{faq.a}</p>
+                    {faq.link && (
+                      <div className="pt-1">
+                        <Link
+                          to={faq.link}
+                          className="text-xs font-mono font-bold text-emerald-700 hover:text-emerald-800 hover:underline inline-flex items-center gap-1"
+                        >
+                          <span>→ {faq.linkLabel}</span>
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

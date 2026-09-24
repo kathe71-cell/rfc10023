@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Terminal, Copy, Check, Code2, Zap, Shield, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function ApiDocsPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isEn = language === 'en';
   const [copiedCurl, setCopiedCurl] = useState(false);
   const [testDomain, setTestDomain] = useState('forsaledns.net');
   const [apiResponse, setApiResponse] = useState<any>(null);
@@ -247,6 +249,21 @@ func main() {
 }`}
           </pre>
         )}
+      </div>
+
+      {/* Ecosystem Link */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700">
+        <span>
+          {isEn
+            ? 'See the RFC 10023 ecosystem for additional parsers, scanners, MCP and developer integrations.'
+            : 'Weitere Parser, Scanner, MCP- und Entwickler-Integrationen findest du im RFC 10023 Ökosystem.'}
+        </span>
+        <Link
+          to={isEn ? '/en/ecosystem' : '/oekosystem'}
+          className="text-xs font-mono font-bold text-emerald-700 hover:text-emerald-800 hover:underline shrink-0"
+        >
+          {isEn ? 'RFC 10023 Ecosystem & Adoption →' : 'RFC 10023 Ökosystem & Adoption →'}
+        </Link>
       </div>
 
     </div>

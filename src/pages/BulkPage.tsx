@@ -1,10 +1,12 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import BulkValidator from '../components/BulkValidator';
 import { Layers } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function BulkPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isEn = language === 'en';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
@@ -37,6 +39,14 @@ export default function BulkPage() {
         <p>
           {t('bulk.privacy_legal')}
         </p>
+        <div className="pt-2 border-t border-slate-200/60">
+          <Link
+            to={isEn ? '/en/ecosystem' : '/oekosystem'}
+            className="text-xs font-mono font-bold text-emerald-700 hover:text-emerald-800 hover:underline inline-flex items-center gap-1"
+          >
+            <span>{isEn ? 'Learn more about current RFC 10023 adoption and integrations →' : 'Mehr über aktuelle RFC-10023-Adoption und Integrationen →'}</span>
+          </Link>
+        </div>
       </div>
 
     </div>

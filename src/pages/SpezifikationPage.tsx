@@ -1,10 +1,11 @@
-import React from 'react';
+import { Link } from 'react-router-dom';
 import { BookOpen, ExternalLink, AlertTriangle } from 'lucide-react';
 import CitationBox from '../components/CitationBox';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function SpezifikationPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isEn = language === 'en';
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
@@ -128,6 +129,19 @@ export default function SpezifikationPage() {
         <p className="text-sm text-slate-700 leading-relaxed">
           {t('spec.s4_text')}
         </p>
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <span>
+            {isEn
+              ? 'See the Ecosystem & Adoption tracker for a continuously maintained overview of services and tools supporting RFC 10023.'
+              : 'Welche Dienste und Tools RFC 10023 bereits unterstützen, zeigt die laufend gepflegte Übersicht zu Ökosystem & Adoption.'}
+          </span>
+          <Link
+            to={isEn ? '/en/ecosystem' : '/oekosystem'}
+            className="text-xs font-mono font-bold text-emerald-700 hover:text-emerald-800 hover:underline shrink-0"
+          >
+            {isEn ? 'Ecosystem & Adoption →' : 'Ökosystem & Adoption →'}
+          </Link>
+        </div>
       </section>
 
       {/* Section 5: Sicherheits- und Missbrauchshinweise */}

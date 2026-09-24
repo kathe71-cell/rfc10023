@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Code2, Database, Scale, HelpCircle, Sparkles, ArrowRight, ExternalLink, ShieldCheck, Cpu, Layers } from 'lucide-react';
+import { BookOpen, Code2, Database, Scale, HelpCircle, Sparkles, ArrowRight, ExternalLink, ShieldCheck, Cpu, Layers, Globe } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function DokumentationPage() {
@@ -17,6 +17,15 @@ export default function DokumentationPage() {
       path: `${langPrefix}/spezifikation`,
       icon: BookOpen,
       tag: 'ABNF & Syntax',
+    },
+    {
+      title: isEn ? 'Ecosystem & Adoption' : 'Ökosystem & Adoption',
+      desc: isEn
+        ? 'See the Ecosystem & Adoption tracker for a continuously maintained overview of services and tools supporting RFC 10023.'
+        : 'Welche Dienste und Tools RFC 10023 bereits unterstützen, zeigt die laufend gepflegte Übersicht zu Ökosystem & Adoption.',
+      path: isEn ? '/en/ecosystem' : '/oekosystem',
+      icon: Globe,
+      tag: isEn ? 'Telemetry & Tools' : 'Telemetrie & Tools',
     },
     {
       title: isEn ? 'DNS Provider Guides & Matrix' : 'DNS-Anbieter Anleitungen & Matrix',

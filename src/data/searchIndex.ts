@@ -70,8 +70,17 @@ export const SEARCH_INDEX: SearchItem[] = [
     category: 'standards',
     pathDe: '/oekosystem',
     pathEn: '/en/ecosystem',
-    keywordsDe: ['oekosystem', 'ökosystem', 'ecosystem', 'adoption', 'tracker', 'verbreitung', 'tools', 'inwx', 'sidn', 'forsaledns', 'statistik', 'telemetrie'],
-    keywordsEn: ['ecosystem', 'adoption', 'tracker', 'telemetry', 'tools', 'inwx', 'sidn', 'forsaledns', 'statistics', 'directory'],
+    keywordsDe: [
+      'ökosystem', 'oekosystem', 'ecosystem', 'adoption', 'verbreitung', 'integrationen',
+      'integration', 'unterstützung', 'tools', 'scanner', 'sidn', 'inwx', 'forsaledns',
+      'domaintoolbelt', 'domains monitor', 'mcp', 'domain intelligence', '_for-sale',
+      'tracker', 'statistik', 'telemetrie'
+    ],
+    keywordsEn: [
+      'ecosystem', 'adoption', 'integrations', 'integration', 'support', 'tools', 'scanners',
+      'scanner', 'sidn', 'inwx', 'forsaledns', 'domaintoolbelt', 'domains monitor', 'mcp',
+      'domain intelligence', '_for-sale', 'tracker', 'statistics', 'directory', 'telemetry'
+    ],
   },
   {
     id: 'tool-api',

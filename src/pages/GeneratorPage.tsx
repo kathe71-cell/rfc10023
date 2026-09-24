@@ -1,11 +1,13 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import RfcGenerator from '../components/RfcGenerator';
 import CitationBox from '../components/CitationBox';
 import { Cpu, Terminal, CheckCircle } from 'lucide-react';
 
 export default function GeneratorPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isEn = language === 'en';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
@@ -46,6 +48,20 @@ export default function GeneratorPage() {
             <strong className="text-slate-900 font-bold block">{t('genpage.step3_title')}</strong>
             <p>{t('genpage.step3_desc')}</p>
           </div>
+        </div>
+
+        <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-600">
+          <span>
+            {isEn
+              ? 'See which services already evaluate this record in the Ecosystem & Adoption Tracker.'
+              : 'Welche Dienste diesen Record bereits auswerten, siehst du im Ökosystem & Adoption Tracker.'}
+          </span>
+          <Link
+            to={isEn ? '/en/ecosystem' : '/oekosystem'}
+            className="text-xs font-mono font-bold text-emerald-700 hover:text-emerald-800 hover:underline shrink-0"
+          >
+            {isEn ? 'Ecosystem Tracker →' : 'Ökosystem & Adoption →'}
+          </Link>
         </div>
       </div>
 

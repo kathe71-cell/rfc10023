@@ -790,6 +790,23 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
             </Link>
           </div>
 
+          {/* Ecosystem Context Link on Successful Validation */}
+          {(result.report.status === 'valid' || result.report.status === 'warning') && (
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span>
+                {isEn
+                  ? 'RFC 10023 is already evaluated by multiple tools and services.'
+                  : 'RFC 10023 wird bereits von verschiedenen Tools und Diensten ausgewertet.'}
+              </span>
+              <Link
+                to={isEn ? '/en/ecosystem' : '/oekosystem'}
+                className="text-xs font-mono font-bold text-emerald-700 hover:text-emerald-800 hover:underline shrink-0"
+              >
+                {isEn ? 'View overview →' : 'Übersicht ansehen →'}
+              </Link>
+            </div>
+          )}
+
           {/* 6. Isolated DNS & Mail Diagnostics (No Fake Scores) */}
           {result.diagnostics && (
             <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-4">

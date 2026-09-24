@@ -163,6 +163,12 @@ const translations: Record<Language, Record<string, string>> = {
     'faq.a13': 'Ja, nach RFC 1035 darf ein einzelner String innerhalb eines DNS-TXT-Records maximal 255 Bytes lang sein. Unser Generator überwacht diese Grenze in Echtzeit ("Byte-Guard"), sodass Ihre Einträge garantiert syntaktisch valide bleiben.',
     'faq.q14': 'Kann eine Domain gleichzeitig produktiv betrieben werden und zum Verkauf stehen?',
     'faq.a14': 'Ja! Das ist einer der größten Vorteile von RFC 10023. Ihre bestehende Website auf www oder der Apex-Domain läuft vollkommen ungestört weiter. Nur der spezielle Knoten _for-sale signalisiert Registraren und interessierten Käufern im Hintergrund, dass Angebote willkommen sind.',
+    'faq.q15': 'Wer unterstützt RFC 10023 bereits?',
+    'faq.a15': 'RFC 10023 wird bereits von verschiedenen Registries, Domain-Intelligence-Diensten, Scannern und Entwickler-Tools ausgewertet oder dokumentiert. Eine laufend gepflegte Übersicht findest du im Bereich Ökosystem & Adoption.',
+    'faq.q16': 'Wie verbreitet ist RFC 10023 bereits?',
+    'faq.a16': 'Die Verbreitung lässt sich nur näherungsweise messen, da unterschiedliche Scanner verschiedene Datenquellen und Methoden verwenden. rfc10023.de dokumentiert verifizierte Messwerte und deren Entwicklung transparent im Adoption Tracker.',
+    'faq.q17': 'Wo finde ich aktuelle RFC-10023-Integrationen?',
+    'faq.a17': 'Eine kategorisierte Übersicht verifizierter Integrationen, Tools, Scanner und Dokumentationen befindet sich im RFC 10023 Ecosystem & Adoption Tracker.',
 
     // Widget Embed
     'widget.title': 'Widget zum Einbinden',
@@ -643,6 +649,12 @@ const translations: Record<Language, Record<string, string>> = {
     'faq.a13': 'Yes. Under RFC 1035, a single character-string within a DNS TXT record cannot exceed 255 bytes. Our generator incorporates a real-time Byte-Guard counter to ensure your strings never exceed wire-format limits.',
     'faq.q14': 'Can a domain remain live with an active website while signaling sale availability?',
     'faq.a14': 'Yes! This is one of RFC 10023’s premier advantages. Your live web application, store, or blog on www and the apex domain functions without interruption. Only the dedicated _for-sale node signals availability to prospective buyers and registrars in the background.',
+    'faq.q15': 'Who already supports RFC 10023?',
+    'faq.a15': 'RFC 10023 is already evaluated or documented by various registries, domain intelligence services, scanners, and developer tools. See our continuously updated directory in the Ecosystem & Adoption section.',
+    'faq.q16': 'How widely adopted is RFC 10023?',
+    'faq.a16': 'Adoption can only be approximated because different scanners utilize distinct data sources and scanning methodologies. rfc10023.de documents verified metrics and historical telemetry transparently in the Adoption Tracker.',
+    'faq.q17': 'Where can I find current RFC 10023 integrations?',
+    'faq.a17': 'A categorized directory of verified integrations, tools, scanners, and documentation is maintained in the RFC 10023 Ecosystem & Adoption Tracker.',
 
     // Widget Embed
     'widget.title': 'Embeddable Webmaster Widget',
