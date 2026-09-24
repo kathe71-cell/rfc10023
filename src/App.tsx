@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, useLocation, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, Link, Navigate } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import VercelAnalytics from './components/VercelAnalytics';
 import ScrollToTop from './components/ScrollToTop';
@@ -95,8 +95,8 @@ function RouteWatcher() {
       } else if (pathname.includes('/badge')) {
         document.title = 'RFC 10023 Badge Generator | DNS-Verkaufsstatus einbinden';
         if (metaDesc) metaDesc.setAttribute('content', 'Erstelle neutrale Prüf-Links und 100% datenschutzkonforme HTML/CSS-Badges für Domain-Verkaufsseiten.');
-      } else if (pathname.includes('/ecosystem')) {
-        document.title = 'RFC 10023 Adoption & Ecosystem – Tools, Integrationen und Statistiken';
+      } else if (pathname.includes('/oekosystem') || pathname.includes('/ecosystem')) {
+        document.title = 'RFC 10023 Adoption & Ökosystem – Tools, Integrationen und Statistiken';
         if (metaDesc) metaDesc.setAttribute('content', 'Aktuelle Übersicht zur Verbreitung von RFC 10023 und dem _for-sale DNS Record: Implementierungen, Tools, Registrare, Datensätze und Adoption.');
       } else {
         document.title = 'RFC 10023 | Zeige im DNS, dass deine Domain zum Verkauf steht';
@@ -167,7 +167,8 @@ export function AppRoutes() {
       <Route path="/datenschutz" element={<Datenschutz />} />
       <Route path="/faq" element={<FaqPage />} />
       <Route path="/dokumentation" element={<DokumentationPage />} />
-      <Route path="/ecosystem" element={<EcosystemPage />} />
+      <Route path="/oekosystem" element={<EcosystemPage />} />
+      <Route path="/ecosystem" element={<Navigate to="/oekosystem" replace />} />
 
       {/* English Routes (/en prefix for global SEO and international reach) */}
       <Route path="/en" element={<HomePage />} />

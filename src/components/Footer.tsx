@@ -80,8 +80,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to={`${langPrefix}/ecosystem`} className="text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1 font-semibold">
-                  <span>Ecosystem &amp; Adoption</span> <ArrowUpRight className="w-3 h-3 text-emerald-500" />
+                <Link to={language === 'en' ? '/en/ecosystem' : '/oekosystem'} className="text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1 font-semibold">
+                  <span>{language === 'en' ? 'Ecosystem & Adoption' : 'Ökosystem & Adoption'}</span> <ArrowUpRight className="w-3 h-3 text-emerald-500" />
                 </Link>
               </li>
             </ul>

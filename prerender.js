@@ -20,7 +20,7 @@ const routesToPrerender = [
   { url: "/spezifikation", title: "RFC 10023 ABNF-Spezifikation & Wire Format", desc: "Vollständige technische Spezifikation nach IETF RFC 10023: ABNF-Grammatik, Tag-Definitionen und DNS-Wire-Format." },
   { url: "/faq", title: "RFC 10023 Häufig gestellte Fragen (FAQ)", desc: "Antworten auf alle technischen, praktischen und administrativen Fragen zu RFC 10023 und FORSALE1." },
   { url: "/dokumentation", title: "RFC 10023 Dokumentation | Spezifikation & Leitfäden", desc: "Zentrale Dokumentation zu IETF RFC 10023 (Informational): ABNF-Syntax, Anbieter-Konfigurationen, REST-API und Rechtsfragen." },
-  { url: "/ecosystem", title: "RFC 10023 Adoption & Ecosystem – Tools, Integrationen und Statistiken", desc: "Aktuelle Übersicht zur Verbreitung von RFC 10023 und dem _for-sale DNS Record: Implementierungen, Tools, Registrare, Datensätze und Adoption." },
+  { url: "/oekosystem", title: "RFC 10023 Adoption & Ökosystem – Tools, Integrationen und Statistiken", desc: "Aktuelle Übersicht zur Verbreitung von RFC 10023 und dem _for-sale DNS Record: Implementierungen, Tools, Registrare, Datensätze und Adoption." },
   { url: "/impressum", title: "Impressum | RFC 10023 Referenzportal", desc: "Impressum und Anbieterkennzeichnung des RFC 10023 Referenzportals." },
   { url: "/datenschutz", title: "Datenschutzerklärung | RFC 10023 Referenzportal", desc: "Datenschutzhinweise und DSGVO-Informationen des RFC 10023 Referenzportals." },
   { url: "/en", title: "RFC 10023 | Signal Domain Sales Directly in the DNS", desc: "Independent reference portal & developer toolkit for IETF RFC 10023 (Informational). Live DNS validator and multi-record builder." },
@@ -40,6 +40,41 @@ const routesToPrerender = [
   { url: "/en/privacy", title: "Privacy Policy | RFC 10023 Reference Portal", desc: "Privacy policy and GDPR compliance statement for RFC 10023 Reference Portal." }
 ];
 
+const deToEnRouteMap = {
+  "/": "/en",
+  "/validator": "/en/validator",
+  "/generator": "/en/generator",
+  "/bulk-scan": "/en/bulk-scan",
+  "/badge-generator": "/en/badge-generator",
+  "/api-docs": "/en/api-docs",
+  "/recht-leitfaden": "/en/legal-guidelines",
+  "/hoster-matrix": "/en/hoster-matrix",
+  "/spezifikation": "/en/specification",
+  "/faq": "/en/faq",
+  "/dokumentation": "/en/documentation",
+  "/oekosystem": "/en/ecosystem",
+  "/impressum": "/en/imprint",
+  "/datenschutz": "/en/privacy"
+};
+
+const enToDeRouteMap = {
+  "/en": "/",
+  "/en/validator": "/validator",
+  "/en/generator": "/generator",
+  "/en/bulk-scan": "/bulk-scan",
+  "/en/badge-generator": "/badge-generator",
+  "/en/api-docs": "/api-docs",
+  "/en/legal-guidelines": "/recht-leitfaden",
+  "/en/legal-guide": "/recht-leitfaden",
+  "/en/hoster-matrix": "/hoster-matrix",
+  "/en/specification": "/spezifikation",
+  "/en/faq": "/faq",
+  "/en/documentation": "/dokumentation",
+  "/en/ecosystem": "/oekosystem",
+  "/en/imprint": "/impressum",
+  "/en/privacy": "/datenschutz"
+};
+
 console.log("Starting prerendering of " + routesToPrerender.length + " routes...");
 
 for (const route of routesToPrerender) {
@@ -56,6 +91,25 @@ for (const route of routesToPrerender) {
     rendered = rendered.replace(/<meta name=\"twitter:title\" content=\".*?\" \/>/, "<meta name=\"twitter:title\" content=\"" + route.title + "\" />");
     rendered = rendered.replace(/<meta property=\"og:description\" content=\".*?\" \/>/, "<meta property=\"og:description\" content=\"" + route.desc + "\" />");
     rendered = rendered.replace(/<meta name=\"twitter:description\" content=\".*?\" \/>/, "<meta name=\"twitter:description\" content=\"" + route.desc + "\" />");
+
+    // Dynamic Route-Aware hreflang
+    let dePath = "/";
+    let enPath = "/en";
+    if (route.url in enToDeRouteMap) {
+      dePath = enToDeRouteMap[route.url];
+      enPath = route.url;
+    } else if (route.url in deToEnRouteMap) {
+      dePath = route.url;
+      enPath = deToEnRouteMap[route.url];
+    }
+    const hreflangDe = "https://www.rfc10023.de" + (dePath === "/" ? "/" : dePath);
+    const hreflangEn = "https://www.rfc10023.de" + enPath;
+    const hreflangDefault = hreflangDe;
+
+    rendered = rendered.replace(/<link rel=\"alternate\" hreflang=\"de\" href=\".*?\" \/>/, `<link rel="alternate" hreflang="de" href="${hreflangDe}" />`);
+    rendered = rendered.replace(/<link rel=\"alternate\" hreflang=\"en\" href=\".*?\" \/>/, `<link rel="alternate" hreflang="en" href="${hreflangEn}" />`);
+    rendered = rendered.replace(/<link rel=\"alternate\" hreflang=\"x-default\" href=\".*?\" \/>/, `<link rel="alternate" hreflang="x-default" href="${hreflangDefault}" />`);
+
     if (isEn) {
       rendered = rendered.replace("<html lang=\"de\"", "<html lang=\"en\"");
       rendered = rendered.replace("content=\"de_DE\"", "content=\"en_US\"");

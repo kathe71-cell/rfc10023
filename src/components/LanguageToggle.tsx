@@ -10,6 +10,9 @@ export default function LanguageToggle() {
 
   // Slug mapping between German and English canonical routes
   const slugMapDeToEn: Record<string, string> = {
+    '/oekosystem': '/en/ecosystem',
+    '/ecosystem': '/en/ecosystem',
+    '/dokumentation': '/en/documentation',
     '/recht-leitfaden': '/en/legal-guidelines',
     '/spezifikation': '/en/specification',
     '/impressum': '/en/imprint',
@@ -17,6 +20,9 @@ export default function LanguageToggle() {
   };
 
   const slugMapEnToDe: Record<string, string> = {
+    '/en/ecosystem': '/oekosystem',
+    '/en/documentation': '/dokumentation',
+    '/en/dokumentation': '/dokumentation',
     '/en/legal-guidelines': '/recht-leitfaden',
     '/en/legal-guide': '/recht-leitfaden',
     '/en/recht-leitfaden': '/recht-leitfaden',

@@ -63,14 +63,14 @@ export const SEARCH_INDEX: SearchItem[] = [
   },
   {
     id: 'tool-ecosystem',
-    titleDe: 'Ecosystem & Adoption Tracker',
+    titleDe: 'Ökosystem & Adoption Tracker',
     titleEn: 'Ecosystem & Adoption Tracker',
     descDe: 'Transparente Übersicht zu Registries, Registraren, Scannern, KI/MCP-Tools und globalen Adoptions-Zahlen.',
     descEn: 'Transparent directory of registries, registrars, scanners, AI/MCP tools and global telemetry metrics.',
     category: 'standards',
-    pathDe: '/ecosystem',
+    pathDe: '/oekosystem',
     pathEn: '/en/ecosystem',
-    keywordsDe: ['ecosystem', 'adoption', 'tracker', 'verbreitung', 'tools', 'inwx', 'sidn', 'forsaledns', 'statistik', 'telemetrie'],
+    keywordsDe: ['oekosystem', 'ökosystem', 'ecosystem', 'adoption', 'tracker', 'verbreitung', 'tools', 'inwx', 'sidn', 'forsaledns', 'statistik', 'telemetrie'],
     keywordsEn: ['ecosystem', 'adoption', 'tracker', 'telemetry', 'tools', 'inwx', 'sidn', 'forsaledns', 'statistics', 'directory'],
   },
   {

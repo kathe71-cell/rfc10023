@@ -49,7 +49,7 @@ const translations: Record<Language, Record<string, string>> = {
     'hero.stat_mandatory': 'Status',
 
     // Terminal Hero Preview
-    'hero.terminal_header': 'RFC 10023 Wire Protocol',
+    'hero.terminal_header': 'RFC 10023 DNS Convention',
     'hero.terminal_comment': '# Abfrage der Verkaufsdaten einer Domain:',
     'hero.terminal_node': 'DNS-Knoten:',
     'hero.terminal_dnssec': 'DNSSEC:',
@@ -529,7 +529,7 @@ const translations: Record<Language, Record<string, string>> = {
     'hero.stat_mandatory': 'Status',
 
     // Terminal Hero Preview
-    'hero.terminal_header': 'RFC 10023 Wire Protocol',
+    'hero.terminal_header': 'RFC 10023 DNS Convention',
     'hero.terminal_comment': '# Querying domain sale data directly via DNS:',
     'hero.terminal_node': 'DNS Node:',
     'hero.terminal_dnssec': 'DNSSEC:',

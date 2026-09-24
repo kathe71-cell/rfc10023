@@ -33,10 +33,29 @@ import {
   computeEcosystemStats,
 } from '../data/ecosystem';
 
+function formatDisplayDate(dateStr: string, isEn: boolean): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 2) {
+    const [year, month] = parts;
+    const monthsEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthsDe = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+    const mIdx = parseInt(month, 10) - 1;
+    return isEn ? `${monthsEn[mIdx] || month} ${year}` : `${monthsDe[mIdx] || month} ${year}`;
+  }
+  if (parts.length === 3) {
+    const [year, month, day] = parts;
+    return isEn ? `${year}-${month}-${day}` : `${day}.${month}.${year}`;
+  }
+  return dateStr;
+}
+
 export default function EcosystemPage() {
   const { language } = useLanguage();
   const isEn = language === 'en';
   const langPrefix = isEn ? '/en' : '';
+  const pagePath = isEn ? '/en/ecosystem' : '/oekosystem';
+  const canonicalUrl = `https://www.rfc10023.de${pagePath}`;
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedTier, setSelectedTier] = useState<string>('all');
@@ -92,11 +111,11 @@ export default function EcosystemPage() {
     '@graph': [
       {
         '@type': 'WebPage',
-        '@id': `https://www.rfc10023.de${langPrefix}/ecosystem#webpage`,
-        url: `https://www.rfc10023.de${langPrefix}/ecosystem`,
+        '@id': `${canonicalUrl}#webpage`,
+        url: canonicalUrl,
         name: isEn
           ? 'RFC 10023 Adoption & Ecosystem – Tools, Integrations and Statistics'
-          : 'RFC 10023 Adoption & Ecosystem – Tools, Integrationen und Statistiken',
+          : 'RFC 10023 Adoption & Ökosystem – Tools, Integrationen und Statistiken',
         description: isEn
           ? 'Comprehensive overview of RFC 10023 and _for-sale DNS record adoption: implementations, tools, registrars, datasets and verified telemetry.'
           : 'Aktuelle Übersicht zur Verbreitung von RFC 10023 und dem _for-sale DNS Record: Implementierungen, Tools, Registrare, Datensätze und Adoption.',
@@ -118,8 +137,8 @@ export default function EcosystemPage() {
           {
             '@type': 'ListItem',
             position: 2,
-            name: 'Ecosystem & Adoption',
-            item: `https://www.rfc10023.de${langPrefix}/ecosystem`,
+            name: isEn ? 'Ecosystem & Adoption' : 'Ökosystem & Adoption',
+            item: canonicalUrl,
           },
         ],
       },
@@ -177,7 +196,7 @@ export default function EcosystemPage() {
                 </Link>
               </li>
               <li>/</li>
-              <li className="text-slate-900 font-bold">Ecosystem & Adoption</li>
+              <li className="text-slate-900 font-bold">{isEn ? 'Ecosystem & Adoption' : 'Ökosystem & Adoption'}</li>
             </ol>
           </nav>
 
@@ -192,7 +211,7 @@ export default function EcosystemPage() {
             </div>
 
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-950">
-              RFC 10023 Ecosystem &amp; Adoption
+              {isEn ? 'RFC 10023 Ecosystem & Adoption' : 'RFC 10023 Ökosystem & Adoption'}
             </h1>
 
             <p className="text-base sm:text-lg text-slate-700 leading-relaxed font-normal">
@@ -298,7 +317,7 @@ export default function EcosystemPage() {
               <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
               <span>
                 {isEn
-                  ? 'Unterschiedliche Anbieter verwenden unterschiedliche Datenquellen, Scanmethoden und Definitionen. Die Werte sind daher nicht direkt miteinander vergleichbar. Alle Angaben basieren auf öffentlich nachprüfbaren Quellen.'
+                  ? 'Different providers use distinct data sources, scanning methodologies, and classification criteria. Telemetry metrics are therefore not directly comparable across vendors. All figures are based on publicly verifiable sources.'
                   : 'Unterschiedliche Anbieter verwenden unterschiedliche Datenquellen, Scanmethoden und Definitionen. Die Werte sind daher nicht direkt miteinander vergleichbar. Alle Angaben basieren auf öffentlich nachprüfbaren Quellen.'}
               </span>
             </div>
@@ -563,7 +582,7 @@ export default function EcosystemPage() {
             
             {/* Step 1 */}
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Schritt 1</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase">{isEn ? 'Step 1' : 'Schritt 1'}</span>
               <div className="font-bold text-slate-900">
                 {isEn ? 'Domain Owner' : 'Domaininhaber'}
               </div>
@@ -574,29 +593,29 @@ export default function EcosystemPage() {
 
             {/* Step 2 */}
             <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200 flex flex-col justify-between space-y-2">
-              <span className="text-[10px] font-bold text-emerald-700 uppercase">Schritt 2</span>
+              <span className="text-[10px] font-bold text-emerald-700 uppercase">{isEn ? 'Step 2' : 'Schritt 2'}</span>
               <div className="font-bold text-emerald-950 break-all">
                 _for-sale TXT
               </div>
               <p className="text-[11px] text-slate-600 font-sans leading-normal">
-                {isEn ? 'v=FORSALE1;fval=EUR...' : 'v=FORSALE1;fval=EUR...'}
+                v=FORSALE1;fval=EUR...
               </p>
             </div>
 
             {/* Step 3 */}
             <div className="p-4 rounded-xl bg-slate-900 text-white border border-slate-800 flex flex-col justify-between space-y-2">
-              <span className="text-[10px] font-bold text-emerald-400 uppercase">Schritt 3</span>
+              <span className="text-[10px] font-bold text-emerald-400 uppercase">{isEn ? 'Step 3' : 'Schritt 3'}</span>
               <div className="font-bold text-white">
                 Global DNS
               </div>
               <p className="text-[11px] text-slate-300 font-sans leading-normal">
-                {isEn ? 'Port 53 / DoH / DNSSEC' : 'Port 53 / DoH / DNSSEC'}
+                Port 53 / DoH / DNSSEC
               </p>
             </div>
 
             {/* Step 4 */}
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Schritt 4</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase">{isEn ? 'Step 4' : 'Schritt 4'}</span>
               <div className="font-bold text-slate-900">
                 {isEn ? 'Scanner / AI / Broker' : 'Scanner / KI / Broker'}
               </div>
@@ -607,7 +626,7 @@ export default function EcosystemPage() {
 
             {/* Step 5 */}
             <div className="p-4 rounded-xl bg-emerald-100/70 border border-emerald-300 flex flex-col justify-between space-y-2">
-              <span className="text-[10px] font-bold text-emerald-800 uppercase">Schritt 5</span>
+              <span className="text-[10px] font-bold text-emerald-800 uppercase">{isEn ? 'Step 5' : 'Schritt 5'}</span>
               <div className="font-bold text-emerald-950">
                 {isEn ? 'Offer Visible' : 'Verkauf sichtbar'}
               </div>
@@ -789,13 +808,13 @@ export default function EcosystemPage() {
                         </div>
                         <div>
                           <span className="text-slate-400 block">{isEn ? 'Last Verified' : 'Zuletzt geprüft'}</span>
-                          <span className="text-slate-800 font-semibold">{item.lastVerified}</span>
+                          <span className="text-slate-800 font-semibold">{formatDisplayDate(item.lastVerified, isEn)}</span>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between pt-1">
                         <span className="text-[10px] font-mono text-slate-400">
-                          {isEn ? 'Observed since:' : 'Beobachtet seit:'} {item.firstObserved}
+                          {isEn ? 'Observed since:' : 'Beobachtet seit:'} {formatDisplayDate(item.firstObserved, isEn)}
                         </span>
                         <a
                           href={item.sourceUrl}
@@ -825,7 +844,7 @@ export default function EcosystemPage() {
               {isEn ? 'Chronology' : 'Chronologie'}
             </span>
             <h2 className="text-2xl font-extrabold text-slate-950 tracking-tight mt-1">
-              RFC 10023 Adoption Timeline
+              {isEn ? 'RFC 10023 Adoption Timeline' : 'RFC 10023 Adoption Timeline'}
             </h2>
             <p className="mt-1 text-sm text-slate-600">
               {isEn
@@ -843,7 +862,7 @@ export default function EcosystemPage() {
                 <div className="space-y-1.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      {event.date}
+                      {formatDisplayDate(event.date, isEn)}
                     </span>
                     <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">
                       {event.category}
@@ -1045,17 +1064,22 @@ export default function EcosystemPage() {
           <div className="text-xs sm:text-sm text-slate-700 leading-relaxed space-y-3 font-sans">
             <p>
               {isEn
-                ? 'Diese Übersicht basiert auf öffentlich zugänglichen Informationen. Ein Eintrag bedeutet nicht automatisch eine vollständige native RFC-10023-Integration. Wir unterscheiden zwischen produktiver Unterstützung, experimenteller Integration, angekündigter Unterstützung und reiner Dokumentation.'
-                : 'Diese Übersicht basiert auf öffentlich zugänglichen Informationen. Ein Eintrag bedeutet nicht automatisch eine vollständige native RFC-10023-Integration. Wir unterscheiden zwischen produktiver Unterstützung, experimenteller Integration, angekündigter Unterstützung und reiner Dokumentation.'}
+                ? 'This directory is based exclusively on publicly verifiable information. An entry does not automatically imply a full native RFC 10023 integration; we rigorously distinguish between native automated processing, developer tools/scanners, and pure documentation.'
+                : 'Diese Übersicht basiert ausschließlich auf öffentlich nachprüfbaren Informationen. Ein Eintrag bedeutet nicht automatisch eine vollständige native RFC-10023-Integration; wir unterscheiden strikt zwischen nativer automatisierter Verarbeitung, Entwickler-Tools/Scannern und reiner Dokumentation.'}
             </p>
             <p>
               {isEn
-                ? 'Die dargestellten Adoptionszahlen stammen von unabhängigen Datenquellen. Unterschiedliche Anbieter verwenden unterschiedliche Datengrundlagen und Scanmethoden. Die Werte sind deshalb nicht unmittelbar miteinander vergleichbar.'
-                : 'Die dargestellten Adoptionszahlen stammen von unabhängigen Datenquellen. Unterschiedliche Anbieter verwenden unterschiedliche Datengrundlagen und Scanmethoden. Die Werte sind deshalb nicht unmittelbar miteinander vergleichbar.'}
+                ? 'Published telemetry figures originate from independent third-party monitoring projects. Different scanners apply distinct data sources, discovery zones, and measurement methodologies, meaning figures cannot be directly cross-compared. Exact calendar dates are only published when backed by definitive source records; otherwise, month-level resolution is applied.'
+                : 'Die dargestellten Adoptionszahlen stammen von unabhängigen Monitoring-Projekten. Unterschiedliche Scanner verwenden verschiedene Datengrundlagen, Zonenabfragen und Scanmethoden; Kennzahlen sind daher nicht unmittelbar miteinander vergleichbar. Exakte Tagesdaten werden nur bei eindeutig belegten Quellen ausgewiesen, andernfalls erfolgt die Angabe auf Monatsebene.'}
+            </p>
+            <p>
+              {isEn
+                ? 'Historical adoption telemetry is recorded prospectively on a daily schedule without retroactive estimation or synthetic data interpolation.'
+                : 'Historische Telemetriedaten werden prospektiv und tagesaktuell fortgeschrieben; auf rückwirkende Schätzungen oder synthetische Interpolationen wird vollständig verzichtet.'}
             </p>
             <p className="text-xs text-slate-500 font-mono">
               {isEn
-                ? 'Verification policy: Every integration requires a verified public source URL. Entries without documented evidence will not be published.'
+                ? 'Verification policy: Every integration requires a verifiable public source URL. Entries without documented evidence will not be published.'
                 : 'Prüfungsstandard: Jeder Eintrag erfordert eine überprüfbare öffentliche Quellenangabe. Einträge ohne belegte Nachweise werden nicht veröffentlicht.'}
             </p>
           </div>
@@ -1077,7 +1101,7 @@ export default function EcosystemPage() {
           </div>
 
           <a
-            href="mailto:info@rfc10023.de?subject=RFC%2010023%20Integration%20melden"
+            href={isEn ? "mailto:info@rfc10023.de?subject=Submit%20RFC%2010023%20Integration" : "mailto:info@rfc10023.de?subject=RFC%2010023%20Integration%20melden"}
             className="shrink-0 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-mono text-xs font-bold transition-colors flex items-center gap-2 shadow-sm"
           >
             <Mail className="w-4 h-4 text-emerald-400" />
@@ -1089,8 +1113,9 @@ export default function EcosystemPage() {
       {/* Citation Box */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <CitationBox
-          title={isEn ? 'RFC 10023 Ecosystem & Adoption Tracker' : 'RFC 10023 Ecosystem & Adoption Tracker'}
-          url={`https://www.rfc10023.de${langPrefix}/ecosystem`}
+          title={isEn ? 'RFC 10023 Ecosystem & Adoption Tracker' : 'RFC 10023 Ökosystem & Adoption Tracker'}
+          url={canonicalUrl}
+          date="2026-09-24"
         />
       </section>
     </div>

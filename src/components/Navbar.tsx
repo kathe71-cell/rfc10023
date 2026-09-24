@@ -35,11 +35,13 @@ export default function Navbar() {
     setMobileDocsOpen(false);
   }, [location.pathname]);
 
+  const ecosystemPath = isEn ? '/en/ecosystem' : '/oekosystem';
+
   const toolLinks = [
     { name: isEn ? 'Create Record' : 'Eintrag erstellen', path: `${langPrefix}/generator`, icon: Cpu },
     { name: isEn ? 'Verify Domain'  : 'Domain prüfen',    path: `${langPrefix}/validator`,  icon: ShieldCheck },
     { name: isEn ? 'Portfolio Scan' : 'Portfolio prüfen', path: `${langPrefix}/bulk-scan`,  icon: Layers },
-    { name: 'Ecosystem',                                  path: `${langPrefix}/ecosystem`,  icon: Globe },
+    { name: isEn ? 'Ecosystem'      : 'Ökosystem',        path: ecosystemPath,              icon: Globe },
   ];
 
   const docsLinks = [

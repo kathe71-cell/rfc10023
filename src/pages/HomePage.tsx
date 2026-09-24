@@ -449,7 +449,7 @@ export default function HomePage() {
               </p>
               <div className="pt-2">
                 <Link
-                  to={`${langPrefix}/ecosystem`}
+                  to={language === 'en' ? '/en/ecosystem' : '/oekosystem'}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs transition-colors shadow-sm"
                 >
                   <span>{t('home.teaser_cta')}</span>

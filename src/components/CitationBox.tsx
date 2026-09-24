@@ -5,32 +5,40 @@ import { useLanguage } from '../context/LanguageContext';
 interface CitationBoxProps {
   title?: string;
   url?: string;
+  date?: string;
 }
 
 export default function CitationBox({
   title,
   url = 'https://www.rfc10023.de/',
+  date = '2026-09-24',
 }: CitationBoxProps) {
   const { t, language } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [format, setFormat] = useState<'apa' | 'harvard' | 'bibtex'>('apa');
 
   const effectiveTitle = title || t('citation.default_title');
-  const currentYear = 2026;
-  const currentMonth = language === 'en' ? 'September' : 'September';
+  const dateParts = date.split('-');
+  const year = dateParts[0] || '2026';
+  const monthNum = parseInt(dateParts[1] || '9', 10);
+  const day = parseInt(dateParts[2] || '24', 10);
+
+  const monthsEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthsDe = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+  const monthName = language === 'en' ? (monthsEn[monthNum - 1] || 'September') : (monthsDe[monthNum - 1] || 'September');
 
   const getCitationText = () => {
     const author = language === 'en' ? 'RFC 10023 Editorial Board' : 'RFC 10023 Fachredaktion';
-    const retrieved = language === 'en' ? `Retrieved on September 11, ${currentYear}, from ${url}` : `Abgerufen am 11. ${currentMonth} ${currentYear}, von ${url}`;
-    const available = language === 'en' ? `Available at: <${url}> [Accessed 11 September ${currentYear}].` : `Verfügbar unter: <${url}> [Zugriff am 11. ${currentMonth} ${currentYear}].`;
+    const retrieved = language === 'en' ? `Retrieved on ${monthName} ${day}, ${year}, from ${url}` : `Abgerufen am ${day}. ${monthName} ${year}, von ${url}`;
+    const available = language === 'en' ? `Available at: <${url}> [Accessed ${day} ${monthName} ${year}].` : `Verfügbar unter: <${url}> [Zugriff am ${day}. ${monthName} ${year}].`;
 
     switch (format) {
       case 'apa':
-        return `${author} (${currentYear}). ${effectiveTitle}. rfc10023.de. ${retrieved}`;
+        return `${author} (${year}). ${effectiveTitle}. rfc10023.de. ${retrieved}`;
       case 'harvard':
-        return `${author}, ${currentYear}. ${effectiveTitle}. [online] rfc10023.de. ${available}`;
+        return `${author}, ${year}. ${effectiveTitle}. [online] rfc10023.de. ${available}`;
       case 'bibtex':
-        return `@online{rfc10023_${currentYear},\n  author = {${author}},\n  title = {${effectiveTitle}},\n  year = {${currentYear}},\n  url = {${url}},\n  urldate = {${currentYear}-09-11}\n}`;
+        return `@online{rfc10023_${year},\n  author = {${author}},\n  title = {${effectiveTitle}},\n  year = {${year}},\n  url = {${url}},\n  urldate = {${date}}\n}`;
       default:
         return '';
     }
