@@ -119,7 +119,7 @@
     "nativeRfc10023Integration": false,
     "testedAt": null,
     "lastVerified": "2026-09-24",
-    "sourceUrl": "https://www.ionos.de/hilfe/domains/dns-einstellungen/",
+    "sourceUrl": "https://www.ionos.de/hilfe/domains/mailserver-und-verwandte-records-konfigurieren/dmarc-record-fuer-eine-domain-konfigurieren/",
     "editorSyntax": "Hostname: _for-sale | Record: TXT",
     "sampleRecord": "_for-sale  TXT  \"v=FORSALE1;fval=EUR2500\"",
     "notes": "Offizielle IONOS-Dokumentation belegt die Unterstützung führender Unterstriche bei TXT-Records (z. B. für _dmarc). Ein dedizierter Praxistest für _for-sale sowie eine native RFC-10023-Marktplatz-Auswertung sind derzeit nicht belegt.",
