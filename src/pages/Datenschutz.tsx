@@ -67,8 +67,8 @@ export default function Datenschutz() {
           </p>
           <p className="mt-2">
             {language === 'en'
-              ? 'Vercel Web Analytics operates completely without cookies, does not store any personally identifiable information (PII), and does not track users across websites. To aggregate anonymous traffic data and optimize server response times, only an ephemeral, irreversible hash is generated that prevents identification of your individual device. Your IP address is never persistently stored.'
-              : 'Vercel Web Analytics arbeitet vollständig ohne Cookies, speichert keine personenbezogenen Daten und rekonstruiert keine individuellen Nutzerprofile über Webseiten hinweg. Zur statistischen Zählung von Seitenaufrufen und zur Optimierung der Ladezeiten wird lediglich ein kurzlebiger, irreversibler Hash erzeugt, der keine Rückschlüsse auf Ihre Identität zulässt. Ihre IP-Adresse wird nicht persistent gespeichert.'}
+              ? 'Vercel Web Analytics is designed to operate without cookies, aims not to create individual user profiles, and is intended not to store personal data permanently. To measure anonymous page views and optimize loading times, an ephemeral, irreversible hash is generated that prevents identification of your individual person or device. IP addresses are not stored persistently.'
+              : 'Vercel Web Analytics ist cookielos ausgelegt und soll keine individuellen Nutzerprofile erstellen oder personenbezogene Daten dauerhaft speichern. Zur statistischen Zählung von Seitenaufrufen und zur Optimierung der Ladezeiten wird lediglich ein kurzlebiger, irreversibler Hash erzeugt, der keine Rückschlüsse auf Ihre Identität zulässt. Ihre IP-Adresse wird nicht persistent gespeichert.'}
           </p>
           <p className="mt-2">
             {language === 'en'

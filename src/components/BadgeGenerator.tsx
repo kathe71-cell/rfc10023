@@ -195,7 +195,7 @@ function escapeHtml(str: string): string {
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
               <span className="text-[11px] text-slate-400 flex items-center gap-1.5">
                 <Code2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{isEn ? 'HTML / CSS (100% GDPR compliant, zero external requests)' : 'HTML / CSS (100% DSGVO-konform, kein externer Request)'}</span>
+                <span>{isEn ? 'HTML / CSS (Self-contained, zero external requests)' : 'HTML / CSS (Datensparsam, kein externer Request)'}</span>
               </span>
               <button
                 type="button"
