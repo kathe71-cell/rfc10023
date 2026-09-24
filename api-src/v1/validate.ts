@@ -82,10 +82,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startTime = performance.now();
   const rawDomain = (req.query.d || req.query.domain || '') as string;
 
-  if (!rawDomain) {
+  if (!rawDomain || rawDomain.length > 253) {
     return res.status(400).json({
       apiVersion: '1.0',
-      error: 'Missing domain parameter. Usage: /api/v1/validate?domain=example.com',
+      error: 'Missing or invalid domain parameter (max 253 chars). Usage: /api/v1/validate?domain=example.com',
       status: 'error',
     });
   }
@@ -94,7 +94,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   domain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/^_for-sale\./, '');
   domain = domain.split('/')[0].split(':')[0];
 
-  if (!domain.includes('.')) {
+  if (!domain.includes('.') || domain.length > 253 || domain.length < 3) {
     return res.status(400).json({
       apiVersion: '1.0',
       error: 'Invalid domain syntax. Must contain a valid TLD.',
@@ -103,6 +103,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const punyHost = toPunycodeHostname(domain);
+  if (!punyHost || punyHost.length > 253) {
+    return res.status(400).json({
+      apiVersion: '1.0',
+      error: 'Invalid domain syntax.',
+      status: 'error',
+    });
+  }
   const leafNode = `_for-sale.${punyHost}`;
   let rawRecords: string[] = [];
   let isDnssec = false;
@@ -215,11 +222,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     return res.status(200).json(response);
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Lookup failed';
+  } catch (_err: unknown) {
     return res.status(500).json({
       apiVersion: '1.0',
-      error: message,
+      error: 'DNS lookup failed. Please try again later.',
       status: 'error',
     });
   }

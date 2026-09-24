@@ -35,9 +35,19 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
     .replace(/^_for-sale\./, '')
     .split('/')[0] || (isEn ? 'yourdomain.com' : 'deinedomain.de');
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
   const lookupUrl = `https://www.rfc10023.de${langPrefix}/validator?d=${encodeURIComponent(clean)}`;
 
   // Safe, self-contained HTML/CSS Badge (Zero external requests)
+  const safeBadgeText = escapeHtml(badgeText);
   const badgeHtml = `<a href="${lookupUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:8px; padding:6px 12px; background:${
     theme === 'dark' ? '#0f172a' : theme === 'emerald' ? '#065f46' : '#ffffff'
   }; color:${
@@ -46,13 +56,14 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
     theme === 'light' ? '#e2e8f0' : 'rgba(255,255,255,0.15)'
   }; border-radius:8px; font-family:-apple-system,BlinkMacSystemFont,sans-serif; font-size:12px; font-weight:600; text-decoration:none; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
   <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981;"></span>
-  <span>${badgeText}</span>
+  <span>${safeBadgeText}</span>
 </a>`;
 
   // Markdown variant with Shields.io external image
   const encodedLabel = encodeURIComponent(isEn ? 'RFC 10023' : 'RFC 10023');
   const encodedMessage = encodeURIComponent(isEn ? 'Check DNS Record' : 'DNS-Eintrag prüfen');
-  const badgeMarkdown = `[![${badgeText}](https://img.shields.io/badge/${encodedLabel}-${encodedMessage}-10b981?style=flat-square)](${lookupUrl})`;
+  const safeMdText = badgeText.replace(/[[\]]/g, '');
+  const badgeMarkdown = `[![${safeMdText}](https://img.shields.io/badge/${encodedLabel}-${encodedMessage}-10b981?style=flat-square)](${lookupUrl})`;
 
   const copyHtml = () => {
     navigator.clipboard.writeText(badgeHtml);
@@ -157,8 +168,25 @@ export default function BadgeGenerator({ initialDomain = 'deinedomain.de' }: Bad
                 href={lookupUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                dangerouslySetInnerHTML={{ __html: badgeHtml }}
-              />
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 12px',
+                  background: theme === 'dark' ? '#0f172a' : theme === 'emerald' ? '#065f46' : '#ffffff',
+                  color: theme === 'light' ? '#0f172a' : '#ffffff',
+                  border: theme === 'light' ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '8px',
+                  fontFamily: '-apple-system,BlinkMacSystemFont,sans-serif',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                }}
+              >
+                <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
+                <span>{badgeText}</span>
+              </a>
             </div>
           </div>
 

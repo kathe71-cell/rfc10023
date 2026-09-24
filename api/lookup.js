@@ -658,9 +658,9 @@ async function handler(req, res) {
     return;
   }
   const rawDomain = req.query.d || req.query.domain || "";
-  if (!rawDomain) {
+  if (!rawDomain || rawDomain.length > 253) {
     return res.status(400).json({
-      error: 'Parameter "domain" oder "d" fehlt. Beispiel: /api/lookup?d=beispieldomain.de',
+      error: 'Parameter "domain" oder "d" fehlt oder ist ung\xFCltig (max. 253 Zeichen).',
       status: "error"
     });
   }
@@ -669,13 +669,19 @@ async function handler(req, res) {
   domain = domain.replace(/^www\./, "");
   domain = domain.replace(/^_for-sale\./, "");
   domain = domain.split("/")[0].split(":")[0];
-  if (!domain.includes(".")) {
+  if (!domain.includes(".") || domain.length > 253 || domain.length < 3) {
     return res.status(400).json({
       error: "Ung\xFCltiger Domainname \xFCbergeben.",
       status: "error"
     });
   }
   const punyHost = toPunycodeHostname(domain);
+  if (!punyHost || punyHost.length > 253) {
+    return res.status(400).json({
+      error: "Ung\xFCltiger Domainname \xFCbergeben.",
+      status: "error"
+    });
+  }
   const leafNode = `_for-sale.${punyHost}`;
   let rawRecords = [];
   let isDnssec = false;
@@ -742,10 +748,9 @@ async function handler(req, res) {
       disclaimer: "rfc10023.de ist ein unabh\xE4ngiges Referenzportal. Daten basieren auf Anycast DNS-Abfragen (RFC 10023 Informational)."
     };
     return res.status(200).json(payload);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "DNS Lookup Error";
+  } catch (_err) {
     return res.status(500).json({
-      error: message,
+      error: "DNS-Abfrage fehlgeschlagen. Bitte versuchen Sie es sp\xE4ter erneut.",
       status: "error"
     });
   }

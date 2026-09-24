@@ -37,9 +37,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const rawDomain = (req.query.d || req.query.domain || '') as string;
-  if (!rawDomain) {
+  if (!rawDomain || rawDomain.length > 253) {
     return res.status(400).json({
-      error: 'Parameter "domain" oder "d" fehlt. Beispiel: /api/lookup?d=beispieldomain.de',
+      error: 'Parameter "domain" oder "d" fehlt oder ist ungültig (max. 253 Zeichen).',
       status: 'error',
     });
   }
@@ -50,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   domain = domain.replace(/^_for-sale\./, '');
   domain = domain.split('/')[0].split(':')[0];
 
-  if (!domain.includes('.')) {
+  if (!domain.includes('.') || domain.length > 253 || domain.length < 3) {
     return res.status(400).json({
       error: 'Ungültiger Domainname übergeben.',
       status: 'error',
@@ -58,6 +58,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const punyHost = toPunycodeHostname(domain);
+  if (!punyHost || punyHost.length > 253) {
+    return res.status(400).json({
+      error: 'Ungültiger Domainname übergeben.',
+      status: 'error',
+    });
+  }
   const leafNode = `_for-sale.${punyHost}`;
   let rawRecords: string[] = [];
   let isDnssec = false;
@@ -135,10 +141,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     return res.status(200).json(payload);
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'DNS Lookup Error';
+  } catch (_err: unknown) {
     return res.status(500).json({
-      error: message,
+      error: 'DNS-Abfrage fehlgeschlagen. Bitte versuchen Sie es später erneut.',
       status: 'error',
     });
   }

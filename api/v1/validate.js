@@ -657,17 +657,17 @@ async function handler(req, res) {
   }
   const startTime = performance.now();
   const rawDomain = req.query.d || req.query.domain || "";
-  if (!rawDomain) {
+  if (!rawDomain || rawDomain.length > 253) {
     return res.status(400).json({
       apiVersion: "1.0",
-      error: "Missing domain parameter. Usage: /api/v1/validate?domain=example.com",
+      error: "Missing or invalid domain parameter (max 253 chars). Usage: /api/v1/validate?domain=example.com",
       status: "error"
     });
   }
   let domain = rawDomain.trim().toLowerCase();
   domain = domain.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/^_for-sale\./, "");
   domain = domain.split("/")[0].split(":")[0];
-  if (!domain.includes(".")) {
+  if (!domain.includes(".") || domain.length > 253 || domain.length < 3) {
     return res.status(400).json({
       apiVersion: "1.0",
       error: "Invalid domain syntax. Must contain a valid TLD.",
@@ -675,6 +675,13 @@ async function handler(req, res) {
     });
   }
   const punyHost = toPunycodeHostname(domain);
+  if (!punyHost || punyHost.length > 253) {
+    return res.status(400).json({
+      apiVersion: "1.0",
+      error: "Invalid domain syntax.",
+      status: "error"
+    });
+  }
   const leafNode = `_for-sale.${punyHost}`;
   let rawRecords = [];
   let isDnssec = false;
@@ -772,11 +779,10 @@ async function handler(req, res) {
       meta: { timestamp: (/* @__PURE__ */ new Date()).toISOString(), documentation: "https://rfc10023.de/api-docs" }
     };
     return res.status(200).json(response);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Lookup failed";
+  } catch (_err) {
     return res.status(500).json({
       apiVersion: "1.0",
-      error: message,
+      error: "DNS lookup failed. Please try again later.",
       status: "error"
     });
   }
