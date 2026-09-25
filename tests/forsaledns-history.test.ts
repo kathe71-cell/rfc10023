@@ -52,11 +52,11 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
   });
 
   describe('2. ForSaleDNS Stored Historical Dataset Integrity', () => {
-    it('verifies data/adoption-history-forsaledns.json exists and contains 41 daily entries', () => {
+    it('verifies data/adoption-history-forsaledns.json exists and contains at least 41 daily entries', () => {
       expect(fs.existsSync(forSaleDnsJsonPath)).toBe(true);
       const data = JSON.parse(fs.readFileSync(forSaleDnsJsonPath, 'utf-8'));
       expect(Array.isArray(data)).toBe(true);
-      expect(data.length).toBe(41);
+      expect(data.length).toBeGreaterThanOrEqual(41);
     });
 
     it('verifies strict chronological order and absence of duplicate days', () => {
@@ -74,7 +74,7 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
       }
 
       expect(data[0].date).toBe('2026-08-15');
-      expect(data[data.length - 1].date).toBe('2026-09-24');
+      expect(data[data.length - 1].date >= '2026-09-24').toBe(true);
     });
 
     it('verifies correct handling of partial sweeps vs 100% complete sweeps', () => {

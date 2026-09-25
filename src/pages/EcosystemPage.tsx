@@ -68,6 +68,20 @@ function formatChartAxisDate(dateStr: string, isEn: boolean): string {
   return `${monthName} ${parseInt(day, 10)}`;
 }
 
+function formatFullDate(dateStr: string, isEn: boolean): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  const [year, month, day] = parts;
+  if (!isEn) {
+    return `${day}.${month}.${year}`;
+  }
+  const monthsEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const mIdx = parseInt(month, 10) - 1;
+  const monthName = monthsEn[mIdx] || month;
+  return `${parseInt(day, 10)} ${monthName} ${year}`;
+}
+
 
 export default function EcosystemPage() {
   const location = useLocation();
@@ -336,7 +350,7 @@ export default function EcosystemPage() {
                 {isEn ? 'RFC 10023 Adoption Snapshot' : 'RFC 10023 Adoption Kennzahlen'}
               </h2>
               <span className="text-[11px] font-mono text-slate-500">
-                {isEn ? 'Status: 24 Sep 2026' : 'Stand: 24.09.2026'}
+                {isEn ? `Status: ${formatFullDate(stats.lastUpdated, true)}` : `Stand: ${formatFullDate(stats.lastUpdated, false)}`}
               </span>
             </div>
 
@@ -472,7 +486,9 @@ export default function EcosystemPage() {
                 {latestForSale ? latestForSale.activeListings.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '334,576' : '334.576')}
               </span>
               <span className="block text-[11px] text-slate-400">
-                {isEn ? 'Observed active listings (24 Sep 2026)' : 'Beobachtete aktive Listings (24.09.2026)'}
+                {isEn
+                  ? `Observed active listings (${latestForSale ? formatFullDate(latestForSale.date, true) : '25 Sep 2026'})`
+                  : `Beobachtete aktive Listings (${latestForSale ? formatFullDate(latestForSale.date, false) : '25.09.2026'})`}
               </span>
             </div>
           </div>
@@ -575,7 +591,9 @@ export default function EcosystemPage() {
                 {/* Render individual points */}
                 {fsAllPoints.map((pt) => {
                   const isPartial = !pt.sweepComplete;
-                  const isKeyPoint = [0, 2, 9, 16, 23, 30, 37, 40].includes(pt.idx);
+                  const isLastPoint = pt.idx === fsAllPoints.length - 1;
+                  const isWeeklyInterval = pt.idx > 0 && pt.idx % 7 === 2;
+                  const isKeyPoint = pt.idx === 0 || isLastPoint || (isWeeklyInterval && (fsAllPoints.length - 1 - pt.idx) >= 3);
 
                   return (
                     <g key={pt.date} className="group cursor-pointer">
@@ -630,7 +648,7 @@ export default function EcosystemPage() {
                 {latestForSale ? latestForSale.activeListings.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '334,576' : '334.576')}
               </div>
               <span className="text-[10px] font-mono text-slate-500">
-                {isEn ? '24 Sep 2026' : '24.09.2026'}
+                {latestForSale ? formatFullDate(latestForSale.date, isEn) : (isEn ? '25 Sep 2026' : '25.09.2026')}
               </span>
             </div>
 
@@ -642,7 +660,10 @@ export default function EcosystemPage() {
                 {latestForSale ? latestForSale.conformant.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '334,565' : '334.565')}
               </div>
               <span className="text-[10px] font-mono text-emerald-700 font-semibold">
-                99.99% {isEn ? 'valid' : 'valide'}
+                {latestForSale && latestForSale.activeListings > 0
+                  ? `${((latestForSale.conformant / latestForSale.activeListings) * 100).toFixed(2)}% `
+                  : '99.99% '}
+                {isEn ? 'valid' : 'valide'}
               </span>
             </div>
 
@@ -654,7 +675,10 @@ export default function EcosystemPage() {
                 {latestForSale ? latestForSale.dnssec.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '161,897' : '161.897')}
               </div>
               <span className="text-[10px] font-mono text-slate-600">
-                48.4% {isEn ? 'signed' : 'signiert'}
+                {latestForSale && latestForSale.activeListings > 0
+                  ? `${((latestForSale.dnssec / latestForSale.activeListings) * 100).toFixed(1)}% `
+                  : '48.4% '}
+                {isEn ? 'signed' : 'signiert'}
               </span>
             </div>
 
@@ -663,10 +687,13 @@ export default function EcosystemPage() {
                 {isEn ? 'Priced Listings' : 'Mit Preisangabe'}
               </span>
               <div className="text-lg font-bold font-mono text-slate-900">
-                {latestForSale ? latestForSale.priced.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '75,038' : '75.038')}
+                {latestForSale ? latestForSale.priced.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '75,054' : '75.054')}
               </div>
               <span className="text-[10px] font-mono text-slate-600">
-                22.4% {isEn ? 'with price' : 'mit Festpreis'}
+                {latestForSale && latestForSale.activeListings > 0
+                  ? `${((latestForSale.priced / latestForSale.activeListings) * 100).toFixed(1)}% `
+                  : '22.4% '}
+                {isEn ? 'with price' : 'mit Festpreis'}
               </span>
             </div>
 
@@ -703,8 +730,8 @@ export default function EcosystemPage() {
             </div>
             <p>
               {isEn
-                ? 'The first two measurement days (15 & 16 Aug 2026) were preliminary partial sweeps with 72.2% and 97.6% inventory coverage (indicated with dashed lines). Since 17 Aug 2026, daily sweep completeness (sweepComplete) has remained continuously at 100.0% (343,818,996 of 343,818,996 domains). The multi-month baseline audit cycle (baselineComplete) is currently documented as in progress (false). The calculated growth rate (-1.6%) refers strictly to the observed ForSaleDNS dataset across complete sweeps and does not represent global adoption growth.'
-                : 'Die ersten beiden Messtage (15. & 16.08.2026) waren vorläufige Teil-Scans mit 72,2 % bzw. 97,6 % Inventarabdeckung (gestrichelt dargestellt). Seit dem 17.08.2026 beträgt die tägliche Scan-Vollständigkeit (sweepComplete) durchgehend 100,0 % (343.818.996 von 343.818.996 Domains). Der multi-monatliche Baseline-Audit-Zyklus (baselineComplete) ist laut API noch in Bearbeitung (false). Die berechnete Wachstumsrate (-1,6 %) bezieht sich streng auf den beobachteten ForSaleDNS-Datenbestand bei vollständigen Scans und stellt kein globales Adoptionswachstum dar.'}
+                ? `The first two measurement days (15 & 16 Aug 2026) were preliminary partial sweeps with 72.2% and 97.6% inventory coverage (indicated with dashed lines). Since 17 Aug 2026, daily sweep completeness (sweepComplete) has remained continuously at 100.0% (343,818,996 of 343,818,996 domains). The multi-month baseline audit cycle (baselineComplete) is currently documented as in progress (false). The calculated growth rate (${forSaleGrowth ? (forSaleGrowth.diff > 0 ? '+' : '') + forSaleGrowth.pct + '%' : '-1.6%'}) refers strictly to the observed ForSaleDNS dataset across complete sweeps and does not represent global adoption growth.`
+                : `Die ersten beiden Messtage (15. & 16.08.2026) waren vorläufige Teil-Scans mit 72,2 % bzw. 97,6 % Inventarabdeckung (gestrichelt dargestellt). Seit dem 17.08.2026 beträgt die tägliche Scan-Vollständigkeit (sweepComplete) durchgehend 100,0 % (343.818.996 von 343.818.996 Domains). Der multi-monatliche Baseline-Audit-Zyklus (baselineComplete) ist laut API noch in Bearbeitung (false). Die berechnete Wachstumsrate (${forSaleGrowth ? (forSaleGrowth.diff > 0 ? '+' : '') + forSaleGrowth.pct.replace('.', ',') + ' %' : '-1,6 %'}) bezieht sich streng auf den beobachteten ForSaleDNS-Datenbestand bei vollständigen Scans und stellt kein globales Adoptionswachstum dar.`}
             </p>
           </div>
 
@@ -724,7 +751,11 @@ export default function EcosystemPage() {
               </a>
             </div>
             <div className="text-slate-600">
-              <span>{isEn ? 'Latest verified snapshot: 24 Sep 2026' : 'Letzter erfolgreicher Abruf: 24.09.2026'}</span>
+              <span>
+                {isEn
+                  ? `Latest verified snapshot: ${latestForSale ? formatFullDate(latestForSale.date, true) : '25 Sep 2026'}`
+                  : `Letzter erfolgreicher Abruf: ${latestForSale ? formatFullDate(latestForSale.date, false) : '25.09.2026'}`}
+              </span>
             </div>
           </div>
         </div>
