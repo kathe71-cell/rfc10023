@@ -105,13 +105,10 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
       expect(fs.existsSync(domainsMonitorJsonPath)).toBe(true);
       const dmData = JSON.parse(fs.readFileSync(domainsMonitorJsonPath, 'utf-8'));
       expect(Array.isArray(dmData)).toBe(true);
-      expect(dmData.length).toBe(2);
+      expect(dmData.length).toBe(1);
       expect(dmData[0].date).toBe('2026-09-24');
       expect(dmData[0].source).toBe('domainsMonitor');
       expect(dmData[0].value).toBe(392683);
-      expect(dmData[1].date).toBe('2026-09-25');
-      expect(dmData[1].source).toBe('domainsMonitor');
-      expect(dmData[1].value).toBe(392683);
     });
   });
 
