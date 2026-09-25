@@ -234,12 +234,37 @@ async function main() {
   // Also update ForSaleDNS adoption history as a separate data source
   console.log('\n--- Checking ForSaleDNS Adoption History ---');
   try {
-    const { updateForSaleDnsHistory, FORSALEDNS_FILE } = await import('./import-forsaledns-history.mjs');
+    const { updateForSaleDnsHistory, applyForSaleDnsUpdate, FORSALEDNS_FILE } = await import('./import-forsaledns-history.mjs');
     const forSaleResult = await updateForSaleDnsHistory();
     forSaleResult.logs.forEach((log) => console.log(log));
-    if (forSaleResult.changed && forSaleResult.data) {
-      fs.writeFileSync(FORSALEDNS_FILE, JSON.stringify(forSaleResult.data, null, 2) + '\n', 'utf-8');
-      console.log('✓ Successfully wrote updated ForSaleDNS history.');
+
+    const currentAdoption = JSON.parse(fs.readFileSync(CURRENT_FILE, 'utf-8'));
+    let existingForSale = [];
+    if (fs.existsSync(FORSALEDNS_FILE)) {
+      try {
+        existingForSale = JSON.parse(fs.readFileSync(FORSALEDNS_FILE, 'utf-8'));
+      } catch {
+        existingForSale = [];
+      }
+    }
+
+    const updateOutcome = applyForSaleDnsUpdate(
+      currentAdoption.forSaleDns,
+      existingForSale,
+      forSaleResult.data,
+      new Date().toISOString()
+    );
+
+    if (updateOutcome.status !== 'fetch-failed') {
+      if (updateOutcome.historyChanged) {
+        fs.writeFileSync(FORSALEDNS_FILE, JSON.stringify(updateOutcome.history, null, 2) + '\n', 'utf-8');
+        console.log('✓ Successfully wrote updated ForSaleDNS history.');
+      }
+      currentAdoption.forSaleDns = updateOutcome.meta;
+      fs.writeFileSync(CURRENT_FILE, JSON.stringify(currentAdoption, null, 2) + '\n', 'utf-8');
+      console.log(`✓ Updated ForSaleDNS metadata (Snapshot: ${updateOutcome.meta.latestSnapshotDate}, Fetch: ${updateOutcome.meta.lastSuccessfulFetch}, Status: ${updateOutcome.status}).`);
+    } else {
+      console.warn('⚠ ForSaleDNS fetch failed. Retaining existing snapshot and fetch timestamp.');
     }
   } catch (forSaleErr) {
     console.error('⚠ Error updating ForSaleDNS history (retaining existing data):', forSaleErr.message);

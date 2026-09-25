@@ -9,5 +9,9 @@
       "lastSuccessfulFetch": "2026-09-24T06:00:00Z",
       "mode": "manual"
     }
+  },
+  "forSaleDns": {
+    "latestSnapshotDate": "2026-09-25",
+    "lastSuccessfulFetch": "2026-09-25T05:24:31Z"
   }
 }

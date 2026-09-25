@@ -61,9 +61,15 @@ export interface AdoptionSource {
   mode: 'automatic' | 'manual';
 }
 
+export interface ForSaleDnsMeta {
+  latestSnapshotDate: string;
+  lastSuccessfulFetch: string;
+}
+
 export interface AdoptionCurrentData {
   lastUpdated: string;
   sources: Record<string, AdoptionSource>;
+  forSaleDns?: ForSaleDnsMeta;
 }
 
 export interface AdoptionHistoryEntry {
@@ -96,6 +102,7 @@ export interface TimelineEntry {
 
 export const ECOSYSTEM_DATA = rawEcosystem as EcosystemData;
 export const ADOPTION_CURRENT = rawCurrent as AdoptionCurrentData;
+export const FORSALEDNS_META = (rawCurrent as AdoptionCurrentData).forSaleDns || null;
 export const ADOPTION_HISTORY = rawHistory as AdoptionHistoryEntry[];
 export const ADOPTION_HISTORY_FORSALEDNS = rawForSaleDnsHistory as ForSaleDnsHistoryEntry[];
 export const TIMELINE_DATA = rawTimeline as TimelineEntry[];

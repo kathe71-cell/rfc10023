@@ -19,6 +19,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
 
 export const FORSALEDNS_FILE = path.join(projectRoot, 'data', 'adoption-history-forsaledns.json');
+export const CURRENT_FILE = path.join(projectRoot, 'data', 'adoption-current.json');
 export const FORSALEDNS_API_URL = 'https://forsaledns.net/api/v1/adoption-history';
 export const USER_AGENT = 'RFC10023-AdoptionTracker/1.0 (+https://www.rfc10023.de)';
 
@@ -70,6 +71,60 @@ export function processForSaleDnsEntries(rawData) {
   // Sort chronologically ascending
   const sorted = Array.from(mapByDay.values()).sort((a, b) => a.date.localeCompare(b.date));
   return sorted;
+}
+
+/**
+ * Applies ForSaleDNS update rules distinguishing latestSnapshotDate and lastSuccessfulFetch.
+ *
+ * Fall A: Fetch erfolgreich + neuer Messpunkt -> Snapshot-Datum & Fetch-Zeit aktualisiert
+ * Fall B: Fetch erfolgreich + kein neuer Messpunkt -> Snapshot-Datum bleibt gleich, Fetch-Zeit aktualisiert
+ * Fall C: Fetch schlägt fehl -> Snapshot-Datum & Fetch-Zeit bleiben unberührt
+ *
+ * @param {object} currentMeta { latestSnapshotDate?: string, lastSuccessfulFetch?: string }
+ * @param {Array<object>} existingHistory
+ * @param {Array<object>|null} fetchedEntries
+ * @param {string} fetchTimeIso
+ * @returns {{
+ *   meta: { latestSnapshotDate: string, lastSuccessfulFetch: string },
+ *   history: Array<object>,
+ *   historyChanged: boolean,
+ *   metaChanged: boolean,
+ *   status: 'success-new-data' | 'success-no-new-data' | 'fetch-failed'
+ * }}
+ */
+export function applyForSaleDnsUpdate(currentMeta, existingHistory, fetchedEntries, fetchTimeIso) {
+  if (!fetchedEntries || !Array.isArray(fetchedEntries) || fetchedEntries.length === 0) {
+    return {
+      meta: currentMeta ? { ...currentMeta } : { latestSnapshotDate: '', lastSuccessfulFetch: '' },
+      history: existingHistory || [],
+      historyChanged: false,
+      metaChanged: false,
+      status: 'fetch-failed',
+    };
+  }
+
+  const latestEntry = fetchedEntries[fetchedEntries.length - 1];
+  const newSnapshotDate = latestEntry.date;
+  const prevSnapshotDate = currentMeta?.latestSnapshotDate;
+
+  const historyJson = JSON.stringify(existingHistory || []);
+  const newHistoryJson = JSON.stringify(fetchedEntries);
+  const historyChanged = historyJson !== newHistoryJson;
+
+  const updatedMeta = {
+    latestSnapshotDate: newSnapshotDate,
+    lastSuccessfulFetch: fetchTimeIso,
+  };
+
+  const isNewSnapshot = !prevSnapshotDate || newSnapshotDate !== prevSnapshotDate;
+
+  return {
+    meta: updatedMeta,
+    history: fetchedEntries,
+    historyChanged,
+    metaChanged: true,
+    status: isNewSnapshot ? 'success-new-data' : 'success-no-new-data',
+  };
 }
 
 /**
@@ -162,13 +217,43 @@ async function main() {
   const result = await updateForSaleDnsHistory();
   result.logs.forEach((log) => console.log(log));
 
-  if (result.changed && result.data) {
-    fs.writeFileSync(FORSALEDNS_FILE, JSON.stringify(result.data, null, 2) + '\n', 'utf-8');
-    console.log(`✓ Wrote ${result.data.length} records to ${FORSALEDNS_FILE}`);
-  } else if (result.data) {
-    console.log('ℹ Existing file is up to date.');
+  let currentAdoption = {};
+  if (fs.existsSync(CURRENT_FILE)) {
+    try {
+      currentAdoption = JSON.parse(fs.readFileSync(CURRENT_FILE, 'utf-8'));
+    } catch {
+      currentAdoption = {};
+    }
+  }
+
+  let existingForSale = [];
+  if (fs.existsSync(FORSALEDNS_FILE)) {
+    try {
+      existingForSale = JSON.parse(fs.readFileSync(FORSALEDNS_FILE, 'utf-8'));
+    } catch {
+      existingForSale = [];
+    }
+  }
+
+  const updateOutcome = applyForSaleDnsUpdate(
+    currentAdoption.forSaleDns,
+    existingForSale,
+    result.data,
+    new Date().toISOString()
+  );
+
+  if (updateOutcome.status !== 'fetch-failed') {
+    if (updateOutcome.historyChanged) {
+      fs.writeFileSync(FORSALEDNS_FILE, JSON.stringify(updateOutcome.history, null, 2) + '\n', 'utf-8');
+      console.log(`✓ Wrote ${result.data.length} records to ${FORSALEDNS_FILE}`);
+    } else {
+      console.log('ℹ Historical data points are up to date.');
+    }
+    currentAdoption.forSaleDns = updateOutcome.meta;
+    fs.writeFileSync(CURRENT_FILE, JSON.stringify(currentAdoption, null, 2) + '\n', 'utf-8');
+    console.log(`✓ Updated ForSaleDNS metadata (Snapshot: ${updateOutcome.meta.latestSnapshotDate}, Fetch: ${updateOutcome.meta.lastSuccessfulFetch}, Status: ${updateOutcome.status}).`);
   } else {
-    console.warn('⚠ Could not retrieve data. Existing file retained unchanged.');
+    console.warn('⚠ Could not retrieve data. Existing file and fetch timestamp retained unchanged.');
   }
 
   console.log('=== Finished ===');

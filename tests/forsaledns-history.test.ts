@@ -4,6 +4,7 @@ import path from 'node:path';
 import {
   validateForSaleDnsItem,
   processForSaleDnsEntries,
+  applyForSaleDnsUpdate,
 } from '../scripts/import-forsaledns-history.mjs';
 
 describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
@@ -155,6 +156,86 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
       // Domains Monitor section
       expect(enHtml).toContain('Domains Monitor – Detected Domains');
       expect(enHtml).toContain('392,683');
+    });
+  });
+
+  describe('5. Methodical Separation of Datenstand and Letzter erfolgreicher Abruf (Cases A - E)', () => {
+    const initialMeta = {
+      latestSnapshotDate: '2026-09-25',
+      lastSuccessfulFetch: '2026-09-25T05:24:31Z',
+    };
+    const initialHistory = [
+      { date: '2026-09-25', activeListings: 334576, sweepComplete: true },
+    ];
+
+    it('Fall A: Fetch erfolgreich + neuer Messpunkt -> Snapshot-Datum & Fetch-Zeit aktualisiert', () => {
+      const newEntries = [
+        { date: '2026-09-25', activeListings: 334576, sweepComplete: true },
+        { date: '2026-09-26', activeListings: 335000, sweepComplete: true },
+      ];
+      const result = applyForSaleDnsUpdate(initialMeta, initialHistory, newEntries, '2026-09-26T05:17:42Z');
+
+      expect(result.status).toBe('success-new-data');
+      expect(result.meta.latestSnapshotDate).toBe('2026-09-26');
+      expect(result.meta.lastSuccessfulFetch).toBe('2026-09-26T05:17:42Z');
+      expect(result.historyChanged).toBe(true);
+      expect(result.history).toHaveLength(2);
+    });
+
+    it('Fall B: Fetch erfolgreich + kein neuer Messpunkt -> Snapshot-Datum bleibt gleich, Fetch-Zeit aktualisiert', () => {
+      const sameEntries = [
+        { date: '2026-09-25', activeListings: 334576, sweepComplete: true },
+      ];
+      const result = applyForSaleDnsUpdate(initialMeta, initialHistory, sameEntries, '2026-09-26T05:17:42Z');
+
+      expect(result.status).toBe('success-no-new-data');
+      expect(result.meta.latestSnapshotDate).toBe('2026-09-25'); // Unchanged!
+      expect(result.meta.lastSuccessfulFetch).toBe('2026-09-26T05:17:42Z'); // Updated!
+      expect(result.historyChanged).toBe(false);
+    });
+
+    it('Fall C: Fetch schlägt fehl -> Snapshot-Datum bleibt gleich, Fetch-Zeit bleibt gleich', () => {
+      const result = applyForSaleDnsUpdate(initialMeta, initialHistory, null, '2026-09-26T05:17:42Z');
+
+      expect(result.status).toBe('fetch-failed');
+      expect(result.meta.latestSnapshotDate).toBe('2026-09-25'); // Unchanged!
+      expect(result.meta.lastSuccessfulFetch).toBe('2026-09-25T05:24:31Z'); // Unchanged!
+      expect(result.historyChanged).toBe(false);
+      expect(result.history).toEqual(initialHistory);
+    });
+
+    it('Fall D: UI zeigt beide Werte korrekt und getrennt im vorgerenderten HTML', () => {
+      const deHtml = fs.readFileSync(deHtmlPath, 'utf-8');
+      const enHtml = fs.readFileSync(enHtmlPath, 'utf-8');
+
+      // German distinct labels
+      expect(deHtml).toContain('Datenstand:');
+      expect(deHtml).toContain('Letzter erfolgreicher Abruf:');
+      expect(deHtml).toContain('MESZ');
+
+      // English distinct labels
+      expect(enHtml).toContain('Data snapshot:');
+      expect(enHtml).toContain('Last successful fetch:');
+      expect(enHtml).toContain('CEST');
+
+      // Methodology explains the separation
+      expect(deHtml).toContain('Der Datenstand bezeichnet den jüngsten von der Quelle veröffentlichten Messpunkt');
+      expect(enHtml).toContain('The data snapshot refers to the latest measurement published by the source');
+    });
+
+    it('Fall E: Datums- und Zeitformatierung erfolgt in Europe/Berlin (MESZ/MEZ)', () => {
+      const deFmt = new Intl.DateTimeFormat('de-DE', {
+        timeZone: 'Europe/Berlin',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short',
+      }).format(new Date('2026-09-25T05:24:31Z'));
+
+      expect(deFmt).toContain('25.09.2026');
+      expect(deFmt).toContain('MESZ');
     });
   });
 });

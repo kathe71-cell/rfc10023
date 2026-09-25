@@ -26,6 +26,7 @@ import {
   ECOSYSTEM_DATA,
   ADOPTION_HISTORY,
   ADOPTION_HISTORY_FORSALEDNS,
+  FORSALEDNS_META,
   ForSaleDnsHistoryEntry,
   TIMELINE_DATA,
   getMetaAdoptionTier,
@@ -80,6 +81,37 @@ function formatFullDate(dateStr: string, isEn: boolean): string {
   const mIdx = parseInt(month, 10) - 1;
   const monthName = monthsEn[mIdx] || month;
   return `${parseInt(day, 10)} ${monthName} ${year}`;
+}
+
+function formatFetchTimestamp(isoString: string, isEn: boolean): string {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return isoString;
+
+  if (!isEn) {
+    return new Intl.DateTimeFormat('de-DE', {
+      timeZone: 'Europe/Berlin',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZoneName: 'short',
+    }).format(date);
+  }
+
+  const formatted = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Berlin',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZoneName: 'short',
+  }).format(date);
+
+  return formatted.replace('Sept', 'Sep');
 }
 
 
@@ -219,13 +251,15 @@ export default function EcosystemPage() {
       .join(' ');
   }, [historyPoints, dmScale]);
 
-  // Telemetry time series: ForSaleDNS (Verified public API: 41 daily observations)
+  // Telemetry time series: ForSaleDNS (Verified public API: 42 daily observations)
   const forSalePoints = ADOPTION_HISTORY_FORSALEDNS;
   const completeSweepPoints = useMemo(
     () => forSalePoints.filter((p) => p.sweepComplete),
     [forSalePoints]
   );
   const latestForSale = forSalePoints[forSalePoints.length - 1] || null;
+  const forSaleSnapshotDate = latestForSale?.date || FORSALEDNS_META?.latestSnapshotDate || '2026-09-25';
+  const forSaleFetchTimestamp = FORSALEDNS_META?.lastSuccessfulFetch || '2026-09-25T05:24:31Z';
 
   // Growth within the complete-sweep ForSaleDNS observation dataset
   const forSaleGrowth = useMemo(() => {
@@ -753,10 +787,15 @@ export default function EcosystemPage() {
                 )
               </span>
             </div>
+            <p className="text-[11px] text-amber-900/90 pt-1 leading-normal">
+              {isEn
+                ? 'The data snapshot refers to the latest measurement published by the source. The last successful fetch indicates when rfc10023.de last retrieved the source successfully.'
+                : 'Der Datenstand bezeichnet den jüngsten von der Quelle veröffentlichten Messpunkt. Der letzte erfolgreiche Abruf zeigt, wann rfc10023.de die Quelle zuletzt erfolgreich geprüft hat.'}
+            </p>
           </div>
 
           {/* Source Citation for ForSaleDNS */}
-          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 font-mono gap-2">
+          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 font-mono gap-3">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-slate-700">
                 {isEn ? 'Source: ' : 'Quelle: '}
@@ -773,11 +812,16 @@ export default function EcosystemPage() {
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>
-            <div className="text-slate-600">
-              <span>
+            <div className="flex flex-col sm:items-end text-slate-600 gap-0.5">
+              <span className="font-semibold text-slate-800">
                 {isEn
-                  ? `Latest verified snapshot: ${latestForSale ? formatFullDate(latestForSale.date, true) : '25 Sep 2026'}`
-                  : `Letzter erfolgreicher Abruf: ${latestForSale ? formatFullDate(latestForSale.date, false) : '25.09.2026'}`}
+                  ? `Data snapshot: ${formatFullDate(forSaleSnapshotDate, true)}`
+                  : `Datenstand: ${formatFullDate(forSaleSnapshotDate, false)}`}
+              </span>
+              <span className="text-[11px] text-slate-500 font-mono">
+                {isEn
+                  ? `Last successful fetch: ${formatFetchTimestamp(forSaleFetchTimestamp, true)}`
+                  : `Letzter erfolgreicher Abruf: ${formatFetchTimestamp(forSaleFetchTimestamp, false)}`}
               </span>
             </div>
           </div>
