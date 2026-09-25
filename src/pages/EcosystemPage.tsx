@@ -598,10 +598,10 @@ export default function EcosystemPage() {
               if (selectedPointIndex !== null) setSelectedPointIndex(null);
             }}
           >
-            {/* Interactive Telemetry Inspector Banner (Permanent, unclipped, 100% stable) */}
+            {/* Interactive Telemetry Inspector Banner (Permanent, unclipped, 100% stable, zero layout shift) */}
             {displayDetails && (
-              <div className="mb-4 p-3.5 sm:p-4 rounded-xl bg-slate-900 text-white border border-slate-800 shadow-sm select-none">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2.5 border-b border-slate-800">
+              <div className="mb-4 p-3.5 sm:p-4 rounded-xl bg-slate-900 text-white border border-slate-800 shadow-sm select-none min-h-[112px]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2.5 border-b border-slate-800 min-h-[44px]">
                   <div className="flex items-center gap-2 flex-wrap">
                     {/* Stepper buttons for day-by-day telemetry navigation */}
                     <div className="flex items-center gap-1 bg-slate-800 p-0.5 rounded-lg border border-slate-700">
@@ -646,7 +646,7 @@ export default function EcosystemPage() {
                           : 'bg-amber-950 text-amber-300 border border-amber-800'
                       }`}
                     >
-                      {displayDetails.sweepLabel}
+                      {displayDetails.sweepBadge}
                     </span>
 
                     {selectedPointIndex !== null ? (
@@ -741,9 +741,13 @@ export default function EcosystemPage() {
               </div>
             )}
 
-            <div className="overflow-x-auto relative">
+            <div className="overflow-x-auto sm:overflow-visible relative">
               <div className="min-w-[640px] relative">
-                <svg viewBox={`0 0 ${fsSvgWidth} ${fsSvgHeight}`} className="w-full h-44 sm:h-52 overflow-visible">
+                <svg
+                  viewBox={`0 0 ${fsSvgWidth} ${fsSvgHeight}`}
+                  className="w-full h-44 sm:h-52 overflow-visible"
+                  onMouseLeave={() => setHoveredPointIndex(null)}
+                >
                   <defs>
                     <linearGradient id="fsGradientAdoption" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#10b981" stopOpacity="0.20" />
@@ -850,19 +854,16 @@ export default function EcosystemPage() {
                     </g>
                   )}
 
-                  {/* Individual observation points */}
+                  {/* Individual observation points visible elements */}
                   {fsAllPoints.map((pt) => {
                     const isPartial = !pt.sweepComplete;
                     const isLastPoint = pt.idx === fsAllPoints.length - 1;
                     const isWeeklyInterval = pt.idx > 0 && pt.idx % 7 === 2;
                     const isKeyPoint = pt.idx === 0 || isLastPoint || (isWeeklyInterval && (fsAllPoints.length - 1 - pt.idx) >= 3);
                     const isActive = activePointIndex === pt.idx;
-                    const isSelected = selectedPointIndex === pt.idx;
-                    const prevPt = pt.idx > 0 ? forSalePoints[pt.idx - 1] : null;
-                    const ptDetails = computePointDetails(pt, prevPt, isEn);
 
                     return (
-                      <g key={pt.date}>
+                      <g key={`pt-${pt.date}`} className="pointer-events-none">
                         {/* Visible circle */}
                         <circle
                           cx={pt.x}
@@ -870,10 +871,10 @@ export default function EcosystemPage() {
                           r={isActive ? 5 : isKeyPoint ? 4.5 : 2.5}
                           className={
                             isActive
-                              ? (isPartial ? 'fill-amber-500 stroke-white stroke-2 pointer-events-none' : 'fill-emerald-600 stroke-white stroke-2 pointer-events-none')
+                              ? (isPartial ? 'fill-amber-500 stroke-white stroke-2' : 'fill-emerald-600 stroke-white stroke-2')
                               : (isPartial
-                                  ? 'fill-white stroke-amber-600 stroke-2 pointer-events-none'
-                                  : 'fill-white stroke-emerald-700 stroke-2 pointer-events-none')
+                                  ? 'fill-white stroke-amber-600 stroke-2'
+                                  : 'fill-white stroke-emerald-700 stroke-2')
                           }
                         />
 
@@ -883,7 +884,7 @@ export default function EcosystemPage() {
                             x={pt.x}
                             y={pt.y - 8}
                             textAnchor="middle"
-                            className={`text-[9px] font-mono font-bold pointer-events-none ${
+                            className={`text-[9px] font-mono font-bold ${
                               isPartial ? 'fill-amber-900' : 'fill-slate-800'
                             }`}
                           >
@@ -897,48 +898,64 @@ export default function EcosystemPage() {
                             x={pt.x}
                             y={fsSvgHeight - fsPaddingY + 14}
                             textAnchor="middle"
-                            className={`text-[9px] font-mono pointer-events-none ${
+                            className={`text-[9px] font-mono ${
                               isActive ? 'fill-slate-900 font-bold' : 'fill-slate-500 font-medium'
                             }`}
                           >
                             {formatChartAxisDate(pt.date, isEn)}
                           </text>
                         )}
-
-                        {/* Enlarged transparent interactive hitbox */}
-                        <circle
-                          cx={pt.x}
-                          cy={pt.y}
-                          r={16}
-                          fill="transparent"
-                          className="cursor-pointer focus:outline-none focus-visible:stroke-emerald-600 focus-visible:stroke-2"
-                          tabIndex={0}
-                          role="button"
-                          aria-pressed={isSelected}
-                          aria-label={ptDetails.ariaLabel}
-                          onMouseEnter={() => setHoveredPointIndex(pt.idx)}
-                          onMouseLeave={() => setHoveredPointIndex(null)}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedPointIndex((prev) => (prev === pt.idx ? null : pt.idx));
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              setSelectedPointIndex((prev) => (prev === pt.idx ? null : pt.idx));
-                            } else if (e.key === 'ArrowRight' && pt.idx < fsAllPoints.length - 1) {
-                              e.preventDefault();
-                              setSelectedPointIndex(pt.idx + 1);
-                            } else if (e.key === 'ArrowLeft' && pt.idx > 0) {
-                              e.preventDefault();
-                              setSelectedPointIndex(pt.idx - 1);
-                            } else if (e.key === 'Escape') {
-                              setSelectedPointIndex(null);
-                              setHoveredPointIndex(null);
-                            }
-                          }}
-                        />
                       </g>
+                    );
+                  })}
+
+                  {/* Full-height contiguous vertical slices for 100% gap-free, zero-jitter tracking */}
+                  {fsAllPoints.map((pt, idx) => {
+                    const sliceWidth = (fsSvgWidth - fsPaddingX * 2) / (fsAllPoints.length - 1);
+                    const isFirst = idx === 0;
+                    const isLast = idx === fsAllPoints.length - 1;
+                    const x = isFirst
+                      ? fsPaddingX - 10
+                      : pt.x - sliceWidth / 2;
+                    const width = isFirst || isLast ? sliceWidth / 2 + 10 : sliceWidth;
+                    const isSelected = selectedPointIndex === pt.idx;
+                    const prevPt = pt.idx > 0 ? forSalePoints[pt.idx - 1] : null;
+                    const ptDetails = computePointDetails(pt, prevPt, isEn);
+
+                    return (
+                      <rect
+                        key={`hitbox-${pt.date}`}
+                        x={x}
+                        y={0}
+                        width={width}
+                        height={fsSvgHeight}
+                        fill="transparent"
+                        className="cursor-pointer focus:outline-none"
+                        tabIndex={0}
+                        role="button"
+                        aria-pressed={isSelected}
+                        aria-label={ptDetails.ariaLabel}
+                        onMouseEnter={() => setHoveredPointIndex(pt.idx)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPointIndex((prev) => (prev === pt.idx ? null : pt.idx));
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedPointIndex((prev) => (prev === pt.idx ? null : pt.idx));
+                          } else if (e.key === 'ArrowRight' && pt.idx < fsAllPoints.length - 1) {
+                            e.preventDefault();
+                            setSelectedPointIndex(pt.idx + 1);
+                          } else if (e.key === 'ArrowLeft' && pt.idx > 0) {
+                            e.preventDefault();
+                            setSelectedPointIndex(pt.idx - 1);
+                          } else if (e.key === 'Escape') {
+                            setSelectedPointIndex(null);
+                            setHoveredPointIndex(null);
+                          }
+                        }}
+                      />
                     );
                   })}
                 </svg>

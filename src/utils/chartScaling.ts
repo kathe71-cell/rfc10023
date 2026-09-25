@@ -144,6 +144,7 @@ export interface PointDetailStats {
   sweepComplete: boolean;
   sweepPct: string;
   sweepLabel: string;
+  sweepBadge: string;
   ariaLabel: string;
 }
 
@@ -221,6 +222,10 @@ export function computePointDetails(
     ? (isEn ? 'Full sweep · 100%' : 'Vollständiger Sweep · 100 %')
     : (isEn ? `Partial scan · ${sweepPct} of observed inventory` : `Teilscan · ${sweepPct} des beobachteten Inventars`);
 
+  const sweepBadge = current.sweepComplete
+    ? (isEn ? '100% Sweep' : '100 % Sweep')
+    : (isEn ? `Scan: ${sweepPct}` : `Scan: ${sweepPct}`);
+
   const deltaSpeech = delta === null
     ? (isEn ? 'First observation' : 'Erster Messpunkt')
     : delta > 0
@@ -254,6 +259,7 @@ export function computePointDetails(
     sweepComplete: current.sweepComplete,
     sweepPct,
     sweepLabel,
+    sweepBadge,
     ariaLabel,
   };
 }
