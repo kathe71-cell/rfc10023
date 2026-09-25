@@ -52,7 +52,9 @@ function formatDisplayDate(dateStr: string, isEn: boolean): string {
   }
   if (parts.length === 3) {
     const [year, month, day] = parts;
-    return isEn ? `${year}-${month}-${day}` : `${day}.${month}.${year}`;
+    const monthsEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const mIdx = parseInt(month, 10) - 1;
+    return isEn ? `${parseInt(day, 10)} ${monthsEn[mIdx] || month} ${year}` : `${day}.${month}.${year}`;
   }
   return dateStr;
 }
@@ -294,6 +296,8 @@ export default function EcosystemPage() {
   const forSaleFetchTimestamp = FORSALEDNS_META?.lastSuccessfulFetch || '2026-09-25T05:24:31Z';
   const ecosystemLastUpdatedDate = latestForSale?.date || stats.lastUpdated || forSaleSnapshotDate;
   const dmStartDate = historyPoints[0]?.date || '2026-09-24';
+  const latestDm = historyPoints[historyPoints.length - 1] || null;
+  const latestDmDate = latestDm?.date || dmStartDate;
 
   // Growth within the complete-sweep ForSaleDNS observation dataset
   const forSaleGrowth = useMemo(() => {
@@ -1209,10 +1213,12 @@ export default function EcosystemPage() {
             </div>
             <div className="text-left sm:text-right font-mono text-xs text-slate-500">
               <span className="font-bold text-slate-900 text-sm">
-                392.683
+                {latestDm?.value ? latestDm.value.toLocaleString(isEn ? 'en-US' : 'de-DE') : '392.683'}
               </span>
               <span className="block text-[11px] text-slate-400">
-                {isEn ? `Baseline snapshot (${formatFullDate(dmStartDate, true)})` : `Basiswert (${formatFullDate(dmStartDate, false)})`}
+                {historyPoints.length > 1
+                  ? (isEn ? `Latest snapshot (${formatFullDate(latestDmDate, true)})` : `Aktueller Stand (${formatFullDate(latestDmDate, false)})`)
+                  : (isEn ? `Baseline snapshot (${formatFullDate(dmStartDate, true)})` : `Basiswert (${formatFullDate(dmStartDate, false)})`)}
               </span>
             </div>
           </div>

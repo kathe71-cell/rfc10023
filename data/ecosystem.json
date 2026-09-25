@@ -11,7 +11,7 @@
       "descriptionEn": "Research lab of Dutch registry SIDN and co-author of RFC 10023. Maintains reference portal rfc10023.nl, official documentation, and automated scans in the .nl zone.",
       "sourceUrl": "https://www.sidnlabs.nl/en/news-and-blogs/a-digital-for-sale-sign-for-nl-domain-names",
       "firstObserved": "2026-07-30",
-      "lastVerified": "2026-09-24"
+      "lastVerified": "2026-09-25"
     },
     {
       "id": "inwx",
@@ -23,7 +23,7 @@
       "descriptionEn": "INWX documents in its blog how the _for-sale DNS record can be configured in nameserver management to mark domains for sale.",
       "sourceUrl": "https://www.inwx.de/de/blog/for-sale-dns-record-erklaert",
       "firstObserved": "2026-08",
-      "lastVerified": "2026-09-24"
+      "lastVerified": "2026-09-25"
     },
     {
       "id": "forsaledns",
@@ -35,7 +35,7 @@
       "descriptionEn": "Specialized search engine and discovery index for domains publishing standard-compliant RFC 10023 _for-sale TXT records.",
       "sourceUrl": "https://forsaledns.net/rfc-10023",
       "firstObserved": "2026-08",
-      "lastVerified": "2026-09-24"
+      "lastVerified": "2026-09-25"
     },
     {
       "id": "ipwhois",
@@ -47,7 +47,7 @@
       "descriptionEn": "DNS and Whois lookup utility detecting and parsing _for-sale TXT signals in domain lookups.",
       "sourceUrl": "https://ipwhois.net/domain/example.nl",
       "firstObserved": "2026-08",
-      "lastVerified": "2026-09-24"
+      "lastVerified": "2026-09-25"
     },
     {
       "id": "ipaddress-to",
@@ -59,7 +59,7 @@
       "descriptionEn": "DNS analysis utility detecting and checking active RFC 10023 records with syntax feedback in API output.",
       "sourceUrl": "https://ipaddress.to/lookup/example.nl",
       "firstObserved": "2026-08",
-      "lastVerified": "2026-09-24"
+      "lastVerified": "2026-09-25"
     },
     {
       "id": "inspect-my-dns",
@@ -71,7 +71,7 @@
       "descriptionEn": "Technical DNS diagnostic utility highlighting a visual notice and syntax details when a _for-sale label is detected.",
       "sourceUrl": "https://inspectmydns.com",
       "firstObserved": "2026-08",
-      "lastVerified": "2026-09-24"
+      "lastVerified": "2026-09-25"
     },
     {
       "id": "domaintoolbelt",
@@ -83,7 +83,7 @@
       "descriptionEn": "Aftermarket research suite for domain investors supporting DNS-based _for-sale market signals.",
       "sourceUrl": "https://domaintoolbelt.com/aftermarket/for-sale",
       "firstObserved": "2026-09",
-      "lastVerified": "2026-09-24"
+      "lastVerified": "2026-09-25"
     },
     {
       "id": "domains-monitor",
@@ -95,7 +95,7 @@
       "descriptionEn": "Monitoring project providing telemetry on active _for-sale DNS records across global domain zones.",
       "sourceUrl": "https://domains-monitor.com/for-sale-domains/",
       "firstObserved": "2026-08",
-      "lastVerified": "2026-09-24"
+      "lastVerified": "2026-09-25"
     },
     {
       "id": "domainkits-mcp",
@@ -107,7 +107,7 @@
       "descriptionEn": "Model Context Protocol server (ABTdomain / Lyalpha) with documented RFC 10023 support in the API for AI agents.",
       "sourceUrl": "https://github.com/ABTdomain/domainkits-mcp/issues/3",
       "firstObserved": "2026-08",
-      "lastVerified": "2026-09-24"
+      "lastVerified": "2026-09-25"
     },
     {
       "id": "rfc-10023-mcp",
@@ -119,7 +119,7 @@
       "descriptionEn": "Open-source Model Context Protocol server (Cloudflare Worker) enabling LLM agents to query _for-sale records autonomously.",
       "sourceUrl": "https://github.com/CultriX-Github/mcp-forsale",
       "firstObserved": "2026-09",
-      "lastVerified": "2026-09-24"
+      "lastVerified": "2026-09-25"
     },
     {
       "id": "dns-for-sale-inspector",
@@ -131,7 +131,7 @@
       "descriptionEn": "Functional Chromium browser extension (author: Marco Davids) checking visited websites for _for-sale DNS signals via DoH.",
       "sourceUrl": "https://github.com/mdavids/ForSale-RFC10023-browser-extensions",
       "firstObserved": "2026-09",
-      "lastVerified": "2026-09-24"
+      "lastVerified": "2026-09-25"
     }
   ]
 }

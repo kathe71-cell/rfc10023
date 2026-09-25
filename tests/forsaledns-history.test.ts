@@ -105,10 +105,13 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
       expect(fs.existsSync(domainsMonitorJsonPath)).toBe(true);
       const dmData = JSON.parse(fs.readFileSync(domainsMonitorJsonPath, 'utf-8'));
       expect(Array.isArray(dmData)).toBe(true);
-      expect(dmData.length).toBe(1);
+      expect(dmData.length).toBe(2);
       expect(dmData[0].date).toBe('2026-09-24');
       expect(dmData[0].source).toBe('domainsMonitor');
       expect(dmData[0].value).toBe(392683);
+      expect(dmData[1].date).toBe('2026-09-25');
+      expect(dmData[1].source).toBe('domainsMonitor');
+      expect(dmData[1].value).toBe(392683);
     });
   });
 
@@ -117,6 +120,11 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
       expect(fs.existsSync(deHtmlPath)).toBe(true);
       const deHtml = fs.readFileSync(deHtmlPath, 'utf-8');
 
+      const forSaleHistory = JSON.parse(fs.readFileSync(forSaleDnsJsonPath, 'utf-8'));
+      const latestActive = forSaleHistory[forSaleHistory.length - 1].activeListings;
+      const deActiveFormatted = latestActive.toLocaleString('de-DE');
+      const enActiveFormatted = latestActive.toLocaleString('en-US');
+
       // Main header
       expect(deHtml).toContain('RFC 10023 Adoption im Zeitverlauf');
       expect(deHtml).toContain('Letzte Aktualisierung: 25. September 2026');
@@ -124,7 +132,7 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
       expect(deHtml).toContain('Abgerufen am 25. September 2026');
       // ForSaleDNS section
       expect(deHtml).toContain('ForSaleDNS – Aktive Listings');
-      expect(deHtml).toContain('334.576');
+      expect(deHtml).toContain(deActiveFormatted);
       expect(deHtml).toContain('ForSaleDNS · historische Adoptionsdaten');
       expect(deHtml).toContain('https://forsaledns.net/developers');
       expect(deHtml).toContain('ForSaleDNS-Quelle und Methodik öffnen');
@@ -142,6 +150,9 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
     it('verifies dist/en/ecosystem/index.html renders English ForSaleDNS chart, methodology, and sources', () => {
       expect(fs.existsSync(enHtmlPath)).toBe(true);
       const enHtml = fs.readFileSync(enHtmlPath, 'utf-8');
+      const forSaleHistory = JSON.parse(fs.readFileSync(forSaleDnsJsonPath, 'utf-8'));
+      const latestActive = forSaleHistory[forSaleHistory.length - 1].activeListings;
+      const enActiveFormatted = latestActive.toLocaleString('en-US');
 
       // Main header
       expect(enHtml).toContain('RFC 10023 Adoption over time');
@@ -150,7 +161,7 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
       expect(enHtml).toContain('Retrieved on September 25, 2026');
       // ForSaleDNS section
       expect(enHtml).toContain('ForSaleDNS – Active Listings');
-      expect(enHtml).toContain('334,576');
+      expect(enHtml).toContain(enActiveFormatted);
       expect(enHtml).toContain('ForSaleDNS · historical adoption data');
       expect(enHtml).toContain('https://forsaledns.net/developers');
       expect(enHtml).toContain('Open ForSaleDNS source and methodology');

@@ -1,17 +1,17 @@
 {
-  "lastUpdated": "2026-09-24T06:00:00Z",
+  "lastUpdated": "2026-09-25T05:24:31Z",
   "sources": {
     "domainsMonitor": {
       "value": 392683,
       "label": "Domains with detected _for-sale record",
       "labelDe": "Erkannte Domains mit _for-sale Record",
       "sourceUrl": "https://domains-monitor.com/research/rfc10023",
-      "lastSuccessfulFetch": "2026-09-24T06:00:00Z",
+      "lastSuccessfulFetch": "2026-09-25T05:24:31Z",
       "mode": "manual"
     }
   },
   "forSaleDns": {
     "latestSnapshotDate": "2026-09-25",
-    "lastSuccessfulFetch": "2026-09-25T05:24:31Z"
+    "lastSuccessfulFetch": "2026-09-25T11:02:51.037Z"
   }
 }
