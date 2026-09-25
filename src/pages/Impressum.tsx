@@ -59,17 +59,6 @@ export default function Impressum() {
 
         <div>
           <h2 className="text-sm font-mono font-bold uppercase tracking-wider text-slate-500 mb-2">
-            {language === 'en' ? 'VAT Exemption Status' : 'Umsatzsteuer-Status'}
-          </h2>
-          <p className="text-sm text-slate-700 leading-relaxed">
-            {language === 'en' 
-              ? 'As a small business owner pursuant to § 19 (1) of the German VAT Act (UStG), no VAT is charged or stated.' 
-              : 'Als Kleinunternehmer im Sinne von § 19 Abs. 1 UStG wird keine Umsatzsteuer berechnet oder ausgewiesen.'}
-          </p>
-        </div>
-
-        <div>
-          <h2 className="text-sm font-mono font-bold uppercase tracking-wider text-slate-500 mb-2">
             {language === 'en' ? 'Responsible for Editorial Content (§ 18 (2) MStV)' : 'Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV'}
           </h2>
           <p className="text-sm text-slate-800">
