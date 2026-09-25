@@ -117,16 +117,16 @@ function formatFetchTimestamp(isoString: string, isEn: boolean): string {
   return formatted.replace('Sept', 'Sep');
 }
 
-function getTooltipTransform(x: number, y: number, totalWidth: number): string {
+function getCompactTooltipTransform(x: number, y: number, totalWidth: number): string {
   let tx = '-50%';
-  if (x > totalWidth - 190) {
-    tx = 'calc(-100% + 14px)';
-  } else if (x < 110) {
-    tx = '-14px';
+  if (x > totalWidth - 95) {
+    tx = 'calc(-100% + 8px)';
+  } else if (x < 95) {
+    tx = '-8px';
   }
-  let ty = 'calc(-100% - 14px)';
-  if (y < 85) {
-    ty = '14px';
+  let ty = 'calc(-100% - 10px)';
+  if (y < 55) {
+    ty = '10px';
   }
   return `translate(${tx}, ${ty})`;
 }
@@ -350,6 +350,16 @@ export default function EcosystemPage() {
     const prev = activePoint.idx > 0 ? forSalePoints[activePoint.idx - 1] : null;
     return computePointDetails(activePoint, prev, isEn);
   }, [activePoint, forSalePoints, isEn]);
+
+  const displayDetails = useMemo(() => {
+    if (activePointDetails) return activePointDetails;
+    if (forSalePoints.length > 0) {
+      const last = forSalePoints[forSalePoints.length - 1];
+      const prev = forSalePoints.length > 1 ? forSalePoints[forSalePoints.length - 2] : null;
+      return computePointDetails(last, prev, isEn);
+    }
+    return null;
+  }, [activePointDetails, forSalePoints, isEn]);
 
   return (
     <div className="space-y-16 pb-16">
@@ -588,6 +598,149 @@ export default function EcosystemPage() {
               if (selectedPointIndex !== null) setSelectedPointIndex(null);
             }}
           >
+            {/* Interactive Telemetry Inspector Banner (Permanent, unclipped, 100% stable) */}
+            {displayDetails && (
+              <div className="mb-4 p-3.5 sm:p-4 rounded-xl bg-slate-900 text-white border border-slate-800 shadow-sm select-none">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2.5 border-b border-slate-800">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Stepper buttons for day-by-day telemetry navigation */}
+                    <div className="flex items-center gap-1 bg-slate-800 p-0.5 rounded-lg border border-slate-700">
+                      <button
+                        type="button"
+                        disabled={activePoint ? activePoint.idx === 0 : false}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const currentIdx = activePoint ? activePoint.idx : fsAllPoints.length - 1;
+                          if (currentIdx > 0) setSelectedPointIndex(currentIdx - 1);
+                        }}
+                        className="p-1 rounded hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                        title={isEn ? 'Previous observation' : 'Vorheriger Messpunkt'}
+                        aria-label={isEn ? 'Previous observation' : 'Vorheriger Messpunkt'}
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5 text-slate-300" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={activePoint ? activePoint.idx === fsAllPoints.length - 1 : true}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const currentIdx = activePoint ? activePoint.idx : fsAllPoints.length - 1;
+                          if (currentIdx < fsAllPoints.length - 1) setSelectedPointIndex(currentIdx + 1);
+                        }}
+                        className="p-1 rounded hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                        title={isEn ? 'Next observation' : 'Nächster Messpunkt'}
+                        aria-label={isEn ? 'Next observation' : 'Nächster Messpunkt'}
+                      >
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
+                      </button>
+                    </div>
+
+                    <span className="font-mono font-bold text-sm text-white">
+                      {displayDetails.formattedDate}
+                    </span>
+
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${
+                        displayDetails.sweepComplete
+                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                          : 'bg-amber-950 text-amber-300 border border-amber-800'
+                      }`}
+                    >
+                      {displayDetails.sweepLabel}
+                    </span>
+
+                    {selectedPointIndex !== null ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-800">
+                        <span>{isEn ? 'Pinned' : 'Fixiert'}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPointIndex(null);
+                          }}
+                          className="hover:text-white ml-0.5"
+                          aria-label={isEn ? 'Unpin' : 'Lösen'}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ) : activePointIndex !== null ? (
+                      <span className="text-[11px] font-mono text-slate-400">
+                        {isEn ? '(Click to pin)' : '(Klick zum Fixieren)'}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-mono text-slate-400">
+                        {isEn ? 'Latest snapshot · Hover points to inspect' : 'Jüngster Messpunkt · Hover über Datenpunkte für Details'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-baseline gap-2 font-mono flex-wrap">
+                    <span className="text-xs text-slate-400">{isEn ? 'Active Listings:' : 'Aktive Listings:'}</span>
+                    <span className="text-lg font-extrabold text-white">
+                      {displayDetails.formattedActiveListings}
+                    </span>
+                    <span
+                      className={`text-xs font-semibold ${
+                        displayDetails.delta === null
+                          ? 'text-slate-400'
+                          : displayDetails.delta > 0
+                          ? 'text-emerald-400'
+                          : displayDetails.delta < 0
+                          ? 'text-rose-400'
+                          : 'text-slate-400'
+                      }`}
+                    >
+                      {displayDetails.deltaVsPreviousLabel}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Secondary Metrics 4-column grid */}
+                <div className="pt-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-mono">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider">
+                      {isEn ? 'RFC-10023 Conformant' : 'RFC-10023-konform'}
+                    </span>
+                    <span className="text-slate-200 font-bold mt-0.5">
+                      {displayDetails.conformantFormatted}{' '}
+                      <span className="text-emerald-400 text-[10px] font-semibold">({displayDetails.conformantPct})</span>
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider">DNSSEC</span>
+                    <span className="text-slate-200 font-bold mt-0.5">
+                      {displayDetails.dnssecFormatted}{' '}
+                      <span className="text-slate-400 text-[10px]">({displayDetails.dnssecPct})</span>
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider">
+                      {isEn ? 'With Price' : 'Mit Festpreis'}
+                    </span>
+                    <span className="text-slate-200 font-bold mt-0.5">
+                      {displayDetails.pricedFormatted}{' '}
+                      <span className="text-slate-400 text-[10px]">({displayDetails.pricedPct})</span>
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider">
+                      {isEn ? 'Observation Scope' : 'Messumfang'}
+                    </span>
+                    <span className="text-slate-200 font-bold mt-0.5">
+                      {displayDetails.sweepPct}{' '}
+                      <span className="text-slate-400 text-[10px]">
+                        ({displayDetails.sweepComplete ? (isEn ? 'Full sweep' : 'Vollständig') : (isEn ? 'Partial' : 'Teilscan')})
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="overflow-x-auto relative">
               <div className="min-w-[640px] relative">
                 <svg viewBox={`0 0 ${fsSvgWidth} ${fsSvgHeight}`} className="w-full h-44 sm:h-52 overflow-visible">
@@ -667,21 +820,21 @@ export default function EcosystemPage() {
                       stroke="#94a3b8"
                       strokeWidth="1.5"
                       strokeDasharray="3 3"
-                      className="pointer-events-none transition-all duration-150"
+                      className="pointer-events-none"
                     />
                   )}
 
-                  {/* Active Point Visual Halo / Highlight */}
+                  {/* Active Point Halo / Ring */}
                   {activePoint && (
-                    <g className="pointer-events-none transition-all duration-150">
+                    <g className="pointer-events-none">
                       <circle
                         cx={activePoint.x}
                         cy={activePoint.y}
                         r={7.5}
                         className={
                           !activePoint.sweepComplete
-                            ? 'fill-none stroke-amber-500/40 stroke-[3px]'
-                            : 'fill-none stroke-emerald-500/40 stroke-[3px]'
+                            ? 'fill-none stroke-amber-500/50 stroke-[3px]'
+                            : 'fill-none stroke-emerald-500/50 stroke-[3px]'
                         }
                       />
                       <circle
@@ -697,7 +850,7 @@ export default function EcosystemPage() {
                     </g>
                   )}
 
-                  {/* Render individual observation points */}
+                  {/* Individual observation points */}
                   {fsAllPoints.map((pt) => {
                     const isPartial = !pt.sweepComplete;
                     const isLastPoint = pt.idx === fsAllPoints.length - 1;
@@ -709,7 +862,7 @@ export default function EcosystemPage() {
                     const ptDetails = computePointDetails(pt, prevPt, isEn);
 
                     return (
-                      <g key={pt.date} className="cursor-pointer">
+                      <g key={pt.date}>
                         {/* Visible circle */}
                         <circle
                           cx={pt.x}
@@ -717,10 +870,10 @@ export default function EcosystemPage() {
                           r={isActive ? 5 : isKeyPoint ? 4.5 : 2.5}
                           className={
                             isActive
-                              ? (isPartial ? 'fill-amber-500 stroke-white stroke-2' : 'fill-emerald-600 stroke-white stroke-2')
+                              ? (isPartial ? 'fill-amber-500 stroke-white stroke-2 pointer-events-none' : 'fill-emerald-600 stroke-white stroke-2 pointer-events-none')
                               : (isPartial
-                                  ? 'fill-white stroke-amber-600 stroke-2 hover:stroke-[3px] transition-all'
-                                  : 'fill-white stroke-emerald-700 stroke-2 hover:stroke-[3px] transition-all')
+                                  ? 'fill-white stroke-amber-600 stroke-2 pointer-events-none'
+                                  : 'fill-white stroke-emerald-700 stroke-2 pointer-events-none')
                           }
                         />
 
@@ -752,13 +905,13 @@ export default function EcosystemPage() {
                           </text>
                         )}
 
-                        {/* Enlarged transparent interactive hitbox for hover, tap & accessibility */}
+                        {/* Enlarged transparent interactive hitbox */}
                         <circle
                           cx={pt.x}
                           cy={pt.y}
                           r={16}
                           fill="transparent"
-                          className="focus:outline-none focus-visible:stroke-emerald-600 focus-visible:stroke-2"
+                          className="cursor-pointer focus:outline-none focus-visible:stroke-emerald-600 focus-visible:stroke-2"
                           tabIndex={0}
                           role="button"
                           aria-pressed={isSelected}
@@ -790,125 +943,39 @@ export default function EcosystemPage() {
                   })}
                 </svg>
 
-                {/* Desktop Floating Tooltip (Collision-safe, high contrast) */}
+                {/* Compact Floating Indicator directly at the point (pointer-events-none, never crashes, never clips) */}
                 {activePoint && activePointDetails && (
                   <div
-                    className="hidden md:block absolute z-20 pointer-events-auto transition-all duration-100 ease-out"
+                    className="hidden md:block absolute z-20 pointer-events-none select-none transition-all duration-75 ease-out"
                     style={{
                       left: `${(activePoint.x / fsSvgWidth) * 100}%`,
                       top: `${(activePoint.y / fsSvgHeight) * 100}%`,
-                      transform: getTooltipTransform(activePoint.x, activePoint.y, fsSvgWidth),
+                      transform: getCompactTooltipTransform(activePoint.x, activePoint.y, fsSvgWidth),
                     }}
-                    onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="bg-slate-950 text-white rounded-xl shadow-2xl border border-slate-800 p-3.5 min-w-[270px] max-w-[295px] text-xs font-sans select-none">
-                      {/* Header: Date + Sweep status badge + Close button if selected */}
-                      <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-800/80">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-mono font-bold text-slate-100 text-[13px]">
-                            {activePointDetails.formattedDate}
-                          </span>
-                          {selectedPointIndex === activePoint.idx && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono uppercase bg-emerald-950 text-emerald-300 border border-emerald-800">
-                              {isEn ? 'Pinned' : 'Fixiert'}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span
-                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono ${
-                              activePointDetails.sweepComplete
-                                ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60'
-                                : 'bg-amber-950/80 text-amber-300 border border-amber-800/60'
-                            }`}
-                          >
-                            {activePointDetails.sweepComplete
-                              ? (isEn ? '100% sweep' : '100 % Sweep')
-                              : (isEn ? `Scan: ${activePointDetails.sweepPct}` : `Scan: ${activePointDetails.sweepPct}`)}
-                          </span>
-                          {selectedPointIndex !== null && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedPointIndex(null);
-                              }}
-                              className="text-slate-400 hover:text-white p-0.5 rounded hover:bg-slate-800 transition-colors"
-                              title={isEn ? 'Close' : 'Schließen'}
-                              aria-label={isEn ? 'Close selection' : 'Auswahl schließen'}
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Primary Metric: Active Listings + Delta */}
-                      <div className="pt-2.5 pb-2">
-                        <div className="text-[11px] font-mono text-slate-400">
-                          {isEn ? 'Active Listings' : 'Aktive Listings'}
-                        </div>
-                        <div className="flex items-baseline gap-2 mt-0.5">
-                          <span className="text-xl font-mono font-extrabold text-white tracking-tight">
-                            {activePointDetails.formattedActiveListings}
-                          </span>
-                        </div>
-                        <div className="mt-1 text-[11px] font-mono">
-                          <span
-                            className={
-                              activePointDetails.delta === null
-                                ? 'text-slate-400'
-                                : activePointDetails.delta > 0
-                                ? 'text-emerald-400 font-semibold'
-                                : activePointDetails.delta < 0
-                                ? 'text-rose-400 font-semibold'
-                                : 'text-slate-400'
-                            }
-                          >
-                            {activePointDetails.deltaVsPreviousLabel}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Secondary Metrics */}
-                      <div className="pt-2 border-t border-slate-800/80 space-y-1.5 text-[11px] font-mono">
-                        <div className="flex items-center justify-between text-slate-300">
-                          <span className="text-slate-400">{isEn ? 'RFC-10023 conformant:' : 'RFC-10023-konform:'}</span>
-                          <span className="text-slate-100 font-medium">
-                            {activePointDetails.conformantFormatted}{' '}
-                            <span className="text-emerald-400 text-[10px]">({activePointDetails.conformantPct})</span>
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-slate-300">
-                          <span className="text-slate-400">DNSSEC:</span>
-                          <span className="text-slate-100 font-medium">
-                            {activePointDetails.dnssecFormatted}{' '}
-                            <span className="text-slate-400 text-[10px]">({activePointDetails.dnssecPct})</span>
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-slate-300">
-                          <span className="text-slate-400">{isEn ? 'With price:' : 'Mit Festpreis:'}</span>
-                          <span className="text-slate-100 font-medium">
-                            {activePointDetails.pricedFormatted}{' '}
-                            <span className="text-slate-400 text-[10px]">({activePointDetails.pricedPct})</span>
-                          </span>
-                        </div>
-                        {!activePointDetails.sweepComplete && (
-                          <div className="pt-1 text-[10px] text-amber-300/90 leading-tight">
-                            {activePointDetails.sweepLabel}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Footer Hint */}
-                      <div className="mt-2.5 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-400">
-                        <span>
-                          {selectedPointIndex === activePoint.idx
-                            ? (isEn ? 'Click or Esc to unpin' : 'Klick oder Esc zum Lösen')
-                            : (isEn ? 'Click to pin point' : 'Klick zum Fixieren')}
+                    <div className="bg-slate-950/95 text-white rounded-lg shadow-xl border border-slate-700/80 px-2.5 py-1 text-center whitespace-nowrap backdrop-blur-xs">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span className="font-mono font-bold text-xs text-slate-100">
+                          {activePointDetails.formattedDate}
                         </span>
-                        <span className="font-mono text-slate-400">
-                          #{activePoint.idx + 1}/{fsAllPoints.length}
+                        <span className="text-slate-500 font-mono text-[10px]">·</span>
+                        <span className="font-mono font-extrabold text-xs text-white">
+                          {activePointDetails.formattedActiveListings}
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-mono mt-0.5 leading-none">
+                        <span
+                          className={
+                            activePointDetails.delta === null
+                              ? 'text-slate-400'
+                              : activePointDetails.delta > 0
+                              ? 'text-emerald-400 font-semibold'
+                              : activePointDetails.delta < 0
+                              ? 'text-rose-400 font-semibold'
+                              : 'text-slate-400'
+                          }
+                        >
+                          {activePointDetails.deltaFormatted}
                         </span>
                       </div>
                     </div>
@@ -916,137 +983,6 @@ export default function EcosystemPage() {
                 )}
               </div>
             </div>
-
-            {/* Mobile Compact Detail Panel */}
-            {activePoint && activePointDetails && (
-              <div
-                className="md:hidden mt-4 p-4 rounded-xl bg-slate-900 text-white border border-slate-800 shadow-md text-xs select-none"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* Header with Navigation Stepper */}
-                <div className="flex items-center justify-between pb-2.5 border-b border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      disabled={activePoint.idx === 0}
-                      onClick={() => {
-                        if (activePoint.idx > 0) setSelectedPointIndex(activePoint.idx - 1);
-                      }}
-                      className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                      aria-label={isEn ? 'Previous day' : 'Vorheriger Tag'}
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <div>
-                      <div className="font-mono font-bold text-sm text-slate-100">
-                        {activePointDetails.formattedDate}
-                      </div>
-                      <div className="text-[10px] font-mono text-slate-400">
-                        #{activePoint.idx + 1} {isEn ? 'of' : 'von'} {fsAllPoints.length}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={activePoint.idx === fsAllPoints.length - 1}
-                      onClick={() => {
-                        if (activePoint.idx < fsAllPoints.length - 1) setSelectedPointIndex(activePoint.idx + 1);
-                      }}
-                      className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                      aria-label={isEn ? 'Next day' : 'Nächster Tag'}
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${
-                        activePointDetails.sweepComplete
-                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                          : 'bg-amber-950 text-amber-300 border border-amber-800'
-                      }`}
-                    >
-                      {activePointDetails.sweepComplete
-                        ? (isEn ? '100% Sweep' : '100 % Sweep')
-                        : activePointDetails.sweepPct}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedPointIndex(null);
-                        setHoveredPointIndex(null);
-                      }}
-                      className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ml-1"
-                      aria-label={isEn ? 'Close details' : 'Details schließen'}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Primary Metric */}
-                <div className="py-2.5">
-                  <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">
-                    {isEn ? 'Active Listings' : 'Aktive Listings'}
-                  </div>
-                  <div className="text-2xl font-mono font-extrabold text-white mt-0.5">
-                    {activePointDetails.formattedActiveListings}
-                  </div>
-                  <div className="text-xs font-mono mt-1">
-                    <span
-                      className={
-                        activePointDetails.delta === null
-                          ? 'text-slate-400'
-                          : activePointDetails.delta > 0
-                          ? 'text-emerald-400 font-semibold'
-                          : activePointDetails.delta < 0
-                          ? 'text-rose-400 font-semibold'
-                          : 'text-slate-400'
-                      }
-                    >
-                      {activePointDetails.deltaVsPreviousLabel}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Secondary Metrics 2x2 grid */}
-                <div className="pt-2 border-t border-slate-800 grid grid-cols-2 gap-2 text-[11px] font-mono">
-                  <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                    <div className="text-slate-400 text-[10px]">{isEn ? 'RFC-10023 Conformant' : 'RFC-10023-konform'}</div>
-                    <div className="text-slate-100 font-bold mt-0.5">
-                      {activePointDetails.conformantFormatted}
-                    </div>
-                    <div className="text-emerald-400 text-[10px] font-semibold">{activePointDetails.conformantPct}</div>
-                  </div>
-
-                  <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                    <div className="text-slate-400 text-[10px]">DNSSEC</div>
-                    <div className="text-slate-100 font-bold mt-0.5">
-                      {activePointDetails.dnssecFormatted}
-                    </div>
-                    <div className="text-slate-400 text-[10px]">{activePointDetails.dnssecPct}</div>
-                  </div>
-
-                  <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                    <div className="text-slate-400 text-[10px]">{isEn ? 'With Price' : 'Mit Festpreis'}</div>
-                    <div className="text-slate-100 font-bold mt-0.5">
-                      {activePointDetails.pricedFormatted}
-                    </div>
-                    <div className="text-slate-400 text-[10px]">{activePointDetails.pricedPct}</div>
-                  </div>
-
-                  <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                    <div className="text-slate-400 text-[10px]">{isEn ? 'Scan Scope' : 'Scan-Umfang'}</div>
-                    <div className="text-slate-100 font-bold mt-0.5">
-                      {activePointDetails.sweepPct}
-                    </div>
-                    <div className="text-slate-400 text-[10px]">
-                      {activePointDetails.sweepComplete ? (isEn ? 'Complete' : 'Vollständig') : (isEn ? 'Partial' : 'Teilscan')}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* KPI Summary Grid */}
