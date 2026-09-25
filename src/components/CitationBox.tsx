@@ -12,7 +12,7 @@ interface CitationBoxProps {
 export default function CitationBox({
   title,
   url = 'https://www.rfc10023.de/',
-  date = '2026-09-24',
+  date = '2026-09-25',
   author,
 }: CitationBoxProps) {
   const { t, language } = useLanguage();

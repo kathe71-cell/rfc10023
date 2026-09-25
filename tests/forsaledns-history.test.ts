@@ -119,6 +119,9 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
 
       // Main header
       expect(deHtml).toContain('RFC 10023 Adoption im Zeitverlauf');
+      expect(deHtml).toContain('Letzte Aktualisierung: 25. September 2026');
+      expect(deHtml).toContain('40 Tage');
+      expect(deHtml).toContain('Abgerufen am 25. September 2026');
       // ForSaleDNS section
       expect(deHtml).toContain('ForSaleDNS – Aktive Listings');
       expect(deHtml).toContain('334.576');
@@ -142,6 +145,9 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
 
       // Main header
       expect(enHtml).toContain('RFC 10023 Adoption over time');
+      expect(enHtml).toContain('Last updated: 25 September 2026');
+      expect(enHtml).toContain('40 days');
+      expect(enHtml).toContain('Retrieved on September 25, 2026');
       // ForSaleDNS section
       expect(enHtml).toContain('ForSaleDNS – Active Listings');
       expect(enHtml).toContain('334,576');

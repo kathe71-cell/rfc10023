@@ -86,6 +86,21 @@ function formatFullDate(dateStr: string, isEn: boolean): string {
   return `${parseInt(day, 10)} ${monthName} ${year}`;
 }
 
+function formatLongDate(dateStr: string, isEn: boolean): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  const [year, month, day] = parts;
+  const d = parseInt(day, 10);
+  const mIdx = parseInt(month, 10) - 1;
+  const monthsDe = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+  const monthsEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  if (!isEn) {
+    return `${d}. ${monthsDe[mIdx] || month} ${year}`;
+  }
+  return `${d} ${monthsEn[mIdx] || month} ${year}`;
+}
+
 function formatFetchTimestamp(isoString: string, isEn: boolean): string {
   if (!isoString) return '';
   const date = new Date(isoString);
@@ -274,8 +289,11 @@ export default function EcosystemPage() {
     [forSalePoints]
   );
   const latestForSale = forSalePoints[forSalePoints.length - 1] || null;
+  const fullSweepDays = completeSweepPoints.length;
   const forSaleSnapshotDate = latestForSale?.date || FORSALEDNS_META?.latestSnapshotDate || '2026-09-25';
   const forSaleFetchTimestamp = FORSALEDNS_META?.lastSuccessfulFetch || '2026-09-25T05:24:31Z';
+  const ecosystemLastUpdatedDate = latestForSale?.date || stats.lastUpdated || forSaleSnapshotDate;
+  const dmStartDate = historyPoints[0]?.date || '2026-09-24';
 
   // Growth within the complete-sweep ForSaleDNS observation dataset
   const forSaleGrowth = useMemo(() => {
@@ -410,8 +428,8 @@ export default function EcosystemPage() {
               <Calendar className="w-3.5 h-3.5 text-slate-400" />
               <span>
                 {isEn
-                  ? `Last updated: September 24, 2026`
-                  : `Letzte Aktualisierung: 24. September 2026`}
+                  ? `Last updated: ${formatLongDate(ecosystemLastUpdatedDate, true)}`
+                  : `Letzte Aktualisierung: ${formatLongDate(ecosystemLastUpdatedDate, false)}`}
               </span>
             </div>
           </div>
@@ -572,7 +590,9 @@ export default function EcosystemPage() {
               <div className="flex items-center gap-1.5">
                 <span className="w-5 h-0.5 bg-emerald-600 rounded"></span>
                 <span className="text-slate-700 font-semibold">
-                  {isEn ? 'Full sweep (100% of 343.8M inventory, 39 days)' : 'Vollständiger Scan (100 % von 343,8M Inventar, 39 Tage)'}
+                  {isEn
+                    ? `Full sweep (100% of 343.8M inventory, ${fullSweepDays} days)`
+                    : `Vollständiger Scan (100 % von 343,8M Inventar, ${fullSweepDays} Tage)`}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -1166,8 +1186,8 @@ export default function EcosystemPage() {
           </p>
           <p className="text-slate-600">
             {isEn
-              ? 'Historical ForSaleDNS values are retrieved directly from the documented Adoption History API. Our own Domains Monitor measurements on rfc10023.de are continuously recorded since September 24, 2026.'
-              : 'Historische ForSaleDNS-Werte werden direkt aus der dokumentierten Adoption-History-API übernommen. Eigene Domains-Monitor-Messungen von rfc10023.de werden seit dem 24.09.2026 fortlaufend gespeichert.'}
+              ? `Historical ForSaleDNS values are retrieved directly from the documented Adoption History API. Our own Domains Monitor measurements on rfc10023.de are continuously recorded since ${formatLongDate(dmStartDate, true)}.`
+              : `Historische ForSaleDNS-Werte werden direkt aus der dokumentierten Adoption-History-API übernommen. Eigene Domains-Monitor-Messungen von rfc10023.de werden seit dem ${formatFullDate(dmStartDate, false)} fortlaufend gespeichert.`}
           </p>
         </div>
 
@@ -1180,7 +1200,7 @@ export default function EcosystemPage() {
                   {isEn ? 'Domains Monitor – Detected Domains' : 'Domains Monitor – Erkannte Domains'}
                 </span>
                 <span className="text-xs font-mono text-slate-500">
-                  {isEn ? 'Own measurement series started 24 Sep 2026' : 'Eigene Messreihe ab 24.09.2026'}
+                  {isEn ? `Own measurement series started ${formatFullDate(dmStartDate, true)}` : `Eigene Messreihe ab ${formatFullDate(dmStartDate, false)}`}
                 </span>
               </div>
               <h3 className="text-lg font-bold text-slate-950">
@@ -1192,7 +1212,7 @@ export default function EcosystemPage() {
                 392.683
               </span>
               <span className="block text-[11px] text-slate-400">
-                {isEn ? 'Baseline snapshot (24 Sep 2026)' : 'Basiswert (24.09.2026)'}
+                {isEn ? `Baseline snapshot (${formatFullDate(dmStartDate, true)})` : `Basiswert (${formatFullDate(dmStartDate, false)})`}
               </span>
             </div>
           </div>
@@ -1266,8 +1286,8 @@ export default function EcosystemPage() {
                 </div>
                 <p>
                   {isEn
-                    ? 'The historical time series is recorded continuously and strictly on a daily schedule starting on the launch date (September 24, 2026). To maintain academic credibility and prevent synthetic bias, we intentionally do not publish retroactively interpolated or estimated figures.'
-                    : 'Die historische Zeitreihe wird ab dem Launch-Datum (24.09.2026) kontinuierlich und täglich per GitHub Action fortgeschrieben. Um maximale wissenschaftliche und redaktionelle Glaubwürdigkeit zu wahren, verzichten wir bewusst auf rückwirkend interpolierte oder geschätzte Pseudomesswerte.'}
+                    ? `The historical time series is recorded continuously and strictly on a daily schedule starting on the launch date (${formatLongDate(dmStartDate, true)}). To maintain academic credibility and prevent synthetic bias, we intentionally do not publish retroactively interpolated or estimated figures.`
+                    : `Die historische Zeitreihe wird ab dem Launch-Datum (${formatFullDate(dmStartDate, false)}) kontinuierlich und täglich per GitHub Action fortgeschrieben. Um maximale wissenschaftliche und redaktionelle Glaubwürdigkeit zu wahren, verzichten wir bewusst auf rückwirkend interpolierte oder geschätzte Pseudomesswerte.`}
                 </p>
                 <p className="text-[11px] text-slate-500 font-mono">
                   {isEn
@@ -1323,7 +1343,7 @@ export default function EcosystemPage() {
               </a>
             </div>
             <div className="flex items-center gap-3 text-slate-600">
-              <span>{isEn ? 'Start: 24 Sep 2026' : 'Start: 24.09.2026'}</span>
+              <span>{isEn ? `Start: ${formatFullDate(dmStartDate, true)}` : `Start: ${formatFullDate(dmStartDate, false)}`}</span>
               <span>•</span>
               <span>{isEn ? 'Daily cron: 05:17 UTC' : 'Täglicher Abgleich: 05:17 UTC'}</span>
             </div>
@@ -1968,7 +1988,7 @@ export default function EcosystemPage() {
         <CitationBox
           title={isEn ? 'RFC 10023 Ecosystem & Adoption Tracker' : 'RFC 10023 Ökosystem & Adoption Tracker'}
           url={canonicalUrl}
-          date="2026-09-24"
+          date={ecosystemLastUpdatedDate}
         />
       </section>
     </div>
