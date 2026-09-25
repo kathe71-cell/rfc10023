@@ -52,5 +52,14 @@
     "description": "rfc10023.de startet den unabhängigen Ecosystem- und Adoptions-Tracker zur quellenbasierten Dokumentation von Tools und Kennzahlen.",
     "descriptionEn": "rfc10023.de launches the independent Ecosystem & Adoption Tracker documenting verified tools and telemetry.",
     "sourceUrl": "https://www.rfc10023.de/oekosystem"
+  },
+  {
+    "date": "2026-09-25",
+    "title": "Atom startet plattformweiten RFC-10023-Rollout",
+    "titleEn": "Atom begins platform-wide RFC 10023 rollout",
+    "category": "Aftermarket",
+    "description": "Atom kündigt die automatische Bereitstellung von RFC 10023 Records für alle auf Atom-Nameservern gehosteten Listings an. Die DNS-Signale enthalten Listing-Links, Festpreise sowie Angebotshinweise und werden mit dem Status synchron gehalten.",
+    "descriptionEn": "Atom announces automated deployment of RFC 10023 records for all listings hosted on Atom nameservers, providing machine-readable listing URLs, Buy Now pricing, and status notes synchronized with marketplace inventory.",
+    "sourceUrl": "https://www.atom.com/blog/atom-adopts-rfc-10023-every-eligible-listing-is-getting-a-machine-readable-for-sale-signal/"
   }
 ]

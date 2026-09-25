@@ -132,6 +132,18 @@
       "sourceUrl": "https://github.com/mdavids/ForSale-RFC10023-browser-extensions",
       "firstObserved": "2026-09",
       "lastVerified": "2026-09-25"
+    },
+    {
+      "id": "atom",
+      "name": "Atom",
+      "category": "aftermarket-search",
+      "supportType": "native-integration",
+      "status": "production",
+      "description": "Marktplatz-Plattform, die für alle gelisteten Domains auf Atom-Nameservern vollautomatisch RFC 10023 DNS-Records (_for-sale TXT) ausliefert. Beinhaltet Listing-URL (furi), Festpreise (fval) und Statushinweise (ftxt) mit automatischer Synchronisation und Löschung bei Verkauf oder Delisting.",
+      "descriptionEn": "Marketplace platform automatically publishing RFC 10023 DNS records (_for-sale TXT) for all eligible listings using Atom nameservers. Includes listing URLs (furi), Buy Now prices (fval), and status notes (ftxt) with automated synchronization and removal upon sale or delisting.",
+      "sourceUrl": "https://www.atom.com/blog/atom-adopts-rfc-10023-every-eligible-listing-is-getting-a-machine-readable-for-sale-signal/",
+      "firstObserved": "2026-09-25",
+      "lastVerified": "2026-09-25"
     }
   ]
 }

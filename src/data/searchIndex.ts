@@ -74,12 +74,13 @@ export const SEARCH_INDEX: SearchItem[] = [
       'ökosystem', 'oekosystem', 'ecosystem', 'adoption', 'verbreitung', 'integrationen',
       'integration', 'unterstützung', 'tools', 'scanner', 'sidn', 'inwx', 'forsaledns',
       'domaintoolbelt', 'domains monitor', 'mcp', 'domain intelligence', '_for-sale',
-      'tracker', 'statistik', 'telemetrie'
+      'tracker', 'statistik', 'telemetrie', 'atom', 'atom.com', 'marktplatz', 'ki-agenten'
     ],
     keywordsEn: [
       'ecosystem', 'adoption', 'integrations', 'integration', 'support', 'tools', 'scanners',
       'scanner', 'sidn', 'inwx', 'forsaledns', 'domaintoolbelt', 'domains monitor', 'mcp',
-      'domain intelligence', '_for-sale', 'tracker', 'statistics', 'directory', 'telemetry'
+      'domain intelligence', '_for-sale', 'tracker', 'statistics', 'directory', 'telemetry',
+      'atom', 'atom.com', 'marketplace', 'ai agents'
     ],
   },
   {
