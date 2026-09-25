@@ -19,6 +19,9 @@ import {
   Mail,
   Filter,
   Server,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import CitationBox from '../components/CitationBox';
@@ -35,7 +38,7 @@ import {
   getCategoryLabel,
   computeEcosystemStats,
 } from '../data/ecosystem';
-import { computeDynamicYScale, calculateSvgY } from '../utils/chartScaling';
+import { computeDynamicYScale, calculateSvgY, computePointDetails } from '../utils/chartScaling';
 
 function formatDisplayDate(dateStr: string, isEn: boolean): string {
   if (!dateStr) return '';
@@ -114,6 +117,19 @@ function formatFetchTimestamp(isoString: string, isEn: boolean): string {
   return formatted.replace('Sept', 'Sep');
 }
 
+function getTooltipTransform(x: number, y: number, totalWidth: number): string {
+  let tx = '-50%';
+  if (x > totalWidth - 190) {
+    tx = 'calc(-100% + 14px)';
+  } else if (x < 110) {
+    tx = '-14px';
+  }
+  let ty = 'calc(-100% - 14px)';
+  if (y < 85) {
+    ty = '14px';
+  }
+  return `translate(${tx}, ${ty})`;
+}
 
 export default function EcosystemPage() {
   const location = useLocation();
@@ -321,6 +337,19 @@ export default function EcosystemPage() {
     if (fsAllPoints.length < 3) return '';
     return fsAllPoints.slice(0, 3).map((p) => `${p.x},${p.y}`).join(' ');
   }, [fsAllPoints]);
+
+  // Interactive point state (hover & selection)
+  const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
+  const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);
+
+  const activePointIndex = selectedPointIndex !== null ? selectedPointIndex : hoveredPointIndex;
+  const activePoint = activePointIndex !== null && fsAllPoints[activePointIndex] ? fsAllPoints[activePointIndex] : null;
+
+  const activePointDetails = useMemo(() => {
+    if (!activePoint) return null;
+    const prev = activePoint.idx > 0 ? forSalePoints[activePoint.idx - 1] : null;
+    return computePointDetails(activePoint, prev, isEn);
+  }, [activePoint, forSalePoints, isEn]);
 
   return (
     <div className="space-y-16 pb-16">
@@ -552,124 +581,472 @@ export default function EcosystemPage() {
             )}
           </div>
 
-          {/* SVG Chart for ForSaleDNS */}
-          <div className="w-full overflow-x-auto bg-slate-50/70 p-4 sm:p-6 rounded-xl border border-slate-200">
-            <div className="min-w-[640px]">
-              <svg viewBox={`0 0 ${fsSvgWidth} ${fsSvgHeight}`} className="w-full h-44 sm:h-52 overflow-visible">
-                <defs>
-                  <linearGradient id="fsGradientAdoption" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.20" />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
+          {/* SVG Chart for ForSaleDNS with Interactive Observation Points */}
+          <div
+            className="w-full bg-slate-50/70 p-4 sm:p-6 rounded-xl border border-slate-200"
+            onClick={() => {
+              if (selectedPointIndex !== null) setSelectedPointIndex(null);
+            }}
+          >
+            <div className="overflow-x-auto relative">
+              <div className="min-w-[640px] relative">
+                <svg viewBox={`0 0 ${fsSvgWidth} ${fsSvgHeight}`} className="w-full h-44 sm:h-52 overflow-visible">
+                  <defs>
+                    <linearGradient id="fsGradientAdoption" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity="0.20" />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
 
-                {/* Dynamic horizontal grid lines & Y-axis labels */}
-                {fsScale.gridLines.map((val) => {
-                  const y = calculateSvgY(val, fsScale, fsSvgHeight, fsPaddingY);
-                  return (
-                    <g key={val}>
-                      <line
-                        x1={fsPaddingX}
-                        y1={y}
-                        x2={fsSvgWidth - fsPaddingX}
-                        y2={y}
-                        stroke="#cbd5e1"
-                        strokeDasharray="4 4"
-                      />
-                      <text
-                        x={fsPaddingX - 10}
-                        y={y + 3}
-                        textAnchor="end"
-                        className="text-[10px] font-mono fill-slate-500 font-medium"
-                      >
-                        {(val / 1000).toFixed(0)}k
-                      </text>
-                    </g>
-                  );
-                })}
+                  {/* Dynamic horizontal grid lines & Y-axis labels */}
+                  {fsScale.gridLines.map((val) => {
+                    const y = calculateSvgY(val, fsScale, fsSvgHeight, fsPaddingY);
+                    return (
+                      <g key={val}>
+                        <line
+                          x1={fsPaddingX}
+                          y1={y}
+                          x2={fsSvgWidth - fsPaddingX}
+                          y2={y}
+                          stroke="#cbd5e1"
+                          strokeDasharray="4 4"
+                        />
+                        <text
+                          x={fsPaddingX - 10}
+                          y={y + 3}
+                          textAnchor="end"
+                          className="text-[10px] font-mono fill-slate-500 font-medium"
+                        >
+                          {(val / 1000).toFixed(0)}k
+                        </text>
+                      </g>
+                    );
+                  })}
 
-                {/* Base axis line */}
-                <line
-                  x1={fsPaddingX}
-                  y1={fsSvgHeight - fsPaddingY}
-                  x2={fsSvgWidth - fsPaddingX}
-                  y2={fsSvgHeight - fsPaddingY}
-                  stroke="#cbd5e1"
-                />
-
-                {/* Partial sweep line segment (index 0, 1, 2) */}
-                {fsPartialPointsString && (
-                  <polyline
-                    fill="none"
-                    stroke="#d97706"
-                    strokeWidth="2"
-                    strokeDasharray="4 4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    points={fsPartialPointsString}
+                  {/* Base axis line */}
+                  <line
+                    x1={fsPaddingX}
+                    y1={fsSvgHeight - fsPaddingY}
+                    x2={fsSvgWidth - fsPaddingX}
+                    y2={fsSvgHeight - fsPaddingY}
+                    stroke="#cbd5e1"
                   />
-                )}
 
-                {/* Complete sweep line segment (index 2 to 40) */}
-                {fsCompletePointsString && (
-                  <polyline
-                    fill="none"
-                    stroke="#059669"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    points={fsCompletePointsString}
-                  />
-                )}
+                  {/* Partial sweep line segment (index 0, 1, 2) */}
+                  {fsPartialPointsString && (
+                    <polyline
+                      fill="none"
+                      stroke="#d97706"
+                      strokeWidth="2"
+                      strokeDasharray="4 4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      points={fsPartialPointsString}
+                    />
+                  )}
 
-                {/* Render individual points */}
-                {fsAllPoints.map((pt) => {
-                  const isPartial = !pt.sweepComplete;
-                  const isLastPoint = pt.idx === fsAllPoints.length - 1;
-                  const isWeeklyInterval = pt.idx > 0 && pt.idx % 7 === 2;
-                  const isKeyPoint = pt.idx === 0 || isLastPoint || (isWeeklyInterval && (fsAllPoints.length - 1 - pt.idx) >= 3);
+                  {/* Complete sweep line segment (index 2 to 41) */}
+                  {fsCompletePointsString && (
+                    <polyline
+                      fill="none"
+                      stroke="#059669"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      points={fsCompletePointsString}
+                    />
+                  )}
 
-                  return (
-                    <g key={pt.date} className="group cursor-pointer">
+                  {/* Active Point Vertical Guide Line to X-Axis */}
+                  {activePoint && (
+                    <line
+                      x1={activePoint.x}
+                      y1={activePoint.y}
+                      x2={activePoint.x}
+                      y2={fsSvgHeight - fsPaddingY}
+                      stroke="#94a3b8"
+                      strokeWidth="1.5"
+                      strokeDasharray="3 3"
+                      className="pointer-events-none transition-all duration-150"
+                    />
+                  )}
+
+                  {/* Active Point Visual Halo / Highlight */}
+                  {activePoint && (
+                    <g className="pointer-events-none transition-all duration-150">
                       <circle
-                        cx={pt.x}
-                        cy={pt.y}
-                        r={isKeyPoint ? 4.5 : 2.5}
+                        cx={activePoint.x}
+                        cy={activePoint.y}
+                        r={7.5}
                         className={
-                          isPartial
-                            ? 'fill-white stroke-amber-600 stroke-2 group-hover:stroke-[3.5px] transition-all'
-                            : 'fill-white stroke-emerald-700 stroke-2 group-hover:stroke-[3.5px] transition-all'
+                          !activePoint.sweepComplete
+                            ? 'fill-none stroke-amber-500/40 stroke-[3px]'
+                            : 'fill-none stroke-emerald-500/40 stroke-[3px]'
                         }
                       />
-                      {/* Value callout on key points */}
-                      {isKeyPoint && (
-                        <text
-                          x={pt.x}
-                          y={pt.y - 8}
-                          textAnchor="middle"
-                          className={`text-[9px] font-mono font-bold ${
-                            isPartial ? 'fill-amber-900' : 'fill-slate-800'
-                          }`}
-                        >
-                          {(pt.activeListings / 1000).toFixed(0)}k
-                        </text>
-                      )}
-                      {/* X-axis date labels on key points */}
-                      {isKeyPoint && (
-                        <text
-                          x={pt.x}
-                          y={fsSvgHeight - fsPaddingY + 14}
-                          textAnchor="middle"
-                          className="text-[9px] font-mono fill-slate-500 font-medium"
-                        >
-                          {formatChartAxisDate(pt.date, isEn)}
-                        </text>
-                      )}
+                      <circle
+                        cx={activePoint.x}
+                        cy={activePoint.y}
+                        r={4.5}
+                        className={
+                          !activePoint.sweepComplete
+                            ? 'fill-amber-500 stroke-white stroke-2'
+                            : 'fill-emerald-600 stroke-white stroke-2'
+                        }
+                      />
                     </g>
-                  );
-                })}
-              </svg>
+                  )}
+
+                  {/* Render individual observation points */}
+                  {fsAllPoints.map((pt) => {
+                    const isPartial = !pt.sweepComplete;
+                    const isLastPoint = pt.idx === fsAllPoints.length - 1;
+                    const isWeeklyInterval = pt.idx > 0 && pt.idx % 7 === 2;
+                    const isKeyPoint = pt.idx === 0 || isLastPoint || (isWeeklyInterval && (fsAllPoints.length - 1 - pt.idx) >= 3);
+                    const isActive = activePointIndex === pt.idx;
+                    const isSelected = selectedPointIndex === pt.idx;
+                    const prevPt = pt.idx > 0 ? forSalePoints[pt.idx - 1] : null;
+                    const ptDetails = computePointDetails(pt, prevPt, isEn);
+
+                    return (
+                      <g key={pt.date} className="cursor-pointer">
+                        {/* Visible circle */}
+                        <circle
+                          cx={pt.x}
+                          cy={pt.y}
+                          r={isActive ? 5 : isKeyPoint ? 4.5 : 2.5}
+                          className={
+                            isActive
+                              ? (isPartial ? 'fill-amber-500 stroke-white stroke-2' : 'fill-emerald-600 stroke-white stroke-2')
+                              : (isPartial
+                                  ? 'fill-white stroke-amber-600 stroke-2 hover:stroke-[3px] transition-all'
+                                  : 'fill-white stroke-emerald-700 stroke-2 hover:stroke-[3px] transition-all')
+                          }
+                        />
+
+                        {/* Value callout on key points */}
+                        {isKeyPoint && !isActive && (
+                          <text
+                            x={pt.x}
+                            y={pt.y - 8}
+                            textAnchor="middle"
+                            className={`text-[9px] font-mono font-bold pointer-events-none ${
+                              isPartial ? 'fill-amber-900' : 'fill-slate-800'
+                            }`}
+                          >
+                            {(pt.activeListings / 1000).toFixed(0)}k
+                          </text>
+                        )}
+
+                        {/* X-axis date labels on key points */}
+                        {isKeyPoint && (
+                          <text
+                            x={pt.x}
+                            y={fsSvgHeight - fsPaddingY + 14}
+                            textAnchor="middle"
+                            className={`text-[9px] font-mono pointer-events-none ${
+                              isActive ? 'fill-slate-900 font-bold' : 'fill-slate-500 font-medium'
+                            }`}
+                          >
+                            {formatChartAxisDate(pt.date, isEn)}
+                          </text>
+                        )}
+
+                        {/* Enlarged transparent interactive hitbox for hover, tap & accessibility */}
+                        <circle
+                          cx={pt.x}
+                          cy={pt.y}
+                          r={16}
+                          fill="transparent"
+                          className="focus:outline-none focus-visible:stroke-emerald-600 focus-visible:stroke-2"
+                          tabIndex={0}
+                          role="button"
+                          aria-pressed={isSelected}
+                          aria-label={ptDetails.ariaLabel}
+                          onMouseEnter={() => setHoveredPointIndex(pt.idx)}
+                          onMouseLeave={() => setHoveredPointIndex(null)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPointIndex((prev) => (prev === pt.idx ? null : pt.idx));
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setSelectedPointIndex((prev) => (prev === pt.idx ? null : pt.idx));
+                            } else if (e.key === 'ArrowRight' && pt.idx < fsAllPoints.length - 1) {
+                              e.preventDefault();
+                              setSelectedPointIndex(pt.idx + 1);
+                            } else if (e.key === 'ArrowLeft' && pt.idx > 0) {
+                              e.preventDefault();
+                              setSelectedPointIndex(pt.idx - 1);
+                            } else if (e.key === 'Escape') {
+                              setSelectedPointIndex(null);
+                              setHoveredPointIndex(null);
+                            }
+                          }}
+                        />
+                      </g>
+                    );
+                  })}
+                </svg>
+
+                {/* Desktop Floating Tooltip (Collision-safe, high contrast) */}
+                {activePoint && activePointDetails && (
+                  <div
+                    className="hidden md:block absolute z-20 pointer-events-auto transition-all duration-100 ease-out"
+                    style={{
+                      left: `${(activePoint.x / fsSvgWidth) * 100}%`,
+                      top: `${(activePoint.y / fsSvgHeight) * 100}%`,
+                      transform: getTooltipTransform(activePoint.x, activePoint.y, fsSvgWidth),
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="bg-slate-950 text-white rounded-xl shadow-2xl border border-slate-800 p-3.5 min-w-[270px] max-w-[295px] text-xs font-sans select-none">
+                      {/* Header: Date + Sweep status badge + Close button if selected */}
+                      <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-800/80">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono font-bold text-slate-100 text-[13px]">
+                            {activePointDetails.formattedDate}
+                          </span>
+                          {selectedPointIndex === activePoint.idx && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono uppercase bg-emerald-950 text-emerald-300 border border-emerald-800">
+                              {isEn ? 'Pinned' : 'Fixiert'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span
+                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono ${
+                              activePointDetails.sweepComplete
+                                ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60'
+                                : 'bg-amber-950/80 text-amber-300 border border-amber-800/60'
+                            }`}
+                          >
+                            {activePointDetails.sweepComplete
+                              ? (isEn ? '100% sweep' : '100 % Sweep')
+                              : (isEn ? `Scan: ${activePointDetails.sweepPct}` : `Scan: ${activePointDetails.sweepPct}`)}
+                          </span>
+                          {selectedPointIndex !== null && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedPointIndex(null);
+                              }}
+                              className="text-slate-400 hover:text-white p-0.5 rounded hover:bg-slate-800 transition-colors"
+                              title={isEn ? 'Close' : 'Schließen'}
+                              aria-label={isEn ? 'Close selection' : 'Auswahl schließen'}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Primary Metric: Active Listings + Delta */}
+                      <div className="pt-2.5 pb-2">
+                        <div className="text-[11px] font-mono text-slate-400">
+                          {isEn ? 'Active Listings' : 'Aktive Listings'}
+                        </div>
+                        <div className="flex items-baseline gap-2 mt-0.5">
+                          <span className="text-xl font-mono font-extrabold text-white tracking-tight">
+                            {activePointDetails.formattedActiveListings}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[11px] font-mono">
+                          <span
+                            className={
+                              activePointDetails.delta === null
+                                ? 'text-slate-400'
+                                : activePointDetails.delta > 0
+                                ? 'text-emerald-400 font-semibold'
+                                : activePointDetails.delta < 0
+                                ? 'text-rose-400 font-semibold'
+                                : 'text-slate-400'
+                            }
+                          >
+                            {activePointDetails.deltaVsPreviousLabel}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Secondary Metrics */}
+                      <div className="pt-2 border-t border-slate-800/80 space-y-1.5 text-[11px] font-mono">
+                        <div className="flex items-center justify-between text-slate-300">
+                          <span className="text-slate-400">{isEn ? 'RFC-10023 conformant:' : 'RFC-10023-konform:'}</span>
+                          <span className="text-slate-100 font-medium">
+                            {activePointDetails.conformantFormatted}{' '}
+                            <span className="text-emerald-400 text-[10px]">({activePointDetails.conformantPct})</span>
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-300">
+                          <span className="text-slate-400">DNSSEC:</span>
+                          <span className="text-slate-100 font-medium">
+                            {activePointDetails.dnssecFormatted}{' '}
+                            <span className="text-slate-400 text-[10px]">({activePointDetails.dnssecPct})</span>
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-300">
+                          <span className="text-slate-400">{isEn ? 'With price:' : 'Mit Festpreis:'}</span>
+                          <span className="text-slate-100 font-medium">
+                            {activePointDetails.pricedFormatted}{' '}
+                            <span className="text-slate-400 text-[10px]">({activePointDetails.pricedPct})</span>
+                          </span>
+                        </div>
+                        {!activePointDetails.sweepComplete && (
+                          <div className="pt-1 text-[10px] text-amber-300/90 leading-tight">
+                            {activePointDetails.sweepLabel}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer Hint */}
+                      <div className="mt-2.5 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-400">
+                        <span>
+                          {selectedPointIndex === activePoint.idx
+                            ? (isEn ? 'Click or Esc to unpin' : 'Klick oder Esc zum Lösen')
+                            : (isEn ? 'Click to pin point' : 'Klick zum Fixieren')}
+                        </span>
+                        <span className="font-mono text-slate-400">
+                          #{activePoint.idx + 1}/{fsAllPoints.length}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* Mobile Compact Detail Panel */}
+            {activePoint && activePointDetails && (
+              <div
+                className="md:hidden mt-4 p-4 rounded-xl bg-slate-900 text-white border border-slate-800 shadow-md text-xs select-none"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header with Navigation Stepper */}
+                <div className="flex items-center justify-between pb-2.5 border-b border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={activePoint.idx === 0}
+                      onClick={() => {
+                        if (activePoint.idx > 0) setSelectedPointIndex(activePoint.idx - 1);
+                      }}
+                      className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                      aria-label={isEn ? 'Previous day' : 'Vorheriger Tag'}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <div>
+                      <div className="font-mono font-bold text-sm text-slate-100">
+                        {activePointDetails.formattedDate}
+                      </div>
+                      <div className="text-[10px] font-mono text-slate-400">
+                        #{activePoint.idx + 1} {isEn ? 'of' : 'von'} {fsAllPoints.length}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={activePoint.idx === fsAllPoints.length - 1}
+                      onClick={() => {
+                        if (activePoint.idx < fsAllPoints.length - 1) setSelectedPointIndex(activePoint.idx + 1);
+                      }}
+                      className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                      aria-label={isEn ? 'Next day' : 'Nächster Tag'}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${
+                        activePointDetails.sweepComplete
+                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                          : 'bg-amber-950 text-amber-300 border border-amber-800'
+                      }`}
+                    >
+                      {activePointDetails.sweepComplete
+                        ? (isEn ? '100% Sweep' : '100 % Sweep')
+                        : activePointDetails.sweepPct}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPointIndex(null);
+                        setHoveredPointIndex(null);
+                      }}
+                      className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ml-1"
+                      aria-label={isEn ? 'Close details' : 'Details schließen'}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Primary Metric */}
+                <div className="py-2.5">
+                  <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">
+                    {isEn ? 'Active Listings' : 'Aktive Listings'}
+                  </div>
+                  <div className="text-2xl font-mono font-extrabold text-white mt-0.5">
+                    {activePointDetails.formattedActiveListings}
+                  </div>
+                  <div className="text-xs font-mono mt-1">
+                    <span
+                      className={
+                        activePointDetails.delta === null
+                          ? 'text-slate-400'
+                          : activePointDetails.delta > 0
+                          ? 'text-emerald-400 font-semibold'
+                          : activePointDetails.delta < 0
+                          ? 'text-rose-400 font-semibold'
+                          : 'text-slate-400'
+                      }
+                    >
+                      {activePointDetails.deltaVsPreviousLabel}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Secondary Metrics 2x2 grid */}
+                <div className="pt-2 border-t border-slate-800 grid grid-cols-2 gap-2 text-[11px] font-mono">
+                  <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
+                    <div className="text-slate-400 text-[10px]">{isEn ? 'RFC-10023 Conformant' : 'RFC-10023-konform'}</div>
+                    <div className="text-slate-100 font-bold mt-0.5">
+                      {activePointDetails.conformantFormatted}
+                    </div>
+                    <div className="text-emerald-400 text-[10px] font-semibold">{activePointDetails.conformantPct}</div>
+                  </div>
+
+                  <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
+                    <div className="text-slate-400 text-[10px]">DNSSEC</div>
+                    <div className="text-slate-100 font-bold mt-0.5">
+                      {activePointDetails.dnssecFormatted}
+                    </div>
+                    <div className="text-slate-400 text-[10px]">{activePointDetails.dnssecPct}</div>
+                  </div>
+
+                  <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
+                    <div className="text-slate-400 text-[10px]">{isEn ? 'With Price' : 'Mit Festpreis'}</div>
+                    <div className="text-slate-100 font-bold mt-0.5">
+                      {activePointDetails.pricedFormatted}
+                    </div>
+                    <div className="text-slate-400 text-[10px]">{activePointDetails.pricedPct}</div>
+                  </div>
+
+                  <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
+                    <div className="text-slate-400 text-[10px]">{isEn ? 'Scan Scope' : 'Scan-Umfang'}</div>
+                    <div className="text-slate-100 font-bold mt-0.5">
+                      {activePointDetails.sweepPct}
+                    </div>
+                    <div className="text-slate-400 text-[10px]">
+                      {activePointDetails.sweepComplete ? (isEn ? 'Complete' : 'Vollständig') : (isEn ? 'Partial' : 'Teilscan')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* KPI Summary Grid */}
