@@ -209,6 +209,7 @@ export default function HosterMatrix() {
             {filteredHosters.map((hoster) => {
               const country = isEn ? hoster.regionEn : hoster.region;
               const notes = isEn ? hoster.notesEn : hoster.notes;
+              const activeSourceUrl = isEn && hoster.sourceUrlEn ? hoster.sourceUrlEn : hoster.sourceUrl;
 
               return (
                 <tr key={hoster.id} className="hover:bg-slate-50/70 transition-colors align-top">
@@ -225,11 +226,11 @@ export default function HosterMatrix() {
                     </div>
                     <div>
                       <a
-                        href={hoster.sourceUrl}
+                        href={activeSourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 hover:underline"
-                        title={hoster.sourceUrl}
+                        title={activeSourceUrl}
                       >
                         <span>{t('matrix.view_source')}</span>
                         <ExternalLink className="w-3 h-3 shrink-0" />
@@ -269,6 +270,7 @@ export default function HosterMatrix() {
         {filteredHosters.map((hoster) => {
           const country = isEn ? hoster.regionEn : hoster.region;
           const notes = isEn ? hoster.notesEn : hoster.notes;
+          const activeSourceUrl = isEn && hoster.sourceUrlEn ? hoster.sourceUrlEn : hoster.sourceUrl;
 
           return (
             <div
@@ -321,7 +323,7 @@ export default function HosterMatrix() {
               {/* Source Button */}
               <div className="pt-2 border-t border-slate-200 flex justify-end">
                 <a
-                  href={hoster.sourceUrl}
+                  href={activeSourceUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-800 border border-slate-300 hover:border-emerald-500 hover:text-emerald-800 shadow-2xs transition-colors"

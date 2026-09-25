@@ -53,6 +53,22 @@ function formatDisplayDate(dateStr: string, isEn: boolean): string {
   return dateStr;
 }
 
+function formatChartAxisDate(dateStr: string, isEn: boolean): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  const [, month, day] = parts;
+  if (!isEn) {
+    // German date format on chart axis: DD.MM. (e.g. 15.08., 24.09.)
+    return `${day}.${month}.`;
+  }
+  const monthsEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const mIdx = parseInt(month, 10) - 1;
+  const monthName = monthsEn[mIdx] || month;
+  return `${monthName} ${parseInt(day, 10)}`;
+}
+
+
 export default function EcosystemPage() {
   const location = useLocation();
   const { language } = useLanguage();
@@ -594,7 +610,7 @@ export default function EcosystemPage() {
                           textAnchor="middle"
                           className="text-[9px] font-mono fill-slate-500 font-medium"
                         >
-                          {pt.date.slice(5).replace('-', '.')}
+                          {formatChartAxisDate(pt.date, isEn)}
                         </text>
                       )}
                     </g>
@@ -805,7 +821,7 @@ export default function EcosystemPage() {
                           textAnchor="middle"
                           className="text-[9px] font-mono fill-slate-400"
                         >
-                          {pt.date.slice(5)}
+                          {formatChartAxisDate(pt.date, isEn)}
                         </text>
                       </g>
                     );

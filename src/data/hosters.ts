@@ -24,6 +24,7 @@ export interface ProviderCompatibility {
   testedAt: string | null;
   lastVerified: string;
   sourceUrl: string;
+  sourceUrlEn: string | null;
   editorSyntax: string;
   sampleRecord: string;
   notes: string;

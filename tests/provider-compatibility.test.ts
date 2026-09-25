@@ -68,6 +68,12 @@ describe('RFC 10023 Provider Compatibility Data Model', () => {
       expect(typeof p.sourceUrl).toBe('string');
       expect(() => new URL(p.sourceUrl)).not.toThrow();
 
+      // sourceUrlEn must be either null or a valid URL
+      if (p.sourceUrlEn !== null && p.sourceUrlEn !== undefined) {
+        expect(typeof p.sourceUrlEn).toBe('string');
+        expect(() => new URL(p.sourceUrlEn)).not.toThrow();
+      }
+
       // editorSyntax and sampleRecord
       expect(typeof p.editorSyntax).toBe('string');
       expect(p.editorSyntax.length).toBeGreaterThan(0);
@@ -80,6 +86,22 @@ describe('RFC 10023 Provider Compatibility Data Model', () => {
       expect(typeof p.notesEn).toBe('string');
       expect(p.notesEn.length).toBeGreaterThan(10);
     }
+  });
+
+  it('verifies language-specific documentation sources and fallback', () => {
+    // Providers with dedicated English docs
+    const providersWithEnDocs = ['hetzner', 'cloudflare', 'inwx', 'netcup', 'desec', 'ionos', 'ovh'];
+    for (const id of providersWithEnDocs) {
+      const p = providersData.find((prov) => prov.id === id);
+      expect(p).toBeDefined();
+      expect(typeof p?.sourceUrlEn).toBe('string');
+      expect(() => new URL(p!.sourceUrlEn!)).not.toThrow();
+    }
+
+    // Strato does not maintain an English DNS guide and must fall back (null)
+    const strato = providersData.find((p) => p.id === 'strato');
+    expect(strato).toBeDefined();
+    expect(strato?.sourceUrlEn).toBeNull();
   });
 
   it('enforces that inferred status is NEVER classified as verified', () => {
