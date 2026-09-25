@@ -121,8 +121,11 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
       // ForSaleDNS section
       expect(deHtml).toContain('ForSaleDNS – Aktive Listings');
       expect(deHtml).toContain('334.576');
+      expect(deHtml).toContain('ForSaleDNS · historische Adoptionsdaten');
+      expect(deHtml).toContain('https://forsaledns.net/developers');
+      expect(deHtml).toContain('ForSaleDNS-Quelle und Methodik öffnen');
+      // Technical API endpoint preserved in methodology/technical section
       expect(deHtml).toContain('GET /api/v1/adoption-history');
-      expect(deHtml).toContain('https://forsaledns.net/api/v1/adoption-history');
       // Methodology text (Requirement 9)
       expect(deHtml).toContain('Die dargestellten Reihen stammen aus unterschiedlichen unabhängigen Scan- und Discovery-Systemen');
       expect(deHtml).toContain('Historische ForSaleDNS-Werte werden direkt aus der dokumentierten Adoption-History-API übernommen');
@@ -141,6 +144,10 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
       // ForSaleDNS section
       expect(enHtml).toContain('ForSaleDNS – Active Listings');
       expect(enHtml).toContain('334,576');
+      expect(enHtml).toContain('ForSaleDNS · historical adoption data');
+      expect(enHtml).toContain('https://forsaledns.net/developers');
+      expect(enHtml).toContain('Open ForSaleDNS source and methodology');
+      // Technical API endpoint preserved in methodology/technical section
       expect(enHtml).toContain('GET /api/v1/adoption-history');
       // Methodology text (Requirement 9)
       expect(enHtml).toContain('The series shown originate from different independent scan and discovery systems');

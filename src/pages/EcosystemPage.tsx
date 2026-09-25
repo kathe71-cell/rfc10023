@@ -723,7 +723,7 @@ export default function EcosystemPage() {
           </div>
 
           {/* Historical Transparency & Baseline Explanation (Requirements 4, 11, 12) */}
-          <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-950 leading-relaxed font-sans space-y-1.5">
+          <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-950 leading-relaxed font-sans space-y-2">
             <div className="flex items-center gap-1.5 font-bold font-mono text-amber-900 uppercase tracking-wider">
               <Info className="w-4 h-4 text-amber-700 shrink-0" />
               <span>{isEn ? 'Methodological Note: ForSaleDNS Sweep Completeness & Baseline' : 'Methodischer Hinweis: ForSaleDNS Scan-Vollständigkeit & Baseline'}</span>
@@ -733,20 +733,43 @@ export default function EcosystemPage() {
                 ? `The first two measurement days (15 & 16 Aug 2026) were preliminary partial sweeps with 72.2% and 97.6% inventory coverage (indicated with dashed lines). Since 17 Aug 2026, daily sweep completeness (sweepComplete) has remained continuously at 100.0% (343,818,996 of 343,818,996 domains). The multi-month baseline audit cycle (baselineComplete) is currently documented as in progress (false). The calculated growth rate (${forSaleGrowth ? (forSaleGrowth.diff > 0 ? '+' : '') + forSaleGrowth.pct + '%' : '-1.6%'}) refers strictly to the observed ForSaleDNS dataset across complete sweeps and does not represent global adoption growth.`
                 : `Die ersten beiden Messtage (15. & 16.08.2026) waren vorläufige Teil-Scans mit 72,2 % bzw. 97,6 % Inventarabdeckung (gestrichelt dargestellt). Seit dem 17.08.2026 beträgt die tägliche Scan-Vollständigkeit (sweepComplete) durchgehend 100,0 % (343.818.996 von 343.818.996 Domains). Der multi-monatliche Baseline-Audit-Zyklus (baselineComplete) ist laut API noch in Bearbeitung (false). Die berechnete Wachstumsrate (${forSaleGrowth ? (forSaleGrowth.diff > 0 ? '+' : '') + forSaleGrowth.pct.replace('.', ',') + ' %' : '-1,6 %'}) bezieht sich streng auf den beobachteten ForSaleDNS-Datenbestand bei vollständigen Scans und stellt kein globales Adoptionswachstum dar.`}
             </p>
+            <div className="pt-2 border-t border-amber-200/70 flex flex-wrap items-center gap-2 text-[11px] font-mono text-amber-900">
+              <span className="font-semibold">
+                {isEn ? 'Technical API Endpoint:' : 'Technischer API-Endpoint:'}
+              </span>
+              <code className="px-1.5 py-0.5 rounded bg-amber-100/90 border border-amber-300 text-amber-950 font-bold">
+                GET /api/v1/adoption-history
+              </code>
+              <span className="text-amber-800">
+                ({isEn ? 'Documented at' : 'Dokumentiert unter'}{' '}
+                <a
+                  href="https://forsaledns.net/developers"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-amber-950 font-semibold"
+                >
+                  forsaledns.net/developers
+                </a>
+                )
+              </span>
+            </div>
           </div>
 
-          {/* Source Citation for ForSaleDNS (Requirement 10) */}
+          {/* Source Citation for ForSaleDNS */}
           <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 font-mono gap-2">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-700">{isEn ? 'Source: ForSaleDNS Observation History' : 'Quelle: ForSaleDNS Beobachtungshistorie'}</span>
-              <span>•</span>
+              <span className="font-semibold text-slate-700">
+                {isEn ? 'Source: ' : 'Quelle: '}
+              </span>
               <a
-                href="https://forsaledns.net/api/v1/adoption-history"
+                href="https://forsaledns.net/developers"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-emerald-700 hover:underline flex items-center gap-1 font-semibold"
+                className="text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1 font-semibold"
+                title={isEn ? 'Open ForSaleDNS source and methodology' : 'ForSaleDNS-Quelle und Methodik öffnen'}
+                aria-label={isEn ? 'Open ForSaleDNS source and methodology' : 'ForSaleDNS-Quelle und Methodik öffnen'}
               >
-                <span>GET /api/v1/adoption-history</span>
+                <span>{isEn ? 'ForSaleDNS · historical adoption data' : 'ForSaleDNS · historische Adoptionsdaten'}</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>
