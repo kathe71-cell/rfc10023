@@ -58,8 +58,8 @@ export const SEARCH_INDEX: SearchItem[] = [
     category: 'tools',
     pathDe: '/badge-generator',
     pathEn: '/en/badge-generator',
-    keywordsDe: ['badge', 'siegel', 'svg', 'embed', 'verkaufsseite', 'sedo', 'dan', 'afternic'],
-    keywordsEn: ['badge', 'shield', 'svg', 'embed', 'landingpage', 'sedo', 'dan', 'afternic'],
+    keywordsDe: ['badge', 'siegel', 'svg', 'embed', 'verkaufsseite', 'sedo', 'afternic', 'atom'],
+    keywordsEn: ['badge', 'shield', 'svg', 'embed', 'landingpage', 'sedo', 'afternic', 'atom'],
   },
   {
     id: 'tool-ecosystem',

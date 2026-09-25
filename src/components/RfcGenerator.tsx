@@ -329,7 +329,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
               type="text"
               value={furi}
               onChange={(e) => setFuri(e.target.value)}
-              placeholder={language === 'en' ? 'https://dan.com/buy-domain/example.com or mailto:contact@...' : 'https://dan.com/buy-domain/example.com oder mailto:kontakt@...'}
+              placeholder={language === 'en' ? 'https://sedo.com/search/details/?domain=example.com or mailto:contact@...' : 'https://sedo.com/search/details/?domain=example.com oder mailto:kontakt@...'}
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-slate-900"
             />
             <span className="text-[11px] text-slate-500 mt-1 block">
