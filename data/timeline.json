@@ -45,6 +45,15 @@
     "sourceUrl": "https://github.com/CultriX-Github/mcp-forsale"
   },
   {
+    "date": "2026-08-08",
+    "title": "RFC 10023 in Website-Spezifikation aufgenommen",
+    "titleEn": "RFC 10023 added to Website Specification",
+    "category": "Developer / AI",
+    "description": "specification.website — eine plattformunabhängige Open-Source-Spezifikation technischer Website-Standards — nimmt _for-sale DNS als Pflichtfeature auf. RFC 10023 wird als formale Grundlage maschinenlesbarer Verkaufssignale dokumentiert.",
+    "descriptionEn": "specification.website — a platform-agnostic, open-source specification of technical website standards — adds _for-sale DNS as a documented feature, referencing RFC 10023 as the formal basis for machine-readable sale signals.",
+    "sourceUrl": "https://specification.website/spec/foundations/for-sale-dns/"
+  },
+  {
     "date": "2026-09-24",
     "title": "Launch des rfc10023.de Ecosystem Trackers",
     "titleEn": "Launch of rfc10023.de Ecosystem Tracker",
