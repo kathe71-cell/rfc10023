@@ -124,11 +124,6 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <Link to={language === 'en' ? '/en/imprint' : '/impressum'} className="text-slate-300 hover:text-white transition-colors">
-                  {t('footer.link_imprint')}
-                </Link>
-              </li>
-              <li>
                 <Link to={language === 'en' ? '/en/privacy' : '/datenschutz'} className="text-slate-300 hover:text-white transition-colors">
                   {t('footer.link_privacy')}
                 </Link>
@@ -192,7 +187,7 @@ export default function Footer() {
             <span>•</span>
             <span>{t('footer.analytics')}</span>
             <span>•</span>
-            <Link to={`${langPrefix}/impressum`} className="text-slate-300 hover:underline">
+            <Link to={language === 'en' ? '/en/imprint' : '/impressum'} className="text-slate-300 hover:underline">
               {t('footer.imprint_bottom')}
             </Link>
           </div>
