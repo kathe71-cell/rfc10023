@@ -300,7 +300,7 @@ const translations: Record<Language, Record<string, string>> = {
     // E-E-A-T Trust Box
     'trust.badge': 'E-E-A-T Fachredaktion & Datenquellen',
     'trust.title': 'Redaktionelle Qualitätsgarantie & Primärquellen',
-    'trust.reviewed_by': 'Fachredaktion rfc10023.de · Stand: September 2026',
+    'trust.reviewed_by': (() => { const d = new Date(); return `Fachredaktion rfc10023.de · Stand: ${d.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}`; })(),
     'trust.standards_label': 'Geprüft nach Standards:',
     'trust.standards_val': 'IETF RFC 10023 · RFC 1035 · RFC 8552 · W3C DoH (RFC 8484)',
     'trust.sources_label': 'Offizielle Primärquellen:',
@@ -326,7 +326,7 @@ const translations: Record<Language, Record<string, string>> = {
     'footer.link_imprint': '→ Impressum (§ 5 DDG)',
     'footer.link_privacy': 'Datenschutzerklärung (DSGVO)',
     'footer.share_label': 'Fachportal weiterempfehlen:',
-    'footer.status_info': 'IETF RFC 10023 · Status: Informational · Stand: Sept. 2026',
+    'footer.status_info': (() => { const d = new Date(); return `IETF RFC 10023 · Status: Informational · Stand: ${d.toLocaleDateString('de-DE', { month: 'short', year: 'numeric' })}`; })(),
     'footer.gdpr': 'Datensparsame Umsetzung',
     'footer.analytics': 'Cookielose Vercel Analytics',
     'footer.imprint_bottom': 'Impressum',
@@ -521,7 +521,7 @@ const translations: Record<Language, Record<string, string>> = {
     'citation.gen_title': 'RFC 10023 Record Generator & Multi-Format Exporter',
     'citation.copy': 'Zitierung kopieren',
     'citation.copied': 'Zitierung kopiert',
-    'citation.status': 'Stand: September 2026 · IETF Informational RFC',
+    'citation.status': (() => { const d = new Date(); return `Stand: ${d.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })} · IETF Informational RFC`; })(),
   },
   en: {
     // Navigation (Main navigation per specification)
@@ -812,7 +812,7 @@ const translations: Record<Language, Record<string, string>> = {
     // E-E-A-T Trust Box
     'trust.badge': 'E-E-A-T Editorial Board & Sources',
     'trust.title': 'Editorial Quality Standard & Primary Sources',
-    'trust.reviewed_by': 'Technical Editorial Board rfc10023.de · Updated: September 2026',
+    'trust.reviewed_by': (() => { const d = new Date(); return `Technical Editorial Board rfc10023.de · Updated: ${d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`; })(),
     'trust.standards_label': 'Audited against Standards:',
     'trust.standards_val': 'IETF RFC 10023 · RFC 1035 · RFC 8552 · W3C DoH (RFC 8484)',
     'trust.sources_label': 'Official Primary Sources:',
@@ -1033,7 +1033,7 @@ const translations: Record<Language, Record<string, string>> = {
     'citation.gen_title': 'RFC 10023 Record Generator & Multi-Format Exporter',
     'citation.copy': 'Copy Citation',
     'citation.copied': 'Citation Copied',
-    'citation.status': 'Published: September 2026 · IETF Informational RFC',
+    'citation.status': (() => { const d = new Date(); return `Published: ${d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} · IETF Informational RFC`; })(),
   }
 };
 

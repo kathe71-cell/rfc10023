@@ -75,6 +75,12 @@ function RouteWatcher() {
       } else if (pathname.includes('/ecosystem')) {
         document.title = 'RFC 10023 Adoption & Ecosystem – Tools, Integrations and Statistics';
         if (metaDesc) metaDesc.setAttribute('content', 'Comprehensive overview of RFC 10023 and _for-sale DNS record adoption: implementations, tools, registrars, datasets and verified telemetry.');
+      } else if (pathname.includes('/impressum') || pathname.includes('/imprint')) {
+        document.title = 'Imprint | RFC 10023 Reference Portal';
+        if (metaDesc) metaDesc.setAttribute('content', 'Legal notice pursuant to § 5 DDG for the RFC 10023 reference and documentation portal rfc10023.de.');
+      } else if (pathname.includes('/datenschutz') || pathname.includes('/privacy')) {
+        document.title = 'Privacy Policy | RFC 10023 Reference Portal';
+        if (metaDesc) metaDesc.setAttribute('content', 'Privacy policy (GDPR / TTDSG) for rfc10023.de – cookie-free analytics, zero-CDN principle, no tracking.');
       } else {
         document.title = 'RFC 10023 | Signal Domain Sales Directly in the DNS';
         if (metaDesc) metaDesc.setAttribute('content', 'Independent reference portal & developer toolkit for IETF RFC 10023 (Informational). Live DNS validator and multi-record builder.');
@@ -98,6 +104,12 @@ function RouteWatcher() {
       } else if (pathname.includes('/oekosystem') || pathname.includes('/ecosystem')) {
         document.title = 'RFC 10023 Adoption & Ökosystem – Tools, Integrationen und Statistiken';
         if (metaDesc) metaDesc.setAttribute('content', 'Aktuelle Übersicht zur Verbreitung von RFC 10023 und dem _for-sale DNS Record: Implementierungen, Tools, Registrare, Datensätze und Adoption.');
+      } else if (pathname.includes('/impressum') || pathname.includes('/imprint')) {
+        document.title = 'Impressum | RFC 10023 Referenzportal';
+        if (metaDesc) metaDesc.setAttribute('content', 'Anbieterkennzeichnung gemäß § 5 DDG für das RFC 10023 Referenz- und Dokumentationsportal rfc10023.de.');
+      } else if (pathname.includes('/datenschutz') || pathname.includes('/privacy')) {
+        document.title = 'Datenschutzerklärung | RFC 10023 Referenzportal';
+        if (metaDesc) metaDesc.setAttribute('content', 'Datenschutzerklärung nach DSGVO & TTDSG für rfc10023.de – cookielose Analyse, Zero-CDN-Prinzip, kein Tracking.');
       } else {
         document.title = 'RFC 10023 | Zeige im DNS, dass deine Domain zum Verkauf steht';
         if (metaDesc) metaDesc.setAttribute('content', 'Unabhängiges Referenz-Portal und Entwickler-Toolkit für IETF RFC 10023 (Informational). Live DNS-Validator und Record-Generator.');
