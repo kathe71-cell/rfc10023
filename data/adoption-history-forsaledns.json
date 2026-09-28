@@ -474,9 +474,20 @@
   },
   {
     "date": "2026-09-27",
-    "activeListings": 333033,
-    "conformant": 333022,
-    "priced": 74997,
+    "activeListings": 333035,
+    "conformant": 333024,
+    "priced": 74988,
+    "dnssec": 161854,
+    "inventoryCompleted": 343818996,
+    "inventoryTotal": 343818996,
+    "baselineComplete": false,
+    "sweepComplete": true
+  },
+  {
+    "date": "2026-09-28",
+    "activeListings": 333034,
+    "conformant": 333023,
+    "priced": 74984,
     "dnssec": 161854,
     "inventoryCompleted": 343818996,
     "inventoryTotal": 343818996,
