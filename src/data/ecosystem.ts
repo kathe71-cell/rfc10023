@@ -11,7 +11,10 @@ export type EcosystemCategory =
   | 'aftermarket-search'
   | 'developer-ai'
   | 'dataset-monitoring'
-  | 'browser-utility';
+  | 'browser-utility'
+  | 'dns-management'
+  | 'developer-tool'
+  | 'badge-service';
 
 export type EcosystemStatus =
   | 'production'
@@ -30,7 +33,9 @@ export type SupportType =
   | 'browser-extension'
   | 'dataset'
   | 'documentation'
-  | 'DNS-configuration';
+  | 'DNS-configuration'
+  | 'badge-generator'
+  | 'generator-validator';
 
 export type MetaAdoptionTier = 'native' | 'tool' | 'documentation';
 
@@ -189,6 +194,9 @@ export function getCategoryLabel(category: EcosystemCategory, isEn: boolean): st
     'developer-ai': { de: 'Entwickler & KI / MCP', en: 'Developer & AI / MCP' },
     'dataset-monitoring': { de: 'Datensätze & Telemetrie', en: 'Datasets & Telemetry' },
     'browser-utility': { de: 'Browser & Utilities', en: 'Browser & Utilities' },
+    'dns-management': { de: 'DNS-Verwaltung', en: 'DNS Management' },
+    'developer-tool': { de: 'Entwickler-Tools', en: 'Developer Tools' },
+    'badge-service': { de: 'Badge-Service', en: 'Badge Service' },
   };
   return isEn ? map[category].en : map[category].de;
 }

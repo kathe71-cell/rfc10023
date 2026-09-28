@@ -202,6 +202,9 @@ export default function EcosystemPage() {
     { id: 'developer-ai', labelDe: 'Entwickler & KI / MCP', labelEn: 'Developer & AI / MCP' },
     { id: 'dataset-monitoring', labelDe: 'Datensätze & Telemetrie', labelEn: 'Datasets & Telemetry' },
     { id: 'browser-utility', labelDe: 'Browser & Utilities', labelEn: 'Browser & Utilities' },
+    { id: 'dns-management', labelDe: 'DNS-Verwaltung', labelEn: 'DNS Management' },
+    { id: 'developer-tool', labelDe: 'Entwickler-Tools', labelEn: 'Developer Tools' },
+    { id: 'badge-service', labelDe: 'Badge-Service', labelEn: 'Badge Service' },
   ];
 
   // Schema.org JSON-LD
