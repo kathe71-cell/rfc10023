@@ -490,7 +490,7 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
               className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono text-[11px] font-semibold flex items-center gap-1.5 transition-colors border border-slate-200"
             >
               <Terminal className="w-3 h-3 text-emerald-600" />
-              <span>{digCopied ? 'Kopiert!' : 'dig Befehl'}</span>
+              <span>{digCopied ? (isEn ? 'Copied!' : 'Kopiert!') : (isEn ? 'dig Command' : 'dig Befehl')}</span>
             </button>
           </div>
         </div>

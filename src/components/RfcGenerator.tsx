@@ -129,15 +129,21 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
     switch (activeTab) {
       case 'bind':
         return [
-          `; RFC 10023 Zonefile für ${cleanDomain}`,
-          `; Knotennamen: _for-sale.${cleanDomain}. | Typ: TXT | TTL: ${ttl}`,
+          language === 'en'
+            ? `; RFC 10023 Zonefile for ${cleanDomain}`
+            : `; RFC 10023 Zonefile für ${cleanDomain}`,
+          language === 'en'
+            ? `; Node name: _for-sale.${cleanDomain}. | Type: TXT | TTL: ${ttl}`
+            : `; Knotennamen: _for-sale.${cleanDomain}. | Typ: TXT | TTL: ${ttl}`,
           ...recordStrings.map((rec) => `_for-sale.${cleanDomain}. ${ttl} IN TXT "${rec.replace(/"/g, '\\"')}"`),
         ].join('\n');
 
       case 'cloudflare':
         return [
           `# Cloudflare Dashboard (DNS -> Records -> Add Record)`,
-          `# Hinweis: Content genau wie angegeben ohne äußere Anführungszeichen einfügen`,
+          language === 'en'
+            ? `# Note: Paste content exactly as shown, without outer quotation marks`
+            : `# Hinweis: Content genau wie angegeben ohne äußere Anführungszeichen einfügen`,
           ``,
           ...recordStrings.map((rec, idx) => 
             `[Record #${idx + 1}]\nType:    TXT\nName:    _for-sale\nTTL:     Auto\nContent: ${rec}\n`
@@ -147,30 +153,42 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
       case 'hetzner':
         return [
           `# Hetzner DNS Console (dns.hetzner.com)`,
-          `# Hetzner unterstützt führende Unterstriche (RFC 8552) uneingeschränkt`,
+          language === 'en'
+            ? `# Hetzner fully supports leading underscores (RFC 8552)`
+            : `# Hetzner unterstützt führende Unterstriche (RFC 8552) uneingeschränkt`,
           ``,
           ...recordStrings.map((rec, idx) => 
-            `[Eintrag #${idx + 1}]\nTyp:   TXT\nName:  _for-sale\nTTL:   ${ttl}\nWert:  ${rec}\n`
+            language === 'en'
+              ? `[Record #${idx + 1}]\nType:  TXT\nName:  _for-sale\nTTL:   ${ttl}\nValue: ${rec}\n`
+              : `[Eintrag #${idx + 1}]\nTyp:   TXT\nName:  _for-sale\nTTL:   ${ttl}\nWert:  ${rec}\n`
           ),
         ].join('\n');
 
       case 'inwx':
         return [
           `# INWX Domain-Center (Tab: DNS-Einträge)`,
-          `# Mehrzeiliges RRset im INWX Domain-Center anlegen`,
+          language === 'en'
+            ? `# Add multi-line RRset in INWX Domain Center`
+            : `# Mehrzeiliges RRset im INWX Domain-Center anlegen`,
           ``,
           ...recordStrings.map((rec, idx) => 
-            `[Eintrag #${idx + 1}]\nTyp:  TXT\nName: _for-sale\nTTL:  ${ttl}\nWert: ${rec}\n`
+            language === 'en'
+              ? `[Record #${idx + 1}]\nType: TXT\nName: _for-sale\nTTL:  ${ttl}\nValue:${rec}\n`
+              : `[Eintrag #${idx + 1}]\nTyp:  TXT\nName: _for-sale\nTTL:  ${ttl}\nWert: ${rec}\n`
           ),
         ].join('\n');
 
       case 'netcup':
         return [
           `# Netcup CCP (Customer Control Panel -> DNS)`,
-          `# Netcup akzeptiert Unterstriche für TXT-Records ohne Warnung`,
+          language === 'en'
+            ? `# Netcup accepts underscores for TXT records without warnings`
+            : `# Netcup akzeptiert Unterstriche für TXT-Records ohne Warnung`,
           ``,
           ...recordStrings.map((rec, idx) => 
-            `[Eintrag #${idx + 1}]\nHost:        _for-sale\nType:        TXT\nDestination: ${rec}\n`
+            language === 'en'
+              ? `[Record #${idx + 1}]\nHost:        _for-sale\nType:        TXT\nDestination: ${rec}\n`
+              : `[Eintrag #${idx + 1}]\nHost:        _for-sale\nType:        TXT\nDestination: ${rec}\n`
           ),
         ].join('\n');
 
@@ -190,13 +208,19 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
 
       case 'cli':
         return [
-          `# 1. DNS-Einträge abfragen (nach Hinterlegung)`,
+          language === 'en'
+            ? `# 1. Query DNS records (after adding the record)`
+            : `# 1. DNS-Einträge abfragen (nach Hinterlegung)`,
           `dig TXT _for-sale.${cleanDomain} +short`,
           ``,
-          `# 2. DNS-over-HTTPS (DoH) JSON-Abfrage`,
+          language === 'en'
+            ? `# 2. DNS-over-HTTPS (DoH) JSON query`
+            : `# 2. DNS-over-HTTPS (DoH) JSON-Abfrage`,
           `curl -sH "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?name=_for-sale.${cleanDomain}&type=TXT"`,
           ``,
-          `# 3. RFC10023.de API-Validator`,
+          language === 'en'
+            ? `# 3. RFC10023.de API Validator`
+            : `# 3. RFC10023.de API-Validator`,
           `curl -s "https://www.rfc10023.de/api/lookup?d=${cleanDomain}"`,
         ].join('\n');
 
@@ -384,14 +408,14 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
 
           {/* TTL Selection */}
           <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono">
-            <span className="font-bold text-slate-600 shrink-0">Empfohlene TTL:</span>
+            <span className="font-bold text-slate-600 shrink-0">{language === 'en' ? 'Recommended TTL:' : 'Empfohlene TTL:'}</span>
             <select
               value={ttl}
               onChange={(e) => setTtl(e.target.value)}
               className="w-full sm:w-auto max-w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-md focus:outline-none font-mono text-xs truncate"
             >
-              <option value="300">300 s (5 min – empfohlen für Verkaufs-Records)</option>
-              <option value="3600">3600 s (1 h – Standard-Hosting)</option>
+              <option value="300">{language === 'en' ? '300 s (5 min – recommended for sale records)' : '300 s (5 min – empfohlen für Verkaufs-Records)'}</option>
+              <option value="3600">{language === 'en' ? '3600 s (1 h – standard hosting)' : '3600 s (1 h – Standard-Hosting)'}</option>
               <option value="86400">86400 s (24 h)</option>
             </select>
           </div>
