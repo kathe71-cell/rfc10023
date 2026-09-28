@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /fr/
+Disallow: /zh/
 
 Sitemap: https://www.rfc10023.de/sitemap.xml
