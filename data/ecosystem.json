@@ -144,6 +144,90 @@
       "sourceUrl": "https://www.atom.com/blog/atom-adopts-rfc-10023-every-eligible-listing-is-getting-a-machine-readable-for-sale-signal/",
       "firstObserved": "2026-09-28",
       "lastVerified": "2026-09-28"
+    },
+    {
+      "id": "happydomain",
+      "name": "happyDomain",
+      "category": "dns-management",
+      "supportType": "native-integration",
+      "status": "production",
+      "description": "Open-Source DNS-Verwaltungsplattform mit nativer Unterstützung für RFC 10023 _for-sale Records im Konfigurationseditor.",
+      "descriptionEn": "Open-source DNS management platform with native support for RFC 10023 _for-sale records in its configuration editor.",
+      "sourceUrl": "https://github.com/happyDomain/happydomain",
+      "firstObserved": "2026-09",
+      "lastVerified": "2026-09-28"
+    },
+    {
+      "id": "tldx",
+      "name": "tldx",
+      "category": "developer-tool",
+      "supportType": "scanner",
+      "status": "production",
+      "description": "Open-Source CLI-Tool für Bulk-Domain-Verfügbarkeitsprüfung via RDAP, DNS und WHOIS mit integriertem RFC 10023 For-Sale-Filter.",
+      "descriptionEn": "Open-source CLI tool for bulk domain availability checking via RDAP, DNS, and WHOIS with integrated RFC 10023 for-sale filter.",
+      "sourceUrl": "https://github.com/brandonyoungdev/tldx#domains-for-sale-rfc-10023",
+      "firstObserved": "2026-09",
+      "lastVerified": "2026-09-28"
+    },
+    {
+      "id": "rdap-ai",
+      "name": "RDAP.ai",
+      "category": "domain-intelligence",
+      "supportType": "scanner",
+      "status": "supported",
+      "description": "KI-gestützte Domain-Research-Plattform mit RFC 10023 Unterstützung für die Erkennung von DNS-basierten Verkaufssignalen.",
+      "descriptionEn": "AI-powered domain research platform with RFC 10023 support for detecting DNS-based for-sale signals.",
+      "sourceUrl": "https://rdap.ai/",
+      "firstObserved": "2026-09",
+      "lastVerified": "2026-09-28"
+    },
+    {
+      "id": "easydnscheck",
+      "name": "EasyDNScheck",
+      "category": "domain-intelligence",
+      "supportType": "scanner",
+      "status": "supported",
+      "description": "Kostenloser DNS-Prüfdienst mit Erkennung und Anzeige von _for-sale TXT-Records nach RFC 10023.",
+      "descriptionEn": "Free DNS checking service detecting and displaying _for-sale TXT records per RFC 10023.",
+      "sourceUrl": "https://www.easydnscheck.com/",
+      "firstObserved": "2026-09",
+      "lastVerified": "2026-09-28"
+    },
+    {
+      "id": "badge-forsale",
+      "name": "badge.forsale",
+      "category": "badge-service",
+      "supportType": "badge-generator",
+      "status": "production",
+      "description": "Dedizierter Badge-Service zur Erzeugung datenschutzkonformer HTML/CSS-Badges für RFC 10023 konforme Domain-Verkaufsseiten.",
+      "descriptionEn": "Dedicated badge service for generating privacy-compliant HTML/CSS badges for RFC 10023 compliant domain sales pages.",
+      "sourceUrl": "https://badge.forsale/",
+      "firstObserved": "2026-09",
+      "lastVerified": "2026-09-28"
+    },
+    {
+      "id": "hx-std-forsale",
+      "name": "for-sale-dns.hx-std.com",
+      "category": "domain-intelligence",
+      "supportType": "generator-validator",
+      "status": "production",
+      "description": "Einfaches und schlankes Online-Tool zur Generierung und Validierung von RFC 10023 _for-sale DNS Records.",
+      "descriptionEn": "Simple and lightweight online tool for generating and validating RFC 10023 _for-sale DNS records.",
+      "sourceUrl": "https://for-sale-dns.hx-std.com/",
+      "firstObserved": "2026-09",
+      "lastVerified": "2026-09-28"
+    },
+    {
+      "id": "dotweekly",
+      "name": "Dotweekly",
+      "category": "aftermarket-search",
+      "supportType": "discovery",
+      "status": "production",
+      "description": "Domain-Nachrichten- und Marktplatz-Plattform mit integriertem RFC 10023 Generator und WHOIS-Lookup mit _for-sale Signal-Anzeige.",
+      "descriptionEn": "Domain news and marketplace platform featuring integrated RFC 10023 generator and WHOIS lookup with _for-sale signal display.",
+      "sourceUrl": "https://dotweekly.com/domain-for-sale",
+      "firstObserved": "2026-09",
+      "lastVerified": "2026-09-28"
     }
   ]
 }
