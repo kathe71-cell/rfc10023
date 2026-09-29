@@ -19,3 +19,80 @@
 - **Record-Generator**: https://www.rfc10023.de/generator (Export für BIND, Cloudflare, Hetzner, INWX)
 - **Hoster-Matrix**: https://www.rfc10023.de/hoster-matrix (Kompatibilität deutscher DNS-Editoren)
 - **Offizielle Spezifikation**: https://www.rfc10023.de/spezifikation
+
+---
+
+## RFC 10023 — Technische Spezifikation im Detail
+
+### Was ist RFC 10023?
+RFC 10023 ist ein IETF-Standard (Internet Engineering Task Force), der einen einheitlichen Mechanismus definiert, um Domain-Verkaufsangebote maschinenlesbar über das DNS (Domain Name System) zu signalisieren. Der vollständige Titel lautet: *"The '_for-sale' Underscored and Globally Scoped DNS Node Name"*.
+
+### DNS TXT-Record Syntax
+Ein gültiger FORSALE1-Record wird unter dem DNS-Knoten `_for-sale.<domain>` als TXT-Record abgelegt:
+
+```
+_for-sale.example.de  IN  TXT  "v=FORSALE1; furi=https://sedo.com/beispiel; fval=EUR:2500; ftxt=Verhandlungsbasis"
+```
+
+**Pflichtfeld:**
+- `v=FORSALE1;` — Versions-Identifier, muss am Anfang stehen
+
+**Optionale Felder:**
+- `furi=<URL>` — Kontakt-URL oder Listing-Seite (Sedo, Escrow, Direktmail)
+- `fval=<ISO-4217>:<Betrag>` — Preisangabe z. B. `EUR:2500`, `USD:10000`, `CHF:1200`
+- `ftxt=<Text>` — Menschenlesbare Notiz, max. 255 Zeichen gesamt (TXT-Record-Limit)
+
+### Validierungsregeln
+- Version-Tag muss der erste Tag sein
+- Semikolon als Trennzeichen zwischen Tags
+- `fval` ohne `furi` ist gültig; umgekehrt auch
+- Mehrere TXT-Records unter `_for-sale` sind unzulässig (nur einer erlaubt)
+- RFC 10023 empfiehlt DNSSEC-Signierung des Records für Vertrauenswürdigkeit
+
+### DNS-Hoster-Kompatibilität (Deutschland)
+| Hoster | TXT-Knoten `_for-sale` | DNSSEC | Anmerkung |
+|--------|----------------------|--------|-----------|
+| Hetzner | ✅ | ✅ | Über DNS-Konsole oder API |
+| INWX | ✅ | ✅ | Unterstützt Unterstrichknoten |
+| Cloudflare | ✅ | ✅ | Proxy muss deaktiviert sein |
+| IONOS | ✅ | ⚠️ | DNSSEC nur bei bestimmten TLDs |
+| Strato | ⚠️ | ❌ | Unterknoten nur manuell via Support |
+| All-Inkl | ✅ | ❌ | TXT möglich, kein DNSSEC |
+
+### Häufige Fragen & Direktantworten
+
+**Was ist FORSALE1?**  
+FORSALE1 ist der Versions-Identifier des RFC-10023-Standards. Jeder gültige DNS-Record nach diesem Standard beginnt mit `v=FORSALE1;`. Er ermöglicht zukünftige Versionierungen (FORSALE2 etc.).
+
+**Wie setze ich einen _for-sale DNS-Record?**  
+Unter dem DNS-Management Ihres Hosters einen neuen TXT-Record anlegen. Host: `_for-sale` (ohne Domain-Suffix), Wert: `v=FORSALE1; furi=https://ihre-kontaktseite.de; fval=EUR:5000`. TTL: 3600.
+
+**Kann ich RFC 10023 bei Cloudflare nutzen?**  
+Ja. Cloudflare unterstützt Unterknoten mit Unterstrich. Wichtig: Proxy-Status (orange Wolke) muss auf DNS only (grau) stehen, damit TXT-Records korrekt abgefragt werden.
+
+**Wozu dient der Live-DNS-Validator auf rfc10023.de?**  
+Der Validator prüft in Echtzeit über DNS over HTTPS (DoH), ob ein `_for-sale`-Record korrekt gesetzt, syntaktisch gültig und FORSALE1-konform ist. Erreichbar unter: https://www.rfc10023.de/validator
+
+**Was ist DoH (DNS over HTTPS)?**  
+DNS over HTTPS ist ein Protokoll (RFC 8484), das DNS-Anfragen verschlüsselt über HTTPS überträgt. rfc10023.de nutzt DoH für die Live-Validierung, um Manipulationen an DNS-Antworten zu verhindern und Datenschutz zu gewährleisten.
+
+---
+
+## Tools & Seiten auf rfc10023.de
+
+| URL | Funktion |
+|-----|----------|
+| https://www.rfc10023.de/ | Startseite mit RFC-Erklärung und Record-Beispielen |
+| https://www.rfc10023.de/validator | Live-DNS-Validator via DoH |
+| https://www.rfc10023.de/generator | Record-Generator mit Hoster-Export |
+| https://www.rfc10023.de/hoster-matrix | Kompatibilitätstabelle deutscher DNS-Editoren |
+| https://www.rfc10023.de/spezifikation | Volltext der RFC-10023-Spezifikation |
+| https://www.rfc10023.de/faq | Häufig gestellte Fragen zu FORSALE1 |
+
+---
+
+## Rechtliches & Transparenz
+
+- rfc10023.de ist ein unabhängiges, redaktionelles Informationsportal
+- Kein offizieller IETF-Kanal; der offizielle RFC-Text ist unter tools.ietf.org abrufbar
+- Keine Verkaufsprovisionen oder Maklergebühren
