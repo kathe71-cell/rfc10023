@@ -36,3 +36,18 @@ jobs:
             git commit -m "chore: update RFC 10023 adoption data"
             git push
           fi
+
+      # Fails the run (-> GitHub notification e-mail) if Domains Monitor
+      # could not be fetched today, instead of silently keeping stale data.
+      - name: Verify Domains Monitor data is fresh
+        run: |
+          node -e "
+            const s = require('./data/adoption-current.json').sources.domainsMonitor;
+            const today = new Date().toISOString().slice(0, 10);
+            const fetched = (s.lastSuccessfulFetch || '').slice(0, 10);
+            console.log('Domains Monitor:', s.value, '| sourceDate:', s.sourceDate, '| lastSuccessfulFetch:', s.lastSuccessfulFetch);
+            if (fetched !== today) {
+              console.error('::error::Domains Monitor fetch failed today (last success: ' + (s.lastSuccessfulFetch || 'never') + '). Check parser / source URL ' + s.sourceUrl);
+              process.exit(1);
+            }
+          "

@@ -97,30 +97,47 @@ export function recordHistoryEntry(history, dateString, sourceKey, value) {
 export function parseDomainsMonitorHtml(html) {
   if (typeof html !== 'string' || !html.trim()) return null;
 
-  // Specifically match table row with title or text containing "full dataset"
-  const rowRegex = /<tr[^>]*title=['"][^'"]*full dataset[^'"]*['"][^>]*>([\s\S]*?)<\/tr>/i;
-  const match = html.match(rowRegex);
-  if (!match) return null;
+  const toIsoDate = (raw) => {
+    const m = String(raw).trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+    return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : null;
+  };
+  const toCount = (raw) => {
+    const digits = String(raw)
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;|&#160;|&#xa0;|&thinsp;|&#8239;/gi, '')
+      .replace(/\D/g, '');
+    const n = parseInt(digits, 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
 
-  const cells = match[1].match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
-  if (!cells || cells.length < 3) return null;
-
-  // Cell 1: Date (e.g. 03.10.2026), Cell 2: Count (e.g. 569 405)
-  const rawDate = cells[1].replace(/<[^>]+>/g, '').trim();
-  const rawCount = cells[2].replace(/<[^>]+>/g, '').replace(/\s+/g, '').trim();
-
-  const count = parseInt(rawCount, 10);
-  if (isNaN(count) || count <= 0) return null;
-
-  // Convert DD.MM.YYYY to YYYY-MM-DD if applicable
-  let sourceDate = rawDate;
-  const dateMatch = rawDate.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
-  if (dateMatch) {
-    const [, day, month, year] = dateMatch;
-    sourceDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  // Strategy 1: <tr title="...full dataset..."> with cells [zone, date, count]
+  const rowMatch = html.match(/<tr[^>]*title=['"][^'"]*full dataset[^'"]*['"][^>]*>([\s\S]*?)<\/tr>/i);
+  if (rowMatch) {
+    const cells = rowMatch[1].match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
+    if (cells && cells.length >= 3) {
+      const count = toCount(cells[2]);
+      const sourceDate = toIsoDate(cells[1].replace(/<[^>]+>/g, ''));
+      if (count && sourceDate) return { count, sourceDate };
+    }
   }
 
-  return { count, sourceDate };
+  // Strategy 2 (markup-independent fallback): visible text
+  // "... (full dataset) 03.10.2026 569 405"
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;|&#160;|&#xa0;/gi, '\u00a0')
+    .replace(/&amp;/gi, '&');
+  const textMatch = text.match(
+    /full dataset\)?\s*(\d{1,2}\.\d{1,2}\.\d{4})\s*(\d{1,3}(?:[ \u00a0\u202f.,]\d{3})*)/i
+  );
+  if (textMatch) {
+    const count = toCount(textMatch[2]);
+    const sourceDate = toIsoDate(textMatch[1]);
+    if (count && sourceDate) return { count, sourceDate };
+  }
+
+  return null;
 }
 
 /**
