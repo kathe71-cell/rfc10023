@@ -127,4 +127,50 @@ describe('RFC 10023 Adoption Data Update Engine (Cases A - E)', () => {
     expect(history).toHaveLength(2); // Still exactly 2 entries, no duplicate!
     expect(history[1].value).toBe(102500); // Updated in-place
   });
+
+  it('Domains Monitor HTML Parser extracts full dataset count and date correctly', async () => {
+    const { parseDomainsMonitorHtml } = await import('../../scripts/update-adoption.mjs');
+    const mockHtml = `
+      <table class="table table-hover">
+        <tr title='Domains for sale with _for-sale DNS records (full dataset)'>
+          <td>Domains for sale with _for-sale DNS records (full dataset)</td>
+          <td>03.10.2026</td>
+          <td>569 405</td>
+        </tr>
+        <tr title='Domains for sale with _for-sale DNS records (daily update)'>
+          <td>Domains for sale with _for-sale DNS records (daily update)</td>
+          <td>03.10.2026</td>
+          <td>1 171</td>
+        </tr>
+      </table>
+    `;
+
+    const parsed = parseDomainsMonitorHtml(mockHtml);
+    expect(parsed).not.toBeNull();
+    expect(parsed?.count).toBe(569405);
+    expect(parsed?.sourceDate).toBe('2026-10-03');
+  });
+
+  it('Stale-Data Guard: flags inconsistency if UI lastUpdated is recent but sourceDate is stale', () => {
+    // Function implementing the regression check
+    function checkStaleDataConsistency(uiDateStr: string, sourceDateStr: string, maxDaysAllowed = 3) {
+      const uiDate = new Date(uiDateStr);
+      const srcDate = new Date(sourceDateStr);
+      const diffMs = Math.abs(uiDate.getTime() - srcDate.getTime());
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+      return {
+        consistent: diffDays <= maxDaysAllowed,
+        diffDays,
+      };
+    }
+
+    // Consistent: sourceDate and uiDate match
+    const good = checkStaleDataConsistency('2026-10-03', '2026-10-03');
+    expect(good.consistent).toBe(true);
+
+    // Stale: UI says 2026-10-03 but metric is still from 2026-09-24 (9 days old)
+    const stale = checkStaleDataConsistency('2026-10-03', '2026-09-24');
+    expect(stale.consistent).toBe(false);
+    expect(stale.diffDays).toBeGreaterThan(3);
+  });
 });

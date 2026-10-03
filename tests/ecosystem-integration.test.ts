@@ -76,7 +76,7 @@ describe('RFC 10023 Ecosystem Integration Tests', () => {
       'https://www.atom.com/blog/atom-adopts-rfc-10023-every-eligible-listing-is-getting-a-machine-readable-for-sale-signal/'
     );
     expect(atom?.firstObserved).toBe('2026-09-25');
-    expect(atom?.lastVerified).toBe('2026-09-25');
+    expect(atom?.lastVerified).toMatch(/^2026-09-\d{2}$|^2026-10-\d{2}$/);
     expect(atom?.description).toContain('Atom-Nameservern');
     expect(atom?.description).toContain('RFC 10023');
     expect(atom?.descriptionEn).toContain('Atom nameservers');

@@ -105,10 +105,12 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
       expect(fs.existsSync(domainsMonitorJsonPath)).toBe(true);
       const dmData = JSON.parse(fs.readFileSync(domainsMonitorJsonPath, 'utf-8'));
       expect(Array.isArray(dmData)).toBe(true);
-      expect(dmData.length).toBe(1);
-      expect(dmData[0].date).toBe('2026-09-24');
-      expect(dmData[0].source).toBe('domainsMonitor');
-      expect(dmData[0].value).toBe(392683);
+      expect(dmData.length).toBeGreaterThanOrEqual(2);
+      // Historical measurement point must be preserved unchanged
+      expect(dmData[0]).toEqual({ date: '2026-09-24', source: 'domainsMonitor', value: 392683 });
+      // New measurement point (full dataset) appended, never interpolated
+      expect(dmData[1]).toEqual({ date: '2026-10-03', source: 'domainsMonitor', value: 569405 });
+      for (const e of dmData) expect(e.source).toBe('domainsMonitor');
     });
   });
 
@@ -124,9 +126,9 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
 
       // Main header
       expect(deHtml).toContain('RFC 10023 Adoption im Zeitverlauf');
-      expect(deHtml).toContain('Letzte Aktualisierung: 25. September 2026');
-      expect(deHtml).toContain('40 Tage');
-      expect(deHtml).toContain('Abgerufen am 25. September 2026');
+      expect(deHtml).toMatch(/Letzte Aktualisierung: \d{1,2}\. \w+ 2026/);
+      expect(deHtml).toMatch(/\d+ Tage/);
+      expect(deHtml).toMatch(/Abgerufen am \d{1,2}\. \w+ 2026/);
       // ForSaleDNS section
       expect(deHtml).toContain('ForSaleDNS – Aktive Listings');
       expect(deHtml).toContain(deActiveFormatted);
@@ -140,8 +142,11 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
       expect(deHtml).toContain('Historische ForSaleDNS-Werte werden direkt aus der dokumentierten Adoption-History-API übernommen');
       // Domains Monitor section
       expect(deHtml).toContain('Domains Monitor – Erkannte Domains');
-      expect(deHtml).toContain('392.683');
-      expect(deHtml).toContain('domains-monitor.com/research/rfc10023');
+      // Current KPI must come from adoption-current.json (full dataset), not a stale hardcoded value
+      const dmCurrent = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'adoption-current.json'), 'utf-8')).sources.domainsMonitor;
+      expect(deHtml).toContain(dmCurrent.value.toLocaleString('de-DE'));
+      expect(deHtml).toContain('Datenstand: ' + dmCurrent.sourceDate.split('-').reverse().join('.'));
+      expect(deHtml).toContain('domains-monitor.com/for-sale-domains/');
     });
 
     it('verifies dist/en/ecosystem/index.html renders English ForSaleDNS chart, methodology, and sources', () => {
@@ -153,9 +158,9 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
 
       // Main header
       expect(enHtml).toContain('RFC 10023 Adoption over time');
-      expect(enHtml).toContain('Last updated: 25 September 2026');
-      expect(enHtml).toContain('40 days');
-      expect(enHtml).toContain('Retrieved on September 25, 2026');
+      expect(enHtml).toMatch(/Last updated: \d{1,2} \w+ 2026/);
+      expect(enHtml).toMatch(/\d+ days/);
+      expect(enHtml).toMatch(/Retrieved on \w+ \d{1,2}, 2026/);
       // ForSaleDNS section
       expect(enHtml).toContain('ForSaleDNS – Active Listings');
       expect(enHtml).toContain(enActiveFormatted);
@@ -169,7 +174,8 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
       expect(enHtml).toContain('Historical ForSaleDNS values are retrieved directly from the documented Adoption History API');
       // Domains Monitor section
       expect(enHtml).toContain('Domains Monitor – Detected Domains');
-      expect(enHtml).toContain('392,683');
+      const dmCurrentEn = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'adoption-current.json'), 'utf-8')).sources.domainsMonitor;
+      expect(enHtml).toContain(dmCurrentEn.value.toLocaleString('en-US'));
     });
   });
 

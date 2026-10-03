@@ -58,11 +58,16 @@ export interface EcosystemData {
 }
 
 export interface AdoptionSource {
+  source?: string;
+  metric?: string;
+  count?: number;
   value: number;
+  sourceDate?: string;
   label: string;
   labelDe?: string;
   sourceUrl: string;
   lastSuccessfulFetch: string;
+  fetchedAt?: string;
   mode: 'automatic' | 'manual';
 }
 
@@ -216,6 +221,8 @@ export function computeEcosystemStats() {
 
   const primarySource = ADOPTION_CURRENT.sources.domainsMonitor;
   const detectedDomains = primarySource ? primarySource.value : 0;
+  const dmSourceDate = primarySource?.sourceDate || null;
+  const dmFetchedAt = primarySource?.lastSuccessfulFetch || primarySource?.fetchedAt || null;
   const lastUpdated = ECOSYSTEM_DATA.lastUpdated;
 
   return {
@@ -224,6 +231,8 @@ export function computeEcosystemStats() {
     toolCount,
     docCount,
     detectedDomains,
+    dmSourceDate,
+    dmFetchedAt,
     lastUpdated,
   };
 }

@@ -27,3 +27,7 @@ export declare function processAdoptionUpdate(
   changed: boolean;
   logs: string[];
 }>;
+
+export declare function parseDomainsMonitorHtml(
+  html: string
+): { count: number; sourceDate: string } | null;

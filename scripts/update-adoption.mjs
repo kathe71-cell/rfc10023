@@ -88,6 +88,42 @@ export function recordHistoryEntry(history, dateString, sourceKey, value) {
 }
 
 /**
+ * Parses full dataset count and date from Domains Monitor HTML table.
+ * Specifically targets "Domains for sale with _for-sale DNS records (full dataset)".
+ * 
+ * @param {string} html 
+ * @returns {{ count: number, sourceDate: string } | null}
+ */
+export function parseDomainsMonitorHtml(html) {
+  if (typeof html !== 'string' || !html.trim()) return null;
+
+  // Specifically match table row with title or text containing "full dataset"
+  const rowRegex = /<tr[^>]*title=['"][^'"]*full dataset[^'"]*['"][^>]*>([\s\S]*?)<\/tr>/i;
+  const match = html.match(rowRegex);
+  if (!match) return null;
+
+  const cells = match[1].match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
+  if (!cells || cells.length < 3) return null;
+
+  // Cell 1: Date (e.g. 03.10.2026), Cell 2: Count (e.g. 569 405)
+  const rawDate = cells[1].replace(/<[^>]+>/g, '').trim();
+  const rawCount = cells[2].replace(/<[^>]+>/g, '').replace(/\s+/g, '').trim();
+
+  const count = parseInt(rawCount, 10);
+  if (isNaN(count) || count <= 0) return null;
+
+  // Convert DD.MM.YYYY to YYYY-MM-DD if applicable
+  let sourceDate = rawDate;
+  const dateMatch = rawDate.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (dateMatch) {
+    const [, day, month, year] = dateMatch;
+    sourceDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+
+  return { count, sourceDate };
+}
+
+/**
  * Core processing logic for an adoption dataset.
  * Can be run with custom fetchers for deterministic unit testing.
  * 
@@ -131,7 +167,10 @@ export async function processAdoptionUpdate(currentData, historyData, options = 
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const response = await fetcher(source.sourceUrl, {
-        headers: { 'Accept': 'application/json, text/plain, */*' },
+        headers: {
+          'Accept': 'text/html,application/xhtml+xml,application/json,text/plain,*/*;q=0.9',
+          'User-Agent': 'Mozilla/5.0 (compatible; rfc10023-telemetry/1.0; +https://www.rfc10023.de)'
+        },
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -143,19 +182,32 @@ export async function processAdoptionUpdate(currentData, historyData, options = 
 
       const rawText = await response.text();
       let extractedValue = null;
+      let extractedDate = null;
 
-      try {
-        const json = JSON.parse(rawText);
-        // Look for common count fields
-        if (typeof json.value === 'number') extractedValue = json.value;
-        else if (typeof json.count === 'number') extractedValue = json.count;
-        else if (typeof json.total === 'number') extractedValue = json.total;
-        else if (typeof json.domainsCount === 'number') extractedValue = json.domainsCount;
-        else if (typeof json.detectedDomains === 'number') extractedValue = json.detectedDomains;
-      } catch {
-        // Fallback: Check if response is raw plain text number
-        const parsed = parseInt(rawText.trim(), 10);
-        if (!isNaN(parsed)) extractedValue = parsed;
+      // 1. Check if source is Domains Monitor HTML page
+      if (sourceKey === 'domainsMonitor' || source.sourceUrl.includes('domains-monitor.com')) {
+        const dmParsed = parseDomainsMonitorHtml(rawText);
+        if (dmParsed) {
+          extractedValue = dmParsed.count;
+          extractedDate = dmParsed.sourceDate;
+        }
+      }
+
+      // 2. Check JSON payload if not extracted from HTML
+      if (extractedValue === null) {
+        try {
+          const json = JSON.parse(rawText);
+          if (typeof json.value === 'number') extractedValue = json.value;
+          else if (typeof json.count === 'number') extractedValue = json.count;
+          else if (typeof json.total === 'number') extractedValue = json.total;
+          else if (typeof json.domainsCount === 'number') extractedValue = json.domainsCount;
+          else if (typeof json.detectedDomains === 'number') extractedValue = json.detectedDomains;
+          if (json.date) extractedDate = json.date;
+        } catch {
+          // Fallback: Check if response is raw plain text number
+          const parsed = parseInt(rawText.trim(), 10);
+          if (!isNaN(parsed)) extractedValue = parsed;
+        }
       }
 
       if (extractedValue === null) {
@@ -169,20 +221,27 @@ export async function processAdoptionUpdate(currentData, historyData, options = 
         continue;
       }
 
+      const effectiveDate = extractedDate || today;
+
       // Valid and plausible value received
       if (extractedValue !== source.value) {
         logs.push(`  ✓ New valid value for [${sourceKey}]: ${source.value} → ${extractedValue}`);
         source.value = extractedValue;
+        source.count = extractedValue;
+        if (extractedDate) source.sourceDate = extractedDate;
         source.lastSuccessfulFetch = nowIso;
+        source.fetchedAt = nowIso;
         hasChanges = true;
 
-        updatedHistory = recordHistoryEntry(updatedHistory, today, sourceKey, extractedValue);
+        updatedHistory = recordHistoryEntry(updatedHistory, effectiveDate, sourceKey, extractedValue);
       } else {
         logs.push(`  ℹ Value unchanged (${source.value}). Updating lastSuccessfulFetch timestamp.`);
         source.lastSuccessfulFetch = nowIso;
+        source.fetchedAt = nowIso;
+        if (extractedDate) source.sourceDate = extractedDate;
         hasChanges = true;
-        // Ensure today is registered in history if missing
-        updatedHistory = recordHistoryEntry(updatedHistory, today, sourceKey, source.value);
+        // Ensure effectiveDate is registered in history if missing
+        updatedHistory = recordHistoryEntry(updatedHistory, effectiveDate, sourceKey, source.value);
       }
     } catch (err) {
       logs.push(`  ✗ Network/Parsing exception for [${sourceKey}]: ${err.message}. Retaining previous value (${source.value}).`);

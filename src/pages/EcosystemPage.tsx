@@ -297,10 +297,15 @@ export default function EcosystemPage() {
   const fullSweepDays = completeSweepPoints.length;
   const forSaleSnapshotDate = latestForSale?.date || FORSALEDNS_META?.latestSnapshotDate || '2026-09-25';
   const forSaleFetchTimestamp = FORSALEDNS_META?.lastSuccessfulFetch || '2026-09-25T05:24:31Z';
-  const ecosystemLastUpdatedDate = latestForSale?.date || stats.lastUpdated || forSaleSnapshotDate;
+  const ecosystemLastUpdatedDate = [latestForSale?.date, stats.dmSourceDate, stats.lastUpdated, forSaleSnapshotDate]
+    .filter((d): d is string => Boolean(d))
+    .sort()
+    .pop() as string;
   const dmStartDate = historyPoints[0]?.date || '2026-09-24';
   const latestDm = historyPoints[historyPoints.length - 1] || null;
-  const latestDmDate = latestDm?.date || dmStartDate;
+  const latestDmDate = stats.dmSourceDate || latestDm?.date || dmStartDate;
+  const latestDmCount = stats.detectedDomains || latestDm?.value || 0;
+  const latestDmFetchTimestamp = stats.dmFetchedAt || null;
 
   // Growth within the complete-sweep ForSaleDNS observation dataset
   const forSaleGrowth = useMemo(() => {
@@ -448,7 +453,7 @@ export default function EcosystemPage() {
                 {isEn ? 'RFC 10023 Adoption Snapshot' : 'RFC 10023 Adoption Kennzahlen'}
               </h2>
               <span className="text-[11px] font-mono text-slate-500">
-                {isEn ? `Status: ${formatFullDate(stats.lastUpdated, true)}` : `Stand: ${formatFullDate(stats.lastUpdated, false)}`}
+                {isEn ? `Status: ${formatFullDate(ecosystemLastUpdatedDate, true)}` : `Stand: ${formatFullDate(ecosystemLastUpdatedDate, false)}`}
               </span>
             </div>
 
@@ -460,12 +465,15 @@ export default function EcosystemPage() {
                   {isEn ? 'Detected _for-sale Records' : 'Erkannte _for-sale Records'}
                 </span>
                 <div className="text-3xl font-extrabold text-slate-950 font-mono tracking-tight">
-                  {stats.detectedDomains.toLocaleString(isEn ? 'en-US' : 'de-DE')}+
+                  {latestDmCount.toLocaleString(isEn ? 'en-US' : 'de-DE')}
                 </div>
+                <span className="block mt-1 text-[11px] font-mono text-slate-500">
+                  {isEn ? `Data snapshot: ${formatFullDate(latestDmDate, true)}` : `Datenstand: ${formatFullDate(latestDmDate, false)}`}
+                </span>
                 <div className="mt-3 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-mono text-slate-500">
                   <span>{isEn ? 'Source: Domains Monitor' : 'Quelle: Domains Monitor'}</span>
                   <a
-                    href="https://domains-monitor.com/research/rfc10023"
+                    href="https://domains-monitor.com/for-sale-domains/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-emerald-700 hover:underline flex items-center gap-0.5"
@@ -1216,7 +1224,7 @@ export default function EcosystemPage() {
             </div>
             <div className="text-left sm:text-right font-mono text-xs text-slate-500">
               <span className="font-bold text-slate-900 text-sm">
-                {latestDm?.value ? latestDm.value.toLocaleString(isEn ? 'en-US' : 'de-DE') : '392.683'}
+                {latestDmCount.toLocaleString(isEn ? 'en-US' : 'de-DE')}
               </span>
               <span className="block text-[11px] text-slate-400">
                 {historyPoints.length > 1
@@ -1337,24 +1345,39 @@ export default function EcosystemPage() {
           )}
 
           {/* Source Citation for Domains Monitor (Requirement 10) */}
-          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 font-mono gap-2">
+          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 font-mono gap-3">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-700">{isEn ? 'Source: Domains Monitor' : 'Quelle: Domains Monitor'}</span>
-              <span>•</span>
+              <span className="font-semibold text-slate-700">{isEn ? 'Source: ' : 'Quelle: '}</span>
               <a
-                href="https://domains-monitor.com/research/rfc10023"
+                href="https://domains-monitor.com/for-sale-domains/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-emerald-700 hover:underline flex items-center gap-1 font-semibold"
+                className="text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1 font-semibold"
+                title={isEn ? 'Open Domains Monitor dataset' : 'Domains Monitor Datensatz öffnen'}
+                aria-label={isEn ? 'Open Domains Monitor dataset' : 'Domains Monitor Datensatz öffnen'}
               >
-                <span>domains-monitor.com/research/rfc10023</span>
+                <span>domains-monitor.com/for-sale-domains/</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>
-            <div className="flex items-center gap-3 text-slate-600">
-              <span>{isEn ? `Start: ${formatFullDate(dmStartDate, true)}` : `Start: ${formatFullDate(dmStartDate, false)}`}</span>
-              <span>•</span>
-              <span>{isEn ? 'Daily cron: 05:17 UTC' : 'Täglicher Abgleich: 05:17 UTC'}</span>
+            <div className="flex flex-col sm:items-end text-slate-600 gap-0.5">
+              <span className="font-semibold text-slate-800">
+                {isEn
+                  ? `Data snapshot: ${formatFullDate(latestDmDate, true)}`
+                  : `Datenstand: ${formatFullDate(latestDmDate, false)}`}
+              </span>
+              {latestDmFetchTimestamp && (
+                <span className="text-[11px] text-slate-500 font-mono">
+                  {isEn
+                    ? `Last successful fetch: ${formatFetchTimestamp(latestDmFetchTimestamp, true)}`
+                    : `Letzter erfolgreicher Abruf: ${formatFetchTimestamp(latestDmFetchTimestamp, false)}`}
+                </span>
+              )}
+              {latestDmFetchTimestamp && (new Date(latestDmFetchTimestamp.slice(0, 10)).getTime() - new Date(latestDmDate).getTime()) / 86400000 > 2 && (
+                <span className="text-[11px] font-mono font-bold text-amber-900 bg-amber-100 border border-amber-300 rounded px-1.5 py-0.5" data-stale-warning="true">
+                  {isEn ? 'Source data older than 2 days – value not current' : 'Quelldaten älter als 2 Tage – Wert nicht aktuell'}
+                </span>
+              )}
             </div>
           </div>
         </div>
