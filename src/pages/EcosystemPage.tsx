@@ -261,6 +261,14 @@ export default function EcosystemPage() {
 
   // Telemetry time series: Domains Monitor (Own baseline started 2026-09-24)
   const historyPoints = ADOPTION_HISTORY;
+  // Domains Monitor "full dataset" metric (domains-monitor.com/for-sale-domains/) is available from
+  // 2026-10-03. The 2026-09-24 baseline stems from a different, since removed research page and is
+  // therefore listed in the table but not connected in the same trend line.
+  const DM_FULL_DATASET_START = '2026-10-03';
+  const dmFullPoints = useMemo(
+    () => historyPoints.filter((p) => p.date >= DM_FULL_DATASET_START),
+    [historyPoints]
+  );
   const dmSvgWidth = 600;
   const dmSvgHeight = 120;
   const dmPaddingX = 40;
@@ -268,24 +276,24 @@ export default function EcosystemPage() {
 
   // Dynamic Y-scale calculation for Domains Monitor
   const dmScale = useMemo(() => {
-    const values = historyPoints.map((p) => p.value);
+    const values = dmFullPoints.map((p) => p.value);
     return computeDynamicYScale(values, {
       minPaddingRatio: 0.02,
       rangePaddingRatio: 0.15,
       gridLineCount: 2,
     });
-  }, [historyPoints]);
+  }, [dmFullPoints]);
 
   const dmPointsString = useMemo(() => {
-    if (historyPoints.length < 2) return '';
-    return historyPoints
+    if (dmFullPoints.length < 2) return '';
+    return dmFullPoints
       .map((pt, idx) => {
-        const x = dmPaddingX + (idx / (historyPoints.length - 1)) * (dmSvgWidth - dmPaddingX * 2);
+        const x = dmPaddingX + (idx / (dmFullPoints.length - 1)) * (dmSvgWidth - dmPaddingX * 2);
         const y = calculateSvgY(pt.value, dmScale, dmSvgHeight, dmPaddingY);
         return `${x.toFixed(1)},${y.toFixed(1)}`;
       })
       .join(' ');
-  }, [historyPoints, dmScale]);
+  }, [dmFullPoints, dmScale]);
 
   // Telemetry time series: ForSaleDNS (Verified public API: 42 daily observations)
   const forSalePoints = ADOPTION_HISTORY_FORSALEDNS;
@@ -330,15 +338,47 @@ export default function EcosystemPage() {
   const fsPaddingX = 55;
   const fsPaddingY = 25;
 
-  // Dynamic Y-scale calculation for ForSaleDNS
+  // Domains Monitor overlay: plotted on the ForSaleDNS date axis (same calendar days only)
+  const fsDateIndex = useMemo(
+    () => new Map(forSalePoints.map((p, i) => [p.date, i] as [string, number])),
+    [forSalePoints]
+  );
+  const dmOverlaySource = useMemo(
+    () => dmFullPoints.filter((p) => fsDateIndex.has(p.date)),
+    [dmFullPoints, fsDateIndex]
+  );
+  const dmValueByDate = useMemo(
+    () => new Map(dmFullPoints.map((p) => [p.date, p.value] as [string, number])),
+    [dmFullPoints]
+  );
+
+  // Dynamic Y-scale calculation for ForSaleDNS (+ Domains Monitor overlay)
   const fsScale = useMemo(() => {
-    const values = forSalePoints.map((p) => p.activeListings);
+    const values = [
+      ...forSalePoints.map((p) => p.activeListings),
+      ...dmOverlaySource.map((p) => p.value),
+    ];
     return computeDynamicYScale(values, {
       minPaddingRatio: 0.02,
       rangePaddingRatio: 0.15,
       gridLineCount: 3,
     });
-  }, [forSalePoints]);
+  }, [forSalePoints, dmOverlaySource]);
+
+  const dmOverlayPoints = useMemo(() => {
+    if (forSalePoints.length < 2) return [];
+    return dmOverlaySource.map((p) => {
+      const idx = fsDateIndex.get(p.date) as number;
+      const x = fsPaddingX + (idx / (forSalePoints.length - 1)) * (fsSvgWidth - fsPaddingX * 2);
+      const y = calculateSvgY(p.value, fsScale, fsSvgHeight, fsPaddingY);
+      return { ...p, x: Number(x.toFixed(1)), y: Number(y.toFixed(1)) };
+    });
+  }, [dmOverlaySource, fsDateIndex, forSalePoints.length, fsScale]);
+
+  const dmOverlayLine = useMemo(
+    () => (dmOverlayPoints.length >= 2 ? dmOverlayPoints.map((p) => `${p.x},${p.y}`).join(' ') : ''),
+    [dmOverlayPoints]
+  );
 
   // Full polyline points with safe dynamic coordinates
   const fsAllPoints = useMemo(() => {
@@ -459,7 +499,7 @@ export default function EcosystemPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               
-              {/* Card 1: Detected Domains */}
+              {/* Card 1: Detected Domains – both independent sources */}
               <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 shadow-2xs">
                 <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 block mb-1">
                   {isEn ? 'Detected _for-sale Records' : 'Erkannte _for-sale Records'}
@@ -468,19 +508,44 @@ export default function EcosystemPage() {
                   {latestDmCount.toLocaleString(isEn ? 'en-US' : 'de-DE')}
                 </div>
                 <span className="block mt-1 text-[11px] font-mono text-slate-500">
-                  {isEn ? `Data snapshot: ${formatFullDate(latestDmDate, true)}` : `Datenstand: ${formatFullDate(latestDmDate, false)}`}
+                  {isEn
+                    ? `Domains Monitor · full dataset · ${formatFullDate(latestDmDate, true)}`
+                    : `Domains Monitor · Gesamtdatensatz · ${formatFullDate(latestDmDate, false)}`}
                 </span>
-                <div className="mt-3 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-mono text-slate-500">
-                  <span>{isEn ? 'Source: Domains Monitor' : 'Quelle: Domains Monitor'}</span>
-                  <a
-                    href="https://domains-monitor.com/for-sale-domains/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-emerald-700 hover:underline flex items-center gap-0.5"
-                  >
-                    <span>{isEn ? 'Source' : 'Quelle'}</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
+                {latestForSale && (
+                  <div className="mt-2.5 pt-2.5 border-t border-slate-200/60">
+                    <div className="text-xl font-extrabold text-slate-800 font-mono tracking-tight">
+                      {latestForSale.activeListings.toLocaleString(isEn ? 'en-US' : 'de-DE')}
+                    </div>
+                    <span className="block mt-0.5 text-[11px] font-mono text-slate-500">
+                      {isEn
+                        ? `ForSaleDNS · active listings · ${formatFullDate(latestForSale.date, true)}`
+                        : `ForSaleDNS · aktive Listings · ${formatFullDate(latestForSale.date, false)}`}
+                    </span>
+                  </div>
+                )}
+                <div className="mt-3 pt-3 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-mono text-slate-500 gap-2">
+                  <span>{isEn ? 'Different methods' : 'Unterschiedliche Methodik'}</span>
+                  <span className="flex items-center gap-2">
+                    <a
+                      href="https://domains-monitor.com/for-sale-domains/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-700 hover:underline flex items-center gap-0.5"
+                    >
+                      <span>DM</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                    <a
+                      href="https://forsaledns.net/developers"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-700 hover:underline flex items-center gap-0.5"
+                    >
+                      <span>ForSaleDNS</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </span>
                 </div>
               </div>
 
@@ -586,6 +651,11 @@ export default function EcosystemPage() {
               <h3 className="text-lg font-bold text-slate-950">
                 {isEn ? 'Observation History: Active RFC 10023 Listings' : 'Beobachtungs-Historie: Aktive RFC-10023-Listings'}
               </h3>
+              <p className="mt-1 text-xs text-slate-500 max-w-2xl">
+                {isEn
+                  ? 'Two independent sources, both fetched daily: ForSaleDNS counts active listings within its 343.8M-domain inventory; Domains Monitor counts all domains with a _for-sale record in its full dataset. Different methods – the values are not directly comparable.'
+                  : 'Zwei unabhängige Quellen, beide täglich abgerufen: ForSaleDNS zählt aktive Listings im eigenen Inventar (343,8 Mio. Domains), Domains Monitor alle Domains mit _for-sale Record im Gesamtdatensatz. Unterschiedliche Methodik – die Werte sind nicht direkt vergleichbar.'}
+              </p>
             </div>
             <div className="text-left sm:text-right font-mono text-xs text-slate-500">
               <span className="font-bold text-slate-900 text-sm">
@@ -614,6 +684,15 @@ export default function EcosystemPage() {
                 <span className="w-5 h-0.5 border-b-2 border-dashed border-amber-600"></span>
                 <span className="text-amber-900 font-semibold">
                   {isEn ? 'Preliminary partial sweeps (15 & 16 Aug)' : 'Vorläufige Teil-Scans (15. & 16.08.)'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 border-2 border-indigo-600 bg-white"></span>
+                <span className="w-4 h-0.5 bg-indigo-600 rounded -ml-1"></span>
+                <span className="text-indigo-900 font-semibold">
+                  {isEn
+                    ? `Domains Monitor – full dataset (since ${formatFullDate(DM_FULL_DATASET_START, true)})`
+                    : `Domains Monitor – Gesamtdatensatz (ab ${formatFullDate(DM_FULL_DATASET_START, false)})`}
                 </span>
               </div>
             </div>
@@ -728,6 +807,14 @@ export default function EcosystemPage() {
                     >
                       {displayDetails.deltaVsPreviousLabel}
                     </span>
+                    {dmValueByDate.has(displayDetails.date) && (
+                      <span className="text-xs text-indigo-300">
+                        · Domains Monitor:{' '}
+                        <span className="font-bold text-indigo-200">
+                          {(dmValueByDate.get(displayDetails.date) as number).toLocaleString(isEn ? 'en-US' : 'de-DE')}
+                        </span>
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -848,6 +935,43 @@ export default function EcosystemPage() {
                       points={fsCompletePointsString}
                     />
                   )}
+
+                  {/* Domains Monitor overlay (full dataset) */}
+                  {dmOverlayLine && (
+                    <polyline
+                      fill="none"
+                      stroke="#4f46e5"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      points={dmOverlayLine}
+                      className="pointer-events-none"
+                    />
+                  )}
+                  {dmOverlayPoints.map((pt, i) => {
+                    const isLast = i === dmOverlayPoints.length - 1;
+                    return (
+                      <g key={`dm-${pt.date}`} className="pointer-events-none">
+                        <rect
+                          x={pt.x - 3.5}
+                          y={pt.y - 3.5}
+                          width={7}
+                          height={7}
+                          className="fill-white stroke-indigo-600 stroke-2"
+                        />
+                        {isLast && (
+                          <text
+                            x={pt.x}
+                            y={pt.y - 9}
+                            textAnchor="middle"
+                            className="text-[9px] font-mono font-bold fill-indigo-800"
+                          >
+                            {(pt.value / 1000).toFixed(0)}k
+                          </text>
+                        )}
+                      </g>
+                    );
+                  })}
 
                   {/* Active Point Vertical Guide Line to X-Axis */}
                   {activePoint && (
@@ -1234,7 +1358,7 @@ export default function EcosystemPage() {
             </div>
           </div>
 
-          {historyPoints.length >= 3 ? (
+          {dmFullPoints.length >= 3 ? (
             <div className="w-full overflow-x-auto">
               <div className="min-w-[500px]">
                 <svg viewBox={`0 0 ${dmSvgWidth} ${dmSvgHeight}`} className="w-full h-32 overflow-visible">
@@ -1261,8 +1385,8 @@ export default function EcosystemPage() {
                     strokeLinejoin="round"
                     points={dmPointsString}
                   />
-                  {historyPoints.map((pt, idx) => {
-                    const x = dmPaddingX + (idx / (historyPoints.length - 1)) * (dmSvgWidth - dmPaddingX * 2);
+                  {dmFullPoints.map((pt, idx) => {
+                    const x = dmPaddingX + (idx / (dmFullPoints.length - 1)) * (dmSvgWidth - dmPaddingX * 2);
                     const y = calculateSvgY(pt.value, dmScale, dmSvgHeight, dmPaddingY);
                     return (
                       <g key={pt.date} className="group">
@@ -1331,7 +1455,11 @@ export default function EcosystemPage() {
                         <td className="py-2.5 px-4 font-bold text-slate-900">{item.date}</td>
                         <td className="py-2.5 px-4 text-slate-600">{item.source}</td>
                         <td className="py-2.5 px-4 font-bold text-emerald-800">{item.value.toLocaleString(isEn ? 'en-US' : 'de-DE')}</td>
-                        <td className="py-2.5 px-4 text-slate-500">Telemetry Snapshot</td>
+                        <td className="py-2.5 px-4 text-slate-500">
+                          {item.date < DM_FULL_DATASET_START
+                            ? (isEn ? 'Baseline (earlier research page, different metric)' : 'Basiswert (frühere Research-Seite, andere Metrik)')
+                            : (isEn ? 'Full dataset (daily)' : 'Gesamtdatensatz (täglich)')}
+                        </td>
                         <td className="py-2.5 px-4 text-emerald-700 font-semibold flex items-center gap-1">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>{isEn ? 'Verified' : 'Verifiziert'}</span>
