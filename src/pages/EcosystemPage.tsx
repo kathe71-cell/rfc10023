@@ -351,6 +351,19 @@ export default function EcosystemPage() {
     () => new Map(dmFullPoints.map((p) => [p.date, p.value] as [string, number])),
     [dmFullPoints]
   );
+  const getDmDetails = (date: string) => {
+    const idx = dmFullPoints.findIndex((p) => p.date === date);
+    if (idx < 0) return null;
+    const value = dmFullPoints[idx].value;
+    const prev = idx > 0 ? dmFullPoints[idx - 1].value : null;
+    const delta = prev !== null ? value - prev : null;
+    const loc = isEn ? 'en-US' : 'de-DE';
+    const deltaLabel =
+      delta === null
+        ? (isEn ? 'First observation' : 'Erster Messpunkt')
+        : `${delta > 0 ? '+' : ''}${delta.toLocaleString(loc)} ${isEn ? 'vs previous' : 'zum Vortag'}`;
+    return { value, formatted: value.toLocaleString(loc), delta, deltaLabel };
+  };
 
   // Dynamic Y-scale calculation for ForSaleDNS (+ Domains Monitor overlay)
   const fsScale = useMemo(() => {
@@ -411,6 +424,7 @@ export default function EcosystemPage() {
   // Interactive point state (hover & selection)
   const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);
+  const [hoveredDm, setHoveredDm] = useState(false);
 
   const activePointIndex = selectedPointIndex !== null ? selectedPointIndex : hoveredPointIndex;
   const activePoint = activePointIndex !== null && fsAllPoints[activePointIndex] ? fsAllPoints[activePointIndex] : null;
@@ -504,7 +518,8 @@ export default function EcosystemPage() {
                 <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 block mb-1">
                   {isEn ? 'Detected _for-sale Records' : 'Erkannte _for-sale Records'}
                 </span>
-                <div className="text-3xl font-extrabold text-slate-950 font-mono tracking-tight">
+                <div className="flex items-center gap-2 text-2xl font-extrabold text-slate-950 font-mono tracking-tight">
+                  <span className="w-2.5 h-2.5 shrink-0 border-2 border-indigo-600 bg-white" aria-hidden="true"></span>
                   {latestDmCount.toLocaleString(isEn ? 'en-US' : 'de-DE')}
                 </div>
                 <span className="block mt-1 text-[11px] font-mono text-slate-500">
@@ -514,7 +529,8 @@ export default function EcosystemPage() {
                 </span>
                 {latestForSale && (
                   <div className="mt-2.5 pt-2.5 border-t border-slate-200/60">
-                    <div className="text-xl font-extrabold text-slate-800 font-mono tracking-tight">
+                    <div className="flex items-center gap-2 text-2xl font-extrabold text-slate-950 font-mono tracking-tight">
+                      <span className="w-2.5 h-2.5 shrink-0 rounded-full border-2 border-emerald-700 bg-white" aria-hidden="true"></span>
                       {latestForSale.activeListings.toLocaleString(isEn ? 'en-US' : 'de-DE')}
                     </div>
                     <span className="block mt-0.5 text-[11px] font-mono text-slate-500">
@@ -807,15 +823,30 @@ export default function EcosystemPage() {
                     >
                       {displayDetails.deltaVsPreviousLabel}
                     </span>
-                    {dmValueByDate.has(displayDetails.date) && (
-                      <span className="text-xs text-indigo-300">
-                        · Domains Monitor:{' '}
-                        <span className="font-bold text-indigo-200">
-                          {(dmValueByDate.get(displayDetails.date) as number).toLocaleString(isEn ? 'en-US' : 'de-DE')}
-                        </span>
-                      </span>
-                    )}
                   </div>
+                  {(() => {
+                    const dm = getDmDetails(displayDetails.date);
+                    if (!dm) return null;
+                    return (
+                      <div
+                        className={`flex items-baseline gap-2 font-mono flex-wrap rounded px-1 -mx-1 ${
+                          hoveredDm ? 'bg-indigo-950/80 ring-1 ring-indigo-700' : ''
+                        }`}
+                      >
+                        <span className="text-xs text-indigo-300">
+                          {isEn ? 'Domains Monitor (full dataset):' : 'Domains Monitor (Gesamtdatensatz):'}
+                        </span>
+                        <span className="text-lg font-extrabold text-indigo-100">{dm.formatted}</span>
+                        <span
+                          className={`text-xs font-semibold ${
+                            dm.delta === null ? 'text-slate-400' : dm.delta > 0 ? 'text-emerald-400' : dm.delta < 0 ? 'text-rose-400' : 'text-slate-400'
+                          }`}
+                        >
+                          {dm.deltaLabel}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Secondary Metrics 4-column grid */}
@@ -868,7 +899,10 @@ export default function EcosystemPage() {
                 <svg
                   viewBox={`0 0 ${fsSvgWidth} ${fsSvgHeight}`}
                   className="w-full h-44 sm:h-52 overflow-visible"
-                  onMouseLeave={() => setHoveredPointIndex(null)}
+                  onMouseLeave={() => {
+                    setHoveredPointIndex(null);
+                    setHoveredDm(false);
+                  }}
                 >
                   <defs>
                     <linearGradient id="fsGradientAdoption" x1="0" y1="0" x2="0" y2="1">
@@ -952,12 +986,25 @@ export default function EcosystemPage() {
                     const isLast = i === dmOverlayPoints.length - 1;
                     return (
                       <g key={`dm-${pt.date}`} className="pointer-events-none">
+                        {activePoint?.date === pt.date && (
+                          <rect
+                            x={pt.x - 7}
+                            y={pt.y - 7}
+                            width={14}
+                            height={14}
+                            className="fill-none stroke-indigo-400/60 stroke-[3px]"
+                          />
+                        )}
                         <rect
                           x={pt.x - 3.5}
                           y={pt.y - 3.5}
                           width={7}
                           height={7}
-                          className="fill-white stroke-indigo-600 stroke-2"
+                          className={
+                            activePoint?.date === pt.date
+                              ? 'fill-indigo-600 stroke-white stroke-2'
+                              : 'fill-white stroke-indigo-600 stroke-2'
+                          }
                         />
                         {isLast && (
                           <text
@@ -1117,10 +1164,66 @@ export default function EcosystemPage() {
                       />
                     );
                   })}
+
+                  {/* Hover targets for Domains Monitor points (on top of the slices) */}
+                  {dmOverlayPoints.map((pt) => {
+                    const fsIdx = fsDateIndex.get(pt.date) as number;
+                    return (
+                      <rect
+                        key={`dm-hit-${pt.date}`}
+                        x={pt.x - 12}
+                        y={pt.y - 12}
+                        width={24}
+                        height={24}
+                        fill="transparent"
+                        className="cursor-pointer"
+                        aria-label={`Domains Monitor ${pt.date}: ${pt.value}`}
+                        onMouseEnter={() => {
+                          setHoveredPointIndex(fsIdx);
+                          setHoveredDm(true);
+                        }}
+                        onMouseLeave={() => setHoveredDm(false)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPointIndex((prev) => (prev === fsIdx ? null : fsIdx));
+                        }}
+                      />
+                    );
+                  })}
                 </svg>
 
+                {/* Floating indicator for a hovered Domains Monitor point */}
+                {hoveredDm && activePoint && (() => {
+                  const dmPt = dmOverlayPoints.find((p) => p.date === activePoint.date);
+                  const dm = dmPt ? getDmDetails(dmPt.date) : null;
+                  if (!dmPt || !dm) return null;
+                  return (
+                    <div
+                      className="hidden md:block absolute z-20 pointer-events-none select-none"
+                      style={{
+                        left: `${(dmPt.x / fsSvgWidth) * 100}%`,
+                        top: `${(dmPt.y / fsSvgHeight) * 100}%`,
+                        transform: getCompactTooltipTransform(dmPt.x, dmPt.y, fsSvgWidth),
+                      }}
+                    >
+                      <div className="bg-indigo-950/95 text-white rounded-lg shadow-xl border border-indigo-700/80 px-2.5 py-1 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span className="font-mono font-bold text-xs text-indigo-100">
+                            {formatFullDate(dmPt.date, isEn)}
+                          </span>
+                          <span className="text-indigo-400 font-mono text-[10px]">·</span>
+                          <span className="font-mono font-extrabold text-xs text-white">{dm.formatted}</span>
+                        </div>
+                        <div className="text-[10px] font-mono mt-0.5 leading-none text-indigo-300">
+                          Domains Monitor · {dm.deltaLabel}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Compact Floating Indicator directly at the point (pointer-events-none, never crashes, never clips) */}
-                {activePoint && activePointDetails && (
+                {!hoveredDm && activePoint && activePointDetails && (
                   <div
                     className="hidden md:block absolute z-20 pointer-events-none select-none transition-all duration-75 ease-out"
                     style={{
