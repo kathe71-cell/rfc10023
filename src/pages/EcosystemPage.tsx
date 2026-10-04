@@ -513,35 +513,37 @@ export default function EcosystemPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               
-              {/* Card 1: Detected Domains – both independent sources */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 shadow-2xs">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 block mb-1">
+              {/* Card 1: Detected Domains – both independent sources side by side */}
+              <div className="lg:col-span-2 p-5 rounded-2xl bg-slate-50 border border-slate-200/90 shadow-2xs flex flex-col">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 block mb-3">
                   {isEn ? 'Detected _for-sale Records' : 'Erkannte _for-sale Records'}
                 </span>
-                <div className="flex items-center gap-2 text-2xl font-extrabold text-slate-950 font-mono tracking-tight">
-                  <span className="w-2.5 h-2.5 shrink-0 border-2 border-indigo-600 bg-white" aria-hidden="true"></span>
-                  {latestDmCount.toLocaleString(isEn ? 'en-US' : 'de-DE')}
-                </div>
-                <span className="block mt-1 text-[11px] font-mono text-slate-500">
-                  {isEn
-                    ? `Domains Monitor · full dataset · ${formatFullDate(latestDmDate, true)}`
-                    : `Domains Monitor · Gesamtdatensatz · ${formatFullDate(latestDmDate, false)}`}
-                </span>
-                {latestForSale && (
-                  <div className="mt-2.5 pt-2.5 border-t border-slate-200/60">
-                    <div className="flex items-center gap-2 text-2xl font-extrabold text-slate-950 font-mono tracking-tight">
-                      <span className="w-2.5 h-2.5 shrink-0 rounded-full border-2 border-emerald-700 bg-white" aria-hidden="true"></span>
-                      {latestForSale.activeListings.toLocaleString(isEn ? 'en-US' : 'de-DE')}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:divide-x divide-slate-200/70">
+                  <div>
+                    <div className="flex items-center gap-2 text-3xl font-extrabold text-slate-950 font-mono tracking-tight">
+                      <span className="w-2.5 h-2.5 shrink-0 border-2 border-indigo-600 bg-white" aria-hidden="true"></span>
+                      {latestDmCount.toLocaleString(isEn ? 'en-US' : 'de-DE')}
                     </div>
-                    <span className="block mt-0.5 text-[11px] font-mono text-slate-500">
-                      {isEn
-                        ? `ForSaleDNS · active listings · ${formatFullDate(latestForSale.date, true)}`
-                        : `ForSaleDNS · aktive Listings · ${formatFullDate(latestForSale.date, false)}`}
+                    <span className="block mt-1 text-[11px] font-mono text-slate-500">
+                      {isEn ? 'Domains Monitor · full dataset' : 'Domains Monitor · Gesamtdatensatz'}
                     </span>
+                    <span className="block text-[11px] font-mono text-slate-400">{formatFullDate(latestDmDate, isEn)}</span>
                   </div>
-                )}
-                <div className="mt-3 pt-3 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-mono text-slate-500 gap-2">
-                  <span>{isEn ? 'Different methods' : 'Unterschiedliche Methodik'}</span>
+                  {latestForSale && (
+                    <div className="sm:pl-4">
+                      <div className="flex items-center gap-2 text-3xl font-extrabold text-slate-950 font-mono tracking-tight">
+                        <span className="w-2.5 h-2.5 shrink-0 rounded-full border-2 border-emerald-700 bg-white" aria-hidden="true"></span>
+                        {latestForSale.activeListings.toLocaleString(isEn ? 'en-US' : 'de-DE')}
+                      </div>
+                      <span className="block mt-1 text-[11px] font-mono text-slate-500">
+                        {isEn ? 'ForSaleDNS · active listings' : 'ForSaleDNS · aktive Listings'}
+                      </span>
+                      <span className="block text-[11px] font-mono text-slate-400">{formatFullDate(latestForSale.date, isEn)}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-auto pt-3 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-mono text-slate-500 gap-2 mt-4">
+                  <span>{isEn ? 'Different methods – not directly comparable' : 'Unterschiedliche Methodik – nicht direkt vergleichbar'}</span>
                   <span className="flex items-center gap-2">
                     <a
                       href="https://domains-monitor.com/for-sale-domains/"
@@ -565,50 +567,57 @@ export default function EcosystemPage() {
                 </div>
               </div>
 
-              {/* Card 2: Documented Integrations */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 shadow-2xs">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 block mb-1">
-                  {isEn ? 'Documented Integrations' : 'Dokumentierte Einträge'}
-                </span>
-                <div className="text-3xl font-extrabold text-slate-950 font-mono tracking-tight">
-                  {stats.totalIntegrations}
-                </div>
-                <div className="mt-3 pt-3 border-t border-slate-200/60 text-xs font-mono text-slate-500">
-                  <span>
-                    {isEn ? 'Verified external entries' : 'Verifizierte externe Einträge'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Card 3: Native & Tool Support */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 shadow-2xs">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 block mb-1">
-                  {isEn ? 'Active Tools & Scanners' : 'Tools, Parser & Scanner'}
-                </span>
-                <div className="text-3xl font-extrabold text-emerald-800 font-mono tracking-tight">
-                  {stats.nativeCount + stats.toolCount}
-                </div>
-                <div className="mt-3 pt-3 border-t border-slate-200/60 text-xs font-mono text-slate-500">
-                  <span>
-                    {stats.nativeCount} {isEn ? 'Native / Discovery' : 'Nativ / Discovery'}, {stats.toolCount} Tools
-                  </span>
-                </div>
-              </div>
-
-              {/* Card 4: Documentation / Registrars */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 shadow-2xs">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 block mb-1">
-                  {isEn ? 'Guides & Documentation' : 'Anleitungen & Dokumentation'}
-                </span>
-                <div className="text-3xl font-extrabold text-slate-800 font-mono tracking-tight">
-                  {stats.docCount}
-                </div>
-                <div className="mt-3 pt-3 border-t border-slate-200/60 text-xs font-mono text-slate-500">
-                  <span>
-                    {isEn ? 'Knowledge bases & Setup' : 'Wissensdatenbanken & Setup'}
-                  </span>
-                </div>
-              </div>
+              {/* Card 2: Documented entries with breakdown by adoption tier */}
+              {(() => {
+                const total = stats.totalIntegrations || 1;
+                const tiers = [
+                  { key: 'native', n: stats.nativeCount, bar: 'bg-emerald-600', dot: 'bg-emerald-600', label: isEn ? 'Native integration / discovery' : 'Native Integration / Discovery' },
+                  { key: 'tool', n: stats.toolCount, bar: 'bg-sky-600', dot: 'bg-sky-600', label: isEn ? 'Tools, parsers & scanners' : 'Tools, Parser & Scanner' },
+                  { key: 'doc', n: stats.docCount, bar: 'bg-slate-400', dot: 'bg-slate-400', label: isEn ? 'Guides & documentation' : 'Anleitungen & Dokumentation' },
+                ];
+                const newest = [...ECOSYSTEM_DATA.integrations]
+                  .sort((a, b) => (b.firstObserved || '').localeCompare(a.firstObserved || ''))
+                  .slice(0, 3)
+                  .map((i) => i.name);
+                return (
+                  <div className="lg:col-span-2 p-5 rounded-2xl bg-slate-50 border border-slate-200/90 shadow-2xs flex flex-col">
+                    <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 block mb-3">
+                      {isEn ? 'Documented Integrations' : 'Dokumentierte Einträge'}
+                    </span>
+                    <div className="flex flex-col lg:flex-row lg:items-start gap-3 lg:gap-5">
+                      <div className="shrink-0 flex items-baseline gap-2 lg:block">
+                        <div className="text-3xl font-extrabold text-slate-950 font-mono tracking-tight">{stats.totalIntegrations}</div>
+                        <span className="block lg:mt-1 text-[11px] font-mono text-slate-500">
+                          {isEn ? 'verified, with source' : 'verifiziert, mit Quelle'}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0 lg:pt-1">
+                        <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-200" role="img"
+                          aria-label={tiers.map((t) => `${t.label}: ${t.n}`).join(', ')}>
+                          {tiers.map((t) => (
+                            <div key={t.key} className={t.bar} style={{ width: `${(t.n / total) * 100}%` }} />
+                          ))}
+                        </div>
+                        <ul className="mt-2.5 space-y-1 text-xs font-mono">
+                          {tiers.map((t) => (
+                            <li key={t.key} className="flex items-center justify-between gap-2">
+                              <span className="flex items-center gap-1.5 text-slate-600 min-w-0">
+                                <span className={`w-2 h-2 rounded-sm shrink-0 ${t.dot}`} aria-hidden="true"></span>
+                                <span className="truncate">{t.label}</span>
+                              </span>
+                              <span className="font-bold text-slate-900">{t.n}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    <div className="mt-auto pt-3 border-t border-slate-200/60 text-[11px] font-mono text-slate-500 mt-4">
+                      {isEn ? 'Recently added: ' : 'Zuletzt aufgenommen: '}
+                      <span className="text-slate-700">{newest.join(', ')}</span>
+                    </div>
+                  </div>
+                );
+              })()}
 
             </div>
 
