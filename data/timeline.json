@@ -45,6 +45,15 @@
     "sourceUrl": "https://github.com/CultriX-Github/mcp-forsale"
   },
   {
+    "date": "2026-08-06",
+    "title": "SIDN-Whois zeigt „Zu verkaufen“-Button für .nl-Domains",
+    "titleEn": "SIDN Whois shows \"for sale\" button for .nl domains",
+    "category": "Registry",
+    "description": "Die .nl-Registry SIDN wertet _for-sale Records nativ aus: Bei .nl-Domains mit RFC-10023-Record erscheint auf der SIDN-Whois-Seite automatisch ein grüner „Zu verkaufen“-Button. Erste Auswertung auf Registry-Ebene (Beispiel cupz.nl, dokumentiert von RFC-Autor Marco Davids).",
+    "descriptionEn": "The .nl registry SIDN natively evaluates _for-sale records: for .nl domains with an RFC 10023 record, its Whois page automatically shows a green \"for sale\" button. First evaluation at registry level (example cupz.nl, documented by RFC author Marco Davids).",
+    "sourceUrl": "https://domainfragen.de/threads/rfc-10023.7958/"
+  },
+  {
     "date": "2026-08-08",
     "title": "RFC 10023 in Website-Spezifikation aufgenommen",
     "titleEn": "RFC 10023 added to Website Specification",
@@ -52,6 +61,24 @@
     "description": "specification.website — eine plattformunabhängige Open-Source-Spezifikation technischer Website-Standards — nimmt _for-sale DNS als Pflichtfeature auf. RFC 10023 wird als formale Grundlage maschinenlesbarer Verkaufssignale dokumentiert.",
     "descriptionEn": "specification.website — a platform-agnostic, open-source specification of technical website standards — adds _for-sale DNS as a documented feature, referencing RFC 10023 as the formal basis for machine-readable sale signals.",
     "sourceUrl": "https://specification.website/spec/foundations/for-sale-dns/"
+  },
+  {
+    "date": "2026-08-08",
+    "title": "Namegarage veröffentlicht _for-sale Records für das gesamte Portfolio",
+    "titleEn": "Namegarage publishes _for-sale records across its entire portfolio",
+    "category": "Aftermarket",
+    "description": "Der Marktplatz Namegarage setzt in jeder eigenen Domain-Zone einen RFC-10023-Record, der direkt auf das jeweilige Listing mit Preis verweist – einer der ersten Marktplätze mit vollständigem Rollout.",
+    "descriptionEn": "Marketplace Namegarage publishes an RFC 10023 record in every zone it controls, pointing directly to the respective listing and price – one of the first marketplaces with a full rollout.",
+    "sourceUrl": "https://namegarage.com/blog/for-sale-dns-records"
+  },
+  {
+    "date": "2026-09-11",
+    "title": "ELITEDOMAINS setzt _for-sale Records automatisch",
+    "titleEn": "ELITEDOMAINS publishes _for-sale records automatically",
+    "category": "Registrar",
+    "description": "Der deutsche Registrar und Marktplatz ELITEDOMAINS stellt RFC-10023-Records automatisch für externe Domains und Nicht-.de-Endungen bereit. Für .de-Domains noch nicht möglich, da DENIC-NSENTRY-Delegationen keine TXT-Records zulassen.",
+    "descriptionEn": "German registrar and marketplace ELITEDOMAINS automatically provides RFC 10023 records for external domains and non-.de TLDs. Not yet possible for .de, as DENIC NSENTRY delegations do not allow TXT records.",
+    "sourceUrl": "https://domainfragen.de/threads/rfc-10023.7958/"
   },
   {
     "date": "2026-09-24",
