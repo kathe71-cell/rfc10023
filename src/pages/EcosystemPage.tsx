@@ -1264,7 +1264,15 @@ export default function EcosystemPage() {
             </div>
           </div>
 
-          {/* KPI Summary Grid */}
+          {/* KPI Summary Grid – ForSaleDNS */}
+          <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-900">
+            <span className="w-2.5 h-2.5 shrink-0 rounded-full border-2 border-emerald-700 bg-white" aria-hidden="true"></span>
+            <span className="whitespace-nowrap">ForSaleDNS</span>
+            <span className="font-normal normal-case tracking-normal text-slate-500">
+              {isEn ? '· active listings within 343.8M-domain inventory' : '· aktive Listings im Inventar von 343,8 Mio. Domains'}
+            </span>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
               <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
@@ -1346,6 +1354,64 @@ export default function EcosystemPage() {
                 {isEn ? 'Audit in progress' : 'Audit in Prüfung'}
               </span>
             </div>
+          </div>
+
+          {/* KPI Summary Grid – Domains Monitor */}
+          {dmFullPoints.length > 0 && (() => {
+            const loc = isEn ? 'en-US' : 'de-DE';
+            const last = dmFullPoints[dmFullPoints.length - 1];
+            const prev = dmFullPoints.length > 1 ? dmFullPoints[dmFullPoints.length - 2] : null;
+            const delta = prev ? last.value - prev.value : null;
+            const deltaPct = prev ? ((delta as number) / prev.value) * 100 : null;
+            return (
+              <>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pt-3 text-[11px] font-mono font-bold uppercase tracking-wider text-indigo-900">
+                  <span className="w-2.5 h-2.5 shrink-0 border-2 border-indigo-600 bg-white" aria-hidden="true"></span>
+                  <span className="whitespace-nowrap">Domains Monitor</span>
+                  <span className="font-normal normal-case tracking-normal text-slate-500">
+                    {isEn ? '· all domains with a _for-sale record (full dataset)' : '· alle Domains mit _for-sale Record (Gesamtdatensatz)'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                  <div className="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-200">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
+                      {isEn ? 'Detected domains' : 'Erkannte Domains'}
+                    </span>
+                    <div className="text-lg font-bold font-mono text-slate-950">{last.value.toLocaleString(loc)}</div>
+                    <span className="text-[10px] font-mono text-slate-500">{formatFullDate(last.date, isEn)}</span>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-200">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
+                      {isEn ? 'Change vs previous day' : 'Veränderung zum Vortag'}
+                    </span>
+                    <div
+                      className={`text-lg font-bold font-mono ${
+                        delta === null ? 'text-slate-400' : delta > 0 ? 'text-emerald-800' : delta < 0 ? 'text-rose-700' : 'text-slate-950'
+                      }`}
+                    >
+                      {delta === null ? '–' : `${delta > 0 ? '+' : ''}${delta.toLocaleString(loc)}`}
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-500">
+                      {deltaPct === null
+                        ? (isEn ? 'First observation' : 'Erster Messpunkt')
+                        : `${deltaPct > 0 ? '+' : ''}${deltaPct.toLocaleString(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`}
+                    </span>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-200">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
+                      {isEn ? 'Measurement series' : 'Messreihe'}
+                    </span>
+                    <div className="text-lg font-bold font-mono text-slate-950">
+                      {dmFullPoints.length} {isEn ? (dmFullPoints.length === 1 ? 'day' : 'days') : (dmFullPoints.length === 1 ? 'Tag' : 'Tage')}
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-500">
+                      {isEn ? `since ${formatFullDate(DM_FULL_DATASET_START, true)}` : `seit ${formatFullDate(DM_FULL_DATASET_START, false)}`}
+                    </span>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
           </div>
 
           {/* Historical Transparency & Baseline Explanation (Requirements 4, 11, 12) */}
