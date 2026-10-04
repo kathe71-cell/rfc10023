@@ -1289,155 +1289,164 @@ export default function EcosystemPage() {
             </div>
           </div>
 
-          {/* KPI Summary Grid – ForSaleDNS */}
-          <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-900">
-            <span className="w-2.5 h-2.5 shrink-0 rounded-full border-2 border-emerald-700 bg-white" aria-hidden="true"></span>
-            <span className="whitespace-nowrap">ForSaleDNS</span>
-            <span className="font-normal normal-case tracking-normal text-slate-500">
-              {isEn ? '· active listings within 343.8M-domain inventory' : '· aktive Listings im Inventar von 343,8 Mio. Domains'}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
-                {isEn ? 'Active Listings' : 'Aktive Listings'}
-              </span>
-              <div className="text-lg font-bold font-mono text-slate-950">
-                {latestForSale ? latestForSale.activeListings.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '334,576' : '334.576')}
-              </div>
-              <span className="text-[10px] font-mono text-slate-500">
-                {latestForSale ? formatFullDate(latestForSale.date, isEn) : (isEn ? '25 Sep 2026' : '25.09.2026')}
-              </span>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
-                {isEn ? 'Conformant' : 'RFC-10023-konform'}
-              </span>
-              <div className="text-lg font-bold font-mono text-emerald-800">
-                {latestForSale ? latestForSale.conformant.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '334,565' : '334.565')}
-              </div>
-              <span className="text-[10px] font-mono text-emerald-700 font-semibold">
-                {latestForSale && latestForSale.activeListings > 0
-                  ? `${((latestForSale.conformant / latestForSale.activeListings) * 100).toFixed(2)}% `
-                  : '99.99% '}
-                {isEn ? 'valid' : 'valide'}
-              </span>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
-                {isEn ? 'DNSSEC Secured' : 'Mit DNSSEC'}
-              </span>
-              <div className="text-lg font-bold font-mono text-slate-900">
-                {latestForSale ? latestForSale.dnssec.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '161,897' : '161.897')}
-              </div>
-              <span className="text-[10px] font-mono text-slate-600">
-                {latestForSale && latestForSale.activeListings > 0
-                  ? `${((latestForSale.dnssec / latestForSale.activeListings) * 100).toFixed(1)}% `
-                  : '48.4% '}
-                {isEn ? 'signed' : 'signiert'}
-              </span>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
-                {isEn ? 'Priced Listings' : 'Mit Preisangabe'}
-              </span>
-              <div className="text-lg font-bold font-mono text-slate-900">
-                {latestForSale ? latestForSale.priced.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '75,054' : '75.054')}
-              </div>
-              <span className="text-[10px] font-mono text-slate-600">
-                {latestForSale && latestForSale.activeListings > 0
-                  ? `${((latestForSale.priced / latestForSale.activeListings) * 100).toFixed(1)}% `
-                  : '22.4% '}
-                {isEn ? 'with price' : 'mit Festpreis'}
-              </span>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
-                {isEn ? 'Inventory Scope' : 'Scan-Umfang'}
-              </span>
-              <div className="text-lg font-bold font-mono text-slate-900">
-                343,8M
-              </div>
-              <span className="text-[10px] font-mono text-emerald-700 font-semibold">
-                100 % {isEn ? 'sweepComplete' : 'vollständig'}
-              </span>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
-                {isEn ? 'Baseline Status' : 'Baseline-Status'}
-              </span>
-              <div className="text-lg font-bold font-mono text-slate-700">
-                false
-              </div>
-              <span className="text-[10px] font-mono text-slate-500">
-                {isEn ? 'Audit in progress' : 'Audit in Prüfung'}
-              </span>
-            </div>
-          </div>
-
-          {/* KPI Summary Grid – Domains Monitor */}
-          {dmFullPoints.length > 0 && (() => {
+          {/* KPI Summary – identical structure for both sources:
+              value · change vs previous day · measurement series · last fetch (+ source-specific details) */}
+          {(() => {
             const loc = isEn ? 'en-US' : 'de-DE';
-            const last = dmFullPoints[dmFullPoints.length - 1];
-            const prev = dmFullPoints.length > 1 ? dmFullPoints[dmFullPoints.length - 2] : null;
-            const delta = prev ? last.value - prev.value : null;
-            const deltaPct = prev ? ((delta as number) / prev.value) * 100 : null;
+            const pct = (v: number, digits = 1) =>
+              `${v.toLocaleString(loc, { minimumFractionDigits: digits, maximumFractionDigits: digits })} %`;
+            const signed = (v: number) => `${v > 0 ? '+' : ''}${v.toLocaleString(loc)}`;
+            const signedPct = (v: number) => `${v > 0 ? '+' : ''}${pct(v, 2)}`;
+            const deltaColor = (d: number | null) =>
+              d === null ? 'text-slate-400' : d > 0 ? 'text-emerald-800' : d < 0 ? 'text-rose-700' : 'text-slate-950';
+
+            type Tile = { label: string; value: string; sub: string; valueClass?: string; subClass?: string };
+            const TileView = ({ t, accent }: { t: Tile; accent: 'fs' | 'dm' }) => (
+              <div
+                className={`p-3.5 rounded-xl border ${
+                  accent === 'dm' ? 'bg-indigo-50/60 border-indigo-200' : 'bg-slate-50 border-slate-200'
+                }`}
+              >
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">{t.label}</span>
+                <div className={`text-lg font-bold font-mono ${t.valueClass || 'text-slate-950'}`}>{t.value}</div>
+                <span className={`text-[10px] font-mono ${t.subClass || 'text-slate-500'}`}>{t.sub}</span>
+              </div>
+            );
+
+            const coreTiles = (o: {
+              valueLabel: string;
+              value: number;
+              date: string;
+              prev: number | null;
+              days: number;
+              since: string;
+              fetchedAt: string | null;
+            }): Tile[] => {
+              const delta = o.prev !== null ? o.value - o.prev : null;
+              return [
+                { label: o.valueLabel, value: o.value.toLocaleString(loc), sub: `${isEn ? 'as of' : 'Stand'} ${formatFullDate(o.date, isEn)}` },
+                {
+                  label: isEn ? 'Change vs previous day' : 'Veränderung zum Vortag',
+                  value: delta === null ? '–' : signed(delta),
+                  valueClass: deltaColor(delta),
+                  sub: delta === null || !o.prev ? (isEn ? 'First observation' : 'Erster Messpunkt') : signedPct((delta / o.prev) * 100),
+                },
+                {
+                  label: isEn ? 'Measurement series' : 'Messreihe',
+                  value: `${o.days} ${isEn ? (o.days === 1 ? 'day' : 'days') : o.days === 1 ? 'Tag' : 'Tage'}`,
+                  sub: `${isEn ? 'since' : 'seit'} ${formatFullDate(o.since, isEn)}`,
+                },
+                {
+                  label: isEn ? 'Last fetch' : 'Letzter Abruf',
+                  value: o.fetchedAt ? formatFetchTimestamp(o.fetchedAt, isEn).split(',')[0] : '–',
+                  sub: o.fetchedAt ? (formatFetchTimestamp(o.fetchedAt, isEn).split(',').slice(1).join(',').trim() || '') : '',
+                },
+              ];
+            };
+
+            const fsLast = forSalePoints[forSalePoints.length - 1];
+            const fsPrev = forSalePoints.length > 1 ? forSalePoints[forSalePoints.length - 2] : null;
+            const fsCore = fsLast
+              ? coreTiles({
+                  valueLabel: isEn ? 'Active listings' : 'Aktive Listings',
+                  value: fsLast.activeListings,
+                  date: fsLast.date,
+                  prev: fsPrev ? fsPrev.activeListings : null,
+                  days: forSalePoints.length,
+                  since: forSalePoints[0].date,
+                  fetchedAt: forSaleFetchTimestamp,
+                })
+              : [];
+            const fsDetails: Tile[] = fsLast
+              ? [
+                  {
+                    label: isEn ? 'RFC 10023 conformant' : 'RFC-10023-konform',
+                    value: fsLast.conformant.toLocaleString(loc),
+                    valueClass: 'text-emerald-800',
+                    sub: `${pct((fsLast.conformant / fsLast.activeListings) * 100)} ${isEn ? 'valid' : 'valide'}`,
+                  },
+                  {
+                    label: isEn ? 'DNSSEC signed' : 'Mit DNSSEC',
+                    value: fsLast.dnssec.toLocaleString(loc),
+                    sub: `${pct((fsLast.dnssec / fsLast.activeListings) * 100)} ${isEn ? 'signed' : 'signiert'}`,
+                  },
+                  {
+                    label: isEn ? 'With price' : 'Mit Preisangabe',
+                    value: fsLast.priced.toLocaleString(loc),
+                    sub: `${pct((fsLast.priced / fsLast.activeListings) * 100)} ${isEn ? 'with fixed price' : 'mit Festpreis'}`,
+                  },
+                  {
+                    label: isEn ? 'Scan scope' : 'Scan-Umfang',
+                    value: isEn ? '343.8M' : '343,8 Mio.',
+                    sub: fsLast.sweepComplete
+                      ? (isEn ? '100 % complete · baseline audit pending' : '100 % vollständig · Baseline-Audit offen')
+                      : (isEn ? 'partial sweep' : 'Teil-Scan'),
+                  },
+                ]
+              : [];
+
+            const dmLast = dmFullPoints[dmFullPoints.length - 1];
+            const dmPrev = dmFullPoints.length > 1 ? dmFullPoints[dmFullPoints.length - 2] : null;
+            const dmCore = dmLast
+              ? coreTiles({
+                  valueLabel: isEn ? 'Detected domains' : 'Erkannte Domains',
+                  value: dmLast.value,
+                  date: dmLast.date,
+                  prev: dmPrev ? dmPrev.value : null,
+                  days: dmFullPoints.length,
+                  since: DM_FULL_DATASET_START,
+                  fetchedAt: latestDmFetchTimestamp,
+                })
+              : [];
+
+            const Header = ({ accent, name, desc }: { accent: 'fs' | 'dm'; name: string; desc: string }) => (
+              <div
+                className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-mono font-bold uppercase tracking-wider ${
+                  accent === 'dm' ? 'text-indigo-900' : 'text-emerald-900'
+                }`}
+              >
+                <span
+                  className={`w-2.5 h-2.5 shrink-0 border-2 bg-white ${
+                    accent === 'dm' ? 'border-indigo-600' : 'rounded-full border-emerald-700'
+                  }`}
+                  aria-hidden="true"
+                ></span>
+                <span className="whitespace-nowrap">{name}</span>
+                <span className="font-normal normal-case tracking-normal text-slate-500">· {desc}</span>
+              </div>
+            );
+
             return (
-              <>
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pt-3 text-[11px] font-mono font-bold uppercase tracking-wider text-indigo-900">
-                  <span className="w-2.5 h-2.5 shrink-0 border-2 border-indigo-600 bg-white" aria-hidden="true"></span>
-                  <span className="whitespace-nowrap">Domains Monitor</span>
-                  <span className="font-normal normal-case tracking-normal text-slate-500">
-                    {isEn ? '· all domains with a _for-sale record (full dataset)' : '· alle Domains mit _for-sale Record (Gesamtdatensatz)'}
-                  </span>
+              <div className="space-y-2">
+                <Header
+                  accent="fs"
+                  name="ForSaleDNS"
+                  desc={isEn ? 'active listings within 343.8M-domain inventory' : 'aktive Listings im Inventar von 343,8 Mio. Domains'}
+                />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[...fsCore, ...fsDetails].map((t) => (
+                    <TileView key={`fs-${t.label}`} t={t} accent="fs" />
+                  ))}
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                  <div className="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-200">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
-                      {isEn ? 'Detected domains' : 'Erkannte Domains'}
-                    </span>
-                    <div className="text-lg font-bold font-mono text-slate-950">{last.value.toLocaleString(loc)}</div>
-                    <span className="text-[10px] font-mono text-slate-500">{formatFullDate(last.date, isEn)}</span>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-200">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
-                      {isEn ? 'Change vs previous day' : 'Veränderung zum Vortag'}
-                    </span>
-                    <div
-                      className={`text-lg font-bold font-mono ${
-                        delta === null ? 'text-slate-400' : delta > 0 ? 'text-emerald-800' : delta < 0 ? 'text-rose-700' : 'text-slate-950'
-                      }`}
-                    >
-                      {delta === null ? '–' : `${delta > 0 ? '+' : ''}${delta.toLocaleString(loc)}`}
+                {dmCore.length > 0 && (
+                  <>
+                    <div className="pt-3">
+                      <Header
+                        accent="dm"
+                        name="Domains Monitor"
+                        desc={isEn ? 'all domains with a _for-sale record (full dataset)' : 'alle Domains mit _for-sale Record (Gesamtdatensatz)'}
+                      />
                     </div>
-                    <span className="text-[10px] font-mono text-slate-500">
-                      {deltaPct === null
-                        ? (isEn ? 'First observation' : 'Erster Messpunkt')
-                        : `${deltaPct > 0 ? '+' : ''}${deltaPct.toLocaleString(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`}
-                    </span>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-200">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block mb-0.5">
-                      {isEn ? 'Measurement series' : 'Messreihe'}
-                    </span>
-                    <div className="text-lg font-bold font-mono text-slate-950">
-                      {dmFullPoints.length} {isEn ? (dmFullPoints.length === 1 ? 'day' : 'days') : (dmFullPoints.length === 1 ? 'Tag' : 'Tage')}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                      {dmCore.map((t) => (
+                        <TileView key={`dm-${t.label}`} t={t} accent="dm" />
+                      ))}
                     </div>
-                    <span className="text-[10px] font-mono text-slate-500">
-                      {isEn ? `since ${formatFullDate(DM_FULL_DATASET_START, true)}` : `seit ${formatFullDate(DM_FULL_DATASET_START, false)}`}
-                    </span>
-                  </div>
-                </div>
-              </>
+                  </>
+                )}
+              </div>
             );
           })()}
-          </div>
 
           {/* Historical Transparency & Baseline Explanation (Requirements 4, 11, 12) */}
           <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-950 leading-relaxed font-sans space-y-2">
