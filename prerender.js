@@ -30,7 +30,6 @@ const routesToPrerender = [
   { url: "/en/badge-generator", title: "RFC 10023 Status Badge Generator", desc: "Generate neutral DNS verification links and privacy-compliant HTML/CSS badges for domain sales pages." },
   { url: "/en/api-docs", title: "RFC 10023 REST API Documentation & Endpoints", desc: "Comprehensive documentation of the public DoH JSON REST API for automated RFC 10023 validation." },
   { url: "/en/legal-guidelines", title: "RFC 10023 Legal Guidelines & Best Practices", desc: "Legal overview for signaling domain sales in the DNS: offer vs invitatio ad offerendum, VAT and escrow." },
-  { url: "/en/legal-guide", title: "RFC 10023 Legal Guide", desc: "Legal overview for signaling domain sales in the DNS." },
   { url: "/en/hoster-matrix", title: "RFC 10023 DNS Provider Compatibility Matrix", desc: "Step-by-step guides for configuring _for-sale TXT records on Cloudflare, Hetzner, INWX, BIND and Terraform." },
   { url: "/en/specification", title: "RFC 10023 ABNF Specification & Wire Format", desc: "Complete technical reference for IETF RFC 10023: formal ABNF grammar, parameter registry and parser rules." },
   { url: "/en/faq", title: "RFC 10023 Frequently Asked Questions (FAQ)", desc: "Frequently asked questions regarding IETF RFC 10023 _for-sale DNS records." },
@@ -71,7 +70,6 @@ const enToDeRouteMap = {
   "/en/badge-generator": "/badge-generator",
   "/en/api-docs": "/api-docs",
   "/en/legal-guidelines": "/recht-leitfaden",
-  "/en/legal-guide": "/recht-leitfaden",
   "/en/hoster-matrix": "/hoster-matrix",
   "/en/specification": "/spezifikation",
   "/en/faq": "/faq",
@@ -115,6 +113,13 @@ for (const route of routesToPrerender) {
     rendered = rendered.replace(/<link rel=\"alternate\" hreflang=\"de\" href=\".*?\" \/>/, `<link rel="alternate" hreflang="de" href="${hreflangDe}" />`);
     rendered = rendered.replace(/<link rel=\"alternate\" hreflang=\"en\" href=\".*?\" \/>/, `<link rel="alternate" hreflang="en" href="${hreflangEn}" />`);
     rendered = rendered.replace(/<link rel=\"alternate\" hreflang=\"x-default\" href=\".*?\" \/>/, `<link rel="alternate" hreflang="x-default" href="${hreflangDefault}" />`);
+
+    // Embed pages are iframe widgets, not standalone content: keep them out of the index
+    // and drop hreflang (they have no language counterparts in the index).
+    if (route.url.endsWith("-embed")) {
+      rendered = rendered.replace(/\s*<link rel=\"alternate\" hreflang=\"[^\"]+\" href=\".*?\" \/>/g, "");
+      rendered = rendered.replace(/<link rel=\"canonical\"/, "<meta name=\"robots\" content=\"noindex, follow\" />\n    <link rel=\"canonical\"");
+    }
 
     if (isEn) {
       rendered = rendered.replace("<html lang=\"de\"", "<html lang=\"en\"");

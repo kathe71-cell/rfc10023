@@ -1,9 +1,15 @@
 {
   "cleanUrls": true,
+  "trailingSlash": false,
   "redirects": [
     {
       "source": "/ecosystem",
       "destination": "/oekosystem",
+      "statusCode": 301
+    },
+    {
+      "source": "/en/legal-guide",
+      "destination": "/en/legal-guidelines",
       "statusCode": 301
     },
     {
@@ -53,6 +59,10 @@
         {
           "key": "Content-Security-Policy",
           "value": "frame-ancestors *;"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
         }
       ]
     },
