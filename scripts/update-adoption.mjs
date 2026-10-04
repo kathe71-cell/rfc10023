@@ -278,6 +278,22 @@ export async function processAdoptionUpdate(currentData, historyData, options = 
 }
 
 /**
+ * Sets <lastmod> for the given <loc> URLs in a sitemap (only moves forward in time).
+ * @param {string} xml
+ * @param {string[]} locs
+ * @param {string} date YYYY-MM-DD
+ * @returns {string}
+ */
+export function updateSitemapLastmod(xml, locs, date) {
+  let out = xml;
+  for (const loc of locs) {
+    const re = new RegExp(`(<loc>${loc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}</loc>[\\s\\S]*?<lastmod>)([^<]+)(</lastmod>)`);
+    out = out.replace(re, (m, a, old, b) => (old < date ? `${a}${date}${b}` : m));
+  }
+  return out;
+}
+
+/**
  * Main CLI entrypoint
  */
 async function main() {
@@ -344,6 +360,30 @@ async function main() {
     }
   } catch (forSaleErr) {
     console.error('⚠ Error updating ForSaleDNS history (retaining existing data):', forSaleErr.message);
+  }
+
+  // Keep sitemap lastmod of the data-driven pages in sync with each successful data update
+  try {
+    const sitemapPath = path.join(projectRoot, 'public', 'sitemap.xml');
+    const current = JSON.parse(fs.readFileSync(CURRENT_FILE, 'utf-8'));
+    const dates = [
+      current.sources?.domainsMonitor?.sourceDate,
+      current.forSaleDns?.latestSnapshotDate,
+    ].filter(Boolean).sort();
+    const latest = dates[dates.length - 1];
+    if (latest && fs.existsSync(sitemapPath)) {
+      const xml = fs.readFileSync(sitemapPath, 'utf-8');
+      const updated = updateSitemapLastmod(xml, [
+        'https://www.rfc10023.de/oekosystem',
+        'https://www.rfc10023.de/en/ecosystem',
+      ], latest);
+      if (updated !== xml) {
+        fs.writeFileSync(sitemapPath, updated, 'utf-8');
+        console.log(`✓ Sitemap lastmod for ecosystem pages set to ${latest}.`);
+      }
+    }
+  } catch (err) {
+    console.warn('⚠ Could not update sitemap lastmod:', err.message);
   }
 
   console.log('=== Execution finished ===');

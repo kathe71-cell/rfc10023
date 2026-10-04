@@ -305,6 +305,25 @@ export default function EcosystemPage() {
   const fullSweepDays = completeSweepPoints.length;
   const forSaleSnapshotDate = latestForSale?.date || FORSALEDNS_META?.latestSnapshotDate || '2026-09-25';
   const forSaleFetchTimestamp = FORSALEDNS_META?.lastSuccessfulFetch || '2026-09-25T05:24:31Z';
+
+  // All ForSaleDNS facts below are derived from the fetched history – nothing hard-coded.
+  const fsInventoryTotal = latestForSale?.inventoryTotal ?? 0;
+  const fsInventoryLabel = (en: boolean) =>
+    en
+      ? `${(fsInventoryTotal / 1e6).toFixed(1)}M`
+      : `${(fsInventoryTotal / 1e6).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Mio.`;
+  const fsPartialPoints = forSalePoints.filter((p) => !p.sweepComplete);
+  const fsFirstCompleteIdx = forSalePoints.findIndex((p) => p.sweepComplete);
+  const fsFirstCompleteDate = fsFirstCompleteIdx >= 0 ? forSalePoints[fsFirstCompleteIdx].date : null;
+  const fsAllCompleteSinceFirst =
+    fsFirstCompleteIdx >= 0 && forSalePoints.slice(fsFirstCompleteIdx).every((p) => p.sweepComplete);
+  const fsBaselineComplete = !!latestForSale?.baselineComplete;
+  const fsLatestSweepPct =
+    latestForSale && latestForSale.inventoryTotal > 0
+      ? (latestForSale.inventoryCompleted / latestForSale.inventoryTotal) * 100
+      : 0;
+  const fsPartialDatesLabel = (en: boolean) =>
+    fsPartialPoints.map((p) => formatChartAxisDate(p.date, en)).join(' & ');
   const ecosystemLastUpdatedDate = [latestForSale?.date, stats.dmSourceDate, stats.lastUpdated, forSaleSnapshotDate]
     .filter((d): d is string => Boolean(d))
     .sort()
@@ -417,8 +436,9 @@ export default function EcosystemPage() {
 
   // Polyline for partial sweeps bridge (indices 0, 1, 2)
   const fsPartialPointsString = useMemo(() => {
-    if (fsAllPoints.length < 3) return '';
-    return fsAllPoints.slice(0, 3).map((p) => `${p.x},${p.y}`).join(' ');
+    const firstComplete = fsAllPoints.findIndex((p) => p.sweepComplete);
+    if (firstComplete <= 0) return '';
+    return fsAllPoints.slice(0, firstComplete + 1).map((p) => `${p.x},${p.y}`).join(' ');
   }, [fsAllPoints]);
 
   // Interactive point state (hover & selection)
@@ -678,13 +698,13 @@ export default function EcosystemPage() {
               </h3>
               <p className="mt-1 text-xs text-slate-500 max-w-2xl">
                 {isEn
-                  ? 'Two independent sources, both fetched daily: ForSaleDNS counts active listings within its 343.8M-domain inventory; Domains Monitor counts all domains with a _for-sale record in its full dataset. Different methods – the values are not directly comparable.'
-                  : 'Zwei unabhängige Quellen, beide täglich abgerufen: ForSaleDNS zählt aktive Listings im eigenen Inventar (343,8 Mio. Domains), Domains Monitor alle Domains mit _for-sale Record im Gesamtdatensatz. Unterschiedliche Methodik – die Werte sind nicht direkt vergleichbar.'}
+                  ? `Two independent sources, both fetched daily: ForSaleDNS counts active listings within its ${fsInventoryLabel(true)}-domain inventory; Domains Monitor counts all domains with a _for-sale record in its full dataset. Different methods – the values are not directly comparable.`
+                  : `Zwei unabhängige Quellen, beide täglich abgerufen: ForSaleDNS zählt aktive Listings im eigenen Inventar (${fsInventoryLabel(false)} Domains), Domains Monitor alle Domains mit _for-sale Record im Gesamtdatensatz. Unterschiedliche Methodik – die Werte sind nicht direkt vergleichbar.`}
               </p>
             </div>
             <div className="text-left sm:text-right font-mono text-xs text-slate-500">
               <span className="font-bold text-slate-900 text-sm">
-                {latestForSale ? latestForSale.activeListings.toLocaleString(isEn ? 'en-US' : 'de-DE') : (isEn ? '334,576' : '334.576')}
+                {latestForSale ? latestForSale.activeListings.toLocaleString(isEn ? 'en-US' : 'de-DE') : '–'}
               </span>
               <span className="block text-[11px] text-slate-400">
                 {isEn
@@ -701,16 +721,20 @@ export default function EcosystemPage() {
                 <span className="w-5 h-0.5 bg-emerald-600 rounded"></span>
                 <span className="text-slate-700 font-semibold">
                   {isEn
-                    ? `Full sweep (100% of 343.8M inventory, ${fullSweepDays} days)`
-                    : `Vollständiger Scan (100 % von 343,8M Inventar, ${fullSweepDays} Tage)`}
+                    ? `Full sweep (100% of ${fsInventoryLabel(true)} inventory, ${fullSweepDays} days)`
+                    : `Vollständiger Scan (100 % von ${fsInventoryLabel(false)} Inventar, ${fullSweepDays} Tage)`}
                 </span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-5 h-0.5 border-b-2 border-dashed border-amber-600"></span>
-                <span className="text-amber-900 font-semibold">
-                  {isEn ? 'Preliminary partial sweeps (15 & 16 Aug)' : 'Vorläufige Teil-Scans (15. & 16.08.)'}
-                </span>
-              </div>
+              {fsPartialPoints.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="w-5 h-0.5 border-b-2 border-dashed border-amber-600"></span>
+                  <span className="text-amber-900 font-semibold">
+                    {isEn
+                      ? `Preliminary partial sweeps (${fsPartialDatesLabel(true)})`
+                      : `Vorläufige Teil-Scans (${fsPartialDatesLabel(false)})`}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 border-2 border-indigo-600 bg-white"></span>
                 <span className="w-4 h-0.5 bg-indigo-600 rounded -ml-1"></span>
@@ -1377,10 +1401,14 @@ export default function EcosystemPage() {
                   },
                   {
                     label: isEn ? 'Scan scope' : 'Scan-Umfang',
-                    value: isEn ? '343.8M' : '343,8 Mio.',
-                    sub: fsLast.sweepComplete
-                      ? (isEn ? '100 % complete · baseline audit pending' : '100 % vollständig · Baseline-Audit offen')
-                      : (isEn ? 'partial sweep' : 'Teil-Scan'),
+                    value: fsInventoryLabel(isEn),
+                    sub: `${pct(fsLatestSweepPct)} ${
+                      fsLast.sweepComplete ? (isEn ? 'complete' : 'vollständig') : (isEn ? 'partial sweep' : 'Teil-Scan')
+                    } · ${
+                      fsBaselineComplete
+                        ? (isEn ? 'baseline audit complete' : 'Baseline-Audit abgeschlossen')
+                        : (isEn ? 'baseline audit pending' : 'Baseline-Audit offen')
+                    }`,
                   },
                 ]
               : [];
@@ -1421,7 +1449,11 @@ export default function EcosystemPage() {
                 <Header
                   accent="fs"
                   name="ForSaleDNS"
-                  desc={isEn ? 'active listings within 343.8M-domain inventory' : 'aktive Listings im Inventar von 343,8 Mio. Domains'}
+                  desc={
+                    isEn
+                      ? `active listings within ${fsInventoryLabel(true)}-domain inventory`
+                      : `aktive Listings im Inventar von ${fsInventoryLabel(false)} Domains`
+                  }
                 />
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {[...fsCore, ...fsDetails].map((t) => (
@@ -1456,8 +1488,46 @@ export default function EcosystemPage() {
             </div>
             <p>
               {isEn
-                ? `The first two measurement days (15 & 16 Aug 2026) were preliminary partial sweeps with 72.2% and 97.6% inventory coverage (indicated with dashed lines). Since 17 Aug 2026, daily sweep completeness (sweepComplete) has remained continuously at 100.0% (343,818,996 of 343,818,996 domains). The multi-month baseline audit cycle (baselineComplete) is currently documented as in progress (false). The calculated growth rate (${forSaleGrowth ? (forSaleGrowth.diff > 0 ? '+' : '') + forSaleGrowth.pct + '%' : '-1.6%'}) refers strictly to the observed ForSaleDNS dataset across complete sweeps and does not represent global adoption growth.`
-                : `Die ersten beiden Messtage (15. & 16.08.2026) waren vorläufige Teil-Scans mit 72,2 % bzw. 97,6 % Inventarabdeckung (gestrichelt dargestellt). Seit dem 17.08.2026 beträgt die tägliche Scan-Vollständigkeit (sweepComplete) durchgehend 100,0 % (343.818.996 von 343.818.996 Domains). Der multi-monatliche Baseline-Audit-Zyklus (baselineComplete) ist laut API noch in Bearbeitung (false). Die berechnete Wachstumsrate (${forSaleGrowth ? (forSaleGrowth.diff > 0 ? '+' : '') + forSaleGrowth.pct.replace('.', ',') + ' %' : '-1,6 %'}) bezieht sich streng auf den beobachteten ForSaleDNS-Datenbestand bei vollständigen Scans und stellt kein globales Adoptionswachstum dar.`}
+                ? [
+                    fsPartialPoints.length > 0
+                      ? `The first ${fsPartialPoints.length === 1 ? 'measurement day' : `${fsPartialPoints.length} measurement days`} (${fsPartialPoints
+                          .map((p) => formatFullDate(p.date, true))
+                          .join(' & ')}) were preliminary partial sweeps with ${fsPartialPoints
+                          .map((p) => ((p.inventoryCompleted / p.inventoryTotal) * 100).toFixed(1) + '%')
+                          .join(' and ')} inventory coverage (dashed).`
+                      : '',
+                    fsFirstCompleteDate
+                      ? `Since ${formatFullDate(fsFirstCompleteDate, true)}, daily sweep completeness (sweepComplete) has ${
+                          fsAllCompleteSinceFirst ? 'remained continuously at 100.0%' : 'not always been 100%'
+                        } (latest: ${latestForSale?.inventoryCompleted.toLocaleString('en-US')} of ${fsInventoryTotal.toLocaleString('en-US')} domains).`
+                      : '',
+                    `The multi-month baseline audit cycle (baselineComplete) is ${
+                      fsBaselineComplete ? 'complete according to the API (true)' : 'documented as in progress (false)'
+                    }.`,
+                    `The calculated change (${forSaleGrowth ? (forSaleGrowth.diff > 0 ? '+' : '') + forSaleGrowth.pct + '%' : '–'}) refers strictly to the observed ForSaleDNS dataset across complete sweeps and does not represent global adoption growth.`,
+                  ]
+                    .filter(Boolean)
+                    .join(' ')
+                : [
+                    fsPartialPoints.length > 0
+                      ? `Die ersten ${fsPartialPoints.length} Messtage (${fsPartialPoints
+                          .map((p) => formatFullDate(p.date, false))
+                          .join(' & ')}) waren vorläufige Teil-Scans mit ${fsPartialPoints
+                          .map((p) => ((p.inventoryCompleted / p.inventoryTotal) * 100).toFixed(1).replace('.', ',') + ' %')
+                          .join(' bzw. ')} Inventarabdeckung (gestrichelt dargestellt).`
+                      : '',
+                    fsFirstCompleteDate
+                      ? `Seit dem ${formatFullDate(fsFirstCompleteDate, false)} beträgt die tägliche Scan-Vollständigkeit (sweepComplete) ${
+                          fsAllCompleteSinceFirst ? 'durchgehend 100,0 %' : 'nicht durchgehend 100 %'
+                        } (zuletzt ${latestForSale?.inventoryCompleted.toLocaleString('de-DE')} von ${fsInventoryTotal.toLocaleString('de-DE')} Domains).`
+                      : '',
+                    `Der multi-monatliche Baseline-Audit-Zyklus (baselineComplete) ist laut API ${
+                      fsBaselineComplete ? 'abgeschlossen (true)' : 'noch in Bearbeitung (false)'
+                    }.`,
+                    `Die berechnete Veränderung (${forSaleGrowth ? (forSaleGrowth.diff > 0 ? '+' : '') + forSaleGrowth.pct.replace('.', ',') + ' %' : '–'}) bezieht sich streng auf den beobachteten ForSaleDNS-Datenbestand bei vollständigen Scans und stellt kein globales Adoptionswachstum dar.`,
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
             </p>
             <div className="pt-2 border-t border-amber-200/70 flex flex-wrap items-center gap-2 text-[11px] font-mono text-amber-900">
               <span className="font-semibold">
