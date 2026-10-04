@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { parseRfc10023Records, type DnsQueryStatus } from '../../src/utils/rfcParserEngine';
+import { parseRfc10023Records, applyDnsContextChecks, probeWildcardTxt, RECOMMENDED_MAX_TTL, type DnsQueryStatus } from '../../src/utils/rfcParserEngine';
 import { validateDomainHostname, detectHosterFromNameservers } from '../../src/utils/dnsIntelligence';
 
 interface TagItem {
@@ -41,6 +41,9 @@ interface ApiResponseV1 {
     recordCount: number;
     byteOverhead: number;
     ttl: number | null;
+    ttlRecommendedMax: number;
+    ttlExceedsRecommendation: boolean;
+    wildcardDetected: boolean;
   };
   tags: {
     parsed: Record<string, string>;
@@ -158,7 +161,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     else if (rawRecords.length === 0) dnsStatus = 'NODATA';
 
     // Canonical Engine Analysis (with chunk merging, \DDD decoding, and IDN resolution)
-    const report = parseRfc10023Records(rawRecords, dnsStatus, 'en');
+    const baseReport = parseRfc10023Records(rawRecords, dnsStatus, 'en');
+    const wildcardDetected = baseReport.saleSignalFound ? await probeWildcardTxt(punyHost, rawRecords) : false;
+    const report = applyDnsContextChecks(baseReport, { ttl, wildcardDetected }, 'en');
 
     // Build standard compliance summary
     const fvalTag = report.tags.find((t) => t.tag === 'fval');
@@ -186,6 +191,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         recordCount: report.rawRecords.length,
         byteOverhead: report.byteOverheadTotal,
         ttl,
+        ttlRecommendedMax: RECOMMENDED_MAX_TTL,
+        ttlExceedsRecommendation: typeof ttl === 'number' && ttl > RECOMMENDED_MAX_TTL,
+        wildcardDetected,
       },
       tags: {
         parsed: cleanParsedMap,

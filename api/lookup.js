@@ -50,6 +50,14 @@ function mergeDnsTxtChunks(rawTxt) {
   }
   return trimmed;
 }
+function countDnsTxtChunks(rawTxt) {
+  const trimmed = rawTxt.trim();
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    const matches = [...trimmed.matchAll(/"((?:[^"\\]|\\.)*)"/g)];
+    return Math.max(matches.length, 1);
+  }
+  return 1;
+}
 function decodeDnsPresentationFormat(str) {
   const bytes = [];
   let i = 0;
@@ -341,7 +349,10 @@ function parseRfc10023Records(rawTxtRecords, dnsQueryStatus = "NOERROR", lang = 
   let hasVersionTagOverall = false;
   let totalBytes = 0;
   let hasSingleLineMultiTagDeviation = false;
+  let hasMultiStringDeviation = false;
+  let hasOversizeDeviation = false;
   rawTxtRecords.forEach((rawStr, recIdx) => {
+    const characterStringCount = countDnsTxtChunks(rawStr);
     const mergedStr = mergeDnsTxtChunks(rawStr);
     const decodedStr = decodeDnsPresentationFormat(mergedStr);
     const hasDnsEscapes = decodedStr !== mergedStr;
@@ -357,9 +368,16 @@ function parseRfc10023Records(rawTxtRecords, dnsQueryStatus = "NOERROR", lang = 
         isEn ? "DNS presentation format escapes (RFC 1035 \xA7 5.1 \\DDD) decoded into UTF-8." : "DNS-Pr\xE4sentationsformat-Escapes (RFC 1035 \xA7 5.1 \\DDD) wurden in UTF-8 dekodiert."
       );
     }
-    if (exceeds255Bytes) {
+    if (characterStringCount > 1) {
+      hasMultiStringDeviation = true;
       recWarnings.push(
-        isEn ? `Record exceeds DNS single character-string limit of 255 octets (${byteLength} bytes).` : `Eintrag \xFCberschreitet das DNS TXT-Limit von 255 Oktetten (${byteLength} Bytes).`
+        isEn ? `Non-conformant: Record consists of ${characterStringCount} character-strings. RFC 10023 \xA7 2.4 requires exactly one character-string (max. 255 octets) per _for-sale TXT record.` : `Nicht konform: Eintrag besteht aus ${characterStringCount} Teil-Strings. RFC 10023 \xA7 2.4 verlangt genau einen String (max. 255 Oktette) pro _for-sale TXT-Eintrag.`
+      );
+    }
+    if (exceeds255Bytes) {
+      hasOversizeDeviation = true;
+      recWarnings.push(
+        isEn ? `Non-conformant: Record exceeds the 255-octet limit of RFC 10023 \xA7 2.4 (${byteLength} bytes).` : `Nicht konform: Eintrag \xFCberschreitet das 255-Oktett-Limit nach RFC 10023 \xA7 2.4 (${byteLength} Bytes).`
       );
     }
     const hasVersionTag = cleanStr.startsWith("v=FORSALE1;");
@@ -438,6 +456,9 @@ function parseRfc10023Records(rawTxtRecords, dnsQueryStatus = "NOERROR", lang = 
               extensionTags.push(tagKey);
             }
             validationMessage = isEn ? `Non-standard extension tag "${tagKey}". Standard processors will ignore this.` : `Nicht standardisiertes Erweiterungs-Tag "${tagKey}". Standard-Resolver ignorieren diesen Tag.`;
+            recWarnings.push(
+              isEn ? `Note: Tag "${tagKey}" is not defined in RFC 10023 (only fcod, ftxt, furi, fval). Allowed as a future/extension tag (\xA7 2.2.5), but standard processors will ignore it.` : `Hinweis: Tag "${tagKey}" ist nicht in RFC 10023 definiert (nur fcod, ftxt, furi, fval). Als Erweiterung zul\xE4ssig (\xA7 2.2.5), wird von Standard-Parsern aber ignoriert.`
+            );
           }
           const tagItem = {
             tag: tagKey,
@@ -466,6 +487,7 @@ function parseRfc10023Records(rawTxtRecords, dnsQueryStatus = "NOERROR", lang = 
       hasVersionTag,
       hasDnsEscapes,
       isSingleLineMultiTag: recWarnings.some((w) => w.includes("Multiple tag-value") || w.includes("mehrere Tags")),
+      characterStringCount,
       tags: recTags,
       warnings: recWarnings,
       errors: recErrors
@@ -482,7 +504,7 @@ function parseRfc10023Records(rawTxtRecords, dnsQueryStatus = "NOERROR", lang = 
     globalErrors.push(
       isEn ? 'No valid RFC 10023 version tag ("v=FORSALE1;") found in RRset.' : 'Kein g\xFCltiger RFC 10023 Versions-Header ("v=FORSALE1;") im RRset gefunden.'
     );
-  } else if (hasSingleLineMultiTagDeviation || globalErrors.length > 0 || allTags.some((t) => !t.isValid)) {
+  } else if (hasSingleLineMultiTagDeviation || hasMultiStringDeviation || hasOversizeDeviation || globalErrors.length > 0 || allTags.some((t) => !t.isValid)) {
     status = "warning";
   }
   let architecture = "unknown";
@@ -496,6 +518,9 @@ function parseRfc10023Records(rawTxtRecords, dnsQueryStatus = "NOERROR", lang = 
   } else if (allTags.length === 0) {
     architecture = "empty_signal";
     architectureLabel = isEn ? "Bare Signal (v=FORSALE1; only)" : "Reines Verkaufssignal (nur v=FORSALE1;)";
+  } else if (hasMultiStringDeviation || hasOversizeDeviation) {
+    architecture = "ietf_multi";
+    architectureLabel = isEn ? `Multi-Record RRset (${rawTxtRecords.length} lines, string format non-conformant)` : `Multi-Record RRset (${rawTxtRecords.length} Zeilen, String-Format nicht konform)`;
   } else {
     architecture = "ietf_multi";
     architectureLabel = isEn ? `Multi-Record RRset (${rawTxtRecords.length} lines, standard conformant)` : `Multi-Record RRset (${rawTxtRecords.length} Zeilen, IETF-konform)`;
@@ -530,6 +555,51 @@ function parseRfc10023Records(rawTxtRecords, dnsQueryStatus = "NOERROR", lang = 
     extensionTags,
     byteOverheadTotal: totalBytes
   };
+}
+var RECOMMENDED_MAX_TTL = 3600;
+function buildWildcardProbeName(punyHost) {
+  const rand = Math.random().toString(36).slice(2, 12);
+  return `rfc10023-probe-${rand}.${punyHost}`;
+}
+function isWildcardAnswer(forSaleRecords, probeRecords) {
+  if (forSaleRecords.length === 0 || probeRecords.length === 0) return false;
+  const norm = (arr) => [...arr].map((r) => mergeDnsTxtChunks(r).trim()).sort().join("\n");
+  return norm(forSaleRecords) === norm(probeRecords);
+}
+function applyDnsContextChecks(report, ctx, lang = "de") {
+  if (!report.saleSignalFound) return report;
+  const isEn = lang === "en";
+  const warnings = [...report.warnings];
+  let status = report.status;
+  let statusMessage = report.statusMessage;
+  if (typeof ctx.ttl === "number" && ctx.ttl > RECOMMENDED_MAX_TTL) {
+    warnings.push(
+      isEn ? `Note: TTL is ${ctx.ttl} s. RFC 10023 \xA7 3.4 recommends 3600 s or less, so that removing the record after a sale propagates quickly.` : `Hinweis: Die TTL betr\xE4gt ${ctx.ttl} s. RFC 10023 \xA7 3.4 empfiehlt h\xF6chstens 3600 s, damit das Entfernen nach einem Verkauf schnell wirksam wird.`
+    );
+  }
+  if (ctx.wildcardDetected) {
+    warnings.push(
+      isEn ? "Warning: The _for-sale answer appears to come from a wildcard TXT record (a random sibling name returns the same data). This is likely not an intentional sale signal (RFC 10023 \xA7 2.5)." : "Warnung: Die _for-sale-Antwort stammt vermutlich aus einem Wildcard-TXT-Eintrag (ein zuf\xE4lliger Nachbarname liefert dieselben Daten). Das ist wahrscheinlich kein bewusst gesetztes Verkaufssignal (RFC 10023 \xA7 2.5)."
+    );
+    status = "warning";
+    statusMessage = isEn ? "Sale signal possibly synthesized by a wildcard record \u2013 verify the zone." : "Verkaufssignal m\xF6glicherweise durch Wildcard-Eintrag erzeugt \u2013 Zone pr\xFCfen.";
+  }
+  return { ...report, warnings, status, statusMessage };
+}
+async function probeWildcardTxt(punyHost, forSaleRecords, fetcher = fetch) {
+  if (forSaleRecords.length === 0) return false;
+  try {
+    const probe = buildWildcardProbeName(punyHost);
+    const r = await fetcher(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(probe)}&type=TXT`, {
+      headers: { Accept: "application/dns-json" }
+    });
+    if (!r.ok) return false;
+    const json = await r.json();
+    const answers = Array.isArray(json.Answer) ? json.Answer.filter((a) => a.type === 16).map((a) => a.data) : [];
+    return isWildcardAnswer(forSaleRecords, answers);
+  } catch {
+    return false;
+  }
 }
 
 // src/utils/dnsIntelligence.ts
@@ -761,6 +831,7 @@ async function handler(req, res) {
   let rawRecords = [];
   let isDnssec = false;
   let rcode = 0;
+  let ttl = null;
   const nameservers = [];
   try {
     const nsPromise = fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(punyHost)}&type=NS`, {
@@ -787,6 +858,7 @@ async function handler(req, res) {
         if (json.AD) isDnssec = true;
         if (json.Answer && Array.isArray(json.Answer)) {
           const txtAnswers = json.Answer.filter((a) => a.type === 16);
+          if (txtAnswers.length > 0 && txtAnswers[0].TTL !== void 0) ttl = txtAnswers[0].TTL;
           rawRecords = txtAnswers.map((a) => a.data);
         }
       }
@@ -798,7 +870,9 @@ async function handler(req, res) {
     if (rcode === 3) dnsStatus = "NXDOMAIN";
     else if (rcode === 2) dnsStatus = "SERVFAIL";
     else if (rawRecords.length === 0) dnsStatus = "NODATA";
-    const report = parseRfc10023Records(rawRecords, dnsStatus, "de");
+    const baseReport = parseRfc10023Records(rawRecords, dnsStatus, "de");
+    const wildcardDetected = baseReport.saleSignalFound ? await probeWildcardTxt(punyHost, rawRecords) : false;
+    const report = applyDnsContextChecks(baseReport, { ttl, wildcardDetected }, "de");
     const cleanParsedMap = {};
     for (const [k, v] of Object.entries(report.parsedMap)) {
       if (v !== void 0) cleanParsedMap[k] = v;

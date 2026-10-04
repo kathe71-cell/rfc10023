@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { cleanDomainInput, detectHosterFromNameservers, toPunycodeHostname, HosterProfile } from '../utils/dnsIntelligence';
-import { parseRfc10023Records, RfcValidationReport, DnsQueryStatus, idnToUnicode } from '../utils/rfcParserEngine';
+import { parseRfc10023Records, RfcValidationReport, DnsQueryStatus, idnToUnicode, applyDnsContextChecks, probeWildcardTxt } from '../utils/rfcParserEngine';
 import { performDomainDiagnostics, DomainDiagnosticsReport } from '../utils/dnsAuditEngine';
 
 interface HistoryEntry {
@@ -206,7 +206,13 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
       const latencyMs = Math.round(performance.now() - startTime);
 
       // 3. Parse and evaluate records using RFC 10023 engine
-      const report = parseRfc10023Records(rawTxtRecords, dnsStatus, isEn ? 'en' : 'de');
+      const baseReport = parseRfc10023Records(rawTxtRecords, dnsStatus, isEn ? 'en' : 'de');
+
+      // 3b. DNS context checks: TTL recommendation (§ 3.4) and wildcard detection (§ 2.5)
+      const wildcardDetected = baseReport.saleSignalFound
+        ? await probeWildcardTxt(punyHost, rawTxtRecords)
+        : false;
+      const report = applyDnsContextChecks(baseReport, { ttl, wildcardDetected }, isEn ? 'en' : 'de');
 
       // 4. Run isolated diagnostics (Email & DNSSEC) in parallel
       let diagResult: DomainDiagnosticsReport | null = null;
@@ -347,12 +353,17 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
         <a
           href={clean}
           target="_blank"
-          rel="noopener noreferrer"
+          rel="noopener noreferrer nofollow"
           className="inline-flex items-center gap-1.5 text-emerald-700 hover:text-emerald-900 underline font-mono text-xs break-all font-medium"
         >
           <span>{displayLabel}</span>
           <ExternalLink className="w-3 h-3 shrink-0" />
         </a>
+        <p className="text-[11px] text-slate-500">
+          {isEn
+            ? 'External link from the DNS record – not verified by rfc10023.de. Opens only on click, never automatically (RFC 10023 § 5).'
+            : 'Externer Link aus dem DNS-Eintrag – von rfc10023.de nicht geprüft. Öffnet nur per Klick, nie automatisch (RFC 10023 § 5).'}
+        </p>
 
         {isIdn && aLabel && (
           <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono text-slate-500">

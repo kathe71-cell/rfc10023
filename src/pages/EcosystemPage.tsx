@@ -32,6 +32,7 @@ import {
   FORSALEDNS_META,
   ForSaleDnsHistoryEntry,
   TIMELINE_DATA,
+  FORSALEDNS_STATE_2026,
   getMetaAdoptionTier,
   getTierBadgeInfo,
   getStatusBadgeInfo,
@@ -1784,6 +1785,115 @@ export default function EcosystemPage() {
         </div>
 
       </section>
+
+      {/* Research snapshot: ForSaleDNS "State of For-Sale DNS 2026" (static, dated) */}
+      {FORSALEDNS_STATE_2026 && (() => {
+        const st = FORSALEDNS_STATE_2026;
+        const loc = isEn ? 'en-US' : 'de-DE';
+        const pctOf = (n: number) => (n / st.totalDomains) * 100;
+        const fmtPct = (v: number) =>
+          `${v.toLocaleString(loc, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
+        const fmtPct2 = (v: number) =>
+          `${v.toLocaleString(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`;
+        const dach = ['de', 'at', 'ch'];
+        const dachTotal = st.tldDistribution.filter((t) => dach.includes(t.tld)).reduce((a, t) => a + t.domains, 0);
+        const maxTld = Math.max(...st.tldDistribution.map((t) => t.domains));
+        const tagOrder = ['fcod', 'furi', 'fval', 'ftxt'];
+        const tagLabel: Record<string, string> = isEn
+          ? { fcod: 'fcod · registry code', furi: 'furi · contact / listing URI', fval: 'fval · price', ftxt: 'ftxt · free text' }
+          : { fcod: 'fcod · Registry-Code', furi: 'furi · Kontakt-/Listing-URI', fval: 'fval · Preis', ftxt: 'ftxt · Freitext' };
+        return (
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-4">
+                <div>
+                  <span className="inline-block px-2 py-0.5 rounded text-[11px] font-mono font-bold uppercase tracking-wider bg-amber-50 text-amber-900 border border-amber-300 mb-2">
+                    {isEn ? 'Snapshot · not updated daily' : 'Momentaufnahme · keine Tageswerte'}
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-950">
+                    {isEn ? 'Where _for-sale records are published' : 'Wo _for-sale Records veröffentlicht werden'}
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-600 max-w-3xl">
+                    {isEn
+                      ? `Baseline study "${st.title}" by ${st.publisher}: ${st.totalDomains.toLocaleString(loc)} domains with a valid RFC 10023 signal, analysed by TLD and tag usage.`
+                      : `Basisstudie „${st.title}“ von ${st.publisher}: ${st.totalDomains.toLocaleString(loc)} Domains mit gültigem RFC-10023-Signal, ausgewertet nach TLD und Tag-Nutzung.`}
+                  </p>
+                </div>
+                <div className="text-left sm:text-right font-mono text-xs text-slate-500 shrink-0">
+                  <span className="block font-bold text-slate-900">{isEn ? 'Published' : 'Veröffentlicht'}: {formatFullDate(st.publishedAt, isEn)}</span>
+                  <a href={st.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-emerald-700 hover:underline font-semibold mt-1">
+                    <span>{isEn ? 'Source: ForSaleDNS study' : 'Quelle: ForSaleDNS-Studie'}</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* TLD distribution */}
+                <div>
+                  <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 mb-3">
+                    {isEn ? 'Top 10 TLDs' : 'Top-10-Endungen'}
+                  </h3>
+                  <ul className="space-y-1.5">
+                    {st.tldDistribution.map((t) => {
+                      const isDach = dach.includes(t.tld);
+                      return (
+                        <li key={t.tld} className="grid grid-cols-[3rem_1fr_9.5rem] items-center gap-3 text-xs font-mono">
+                          <span className={`font-bold ${isDach ? 'text-emerald-800' : 'text-slate-700'}`}>.{t.tld}</span>
+                          <span className="h-2.5 rounded-full bg-slate-100 overflow-hidden" aria-hidden="true">
+                            <span
+                              className={`block h-full rounded-full ${isDach ? 'bg-emerald-600' : 'bg-slate-400'}`}
+                              style={{ width: `${(t.domains / maxTld) * 100}%` }}
+                            />
+                          </span>
+                          <span className="text-slate-600 whitespace-nowrap text-right">
+                            {t.domains.toLocaleString(loc)} <span className="text-slate-400">({fmtPct(pctOf(t.domains))})</span>
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <p className="mt-3 text-xs text-slate-600">
+                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-600 mr-1.5 align-middle" aria-hidden="true"></span>
+                    {isEn
+                      ? `DACH (.de, .at, .ch): ${dachTotal.toLocaleString(loc)} domains = ${fmtPct(pctOf(dachTotal))}. .de ranks second behind the pilot TLD .nl.`
+                      : `DACH (.de, .at, .ch): ${dachTotal.toLocaleString(loc)} Domains = ${fmtPct(pctOf(dachTotal))}. .de liegt auf Platz 2 hinter der Pilot-Endung .nl.`}
+                  </p>
+                </div>
+
+                {/* Tag usage & operational facts */}
+                <div>
+                  <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 mb-3">
+                    {isEn ? 'Tag usage' : 'Nutzung der Tags'}
+                  </h3>
+                  <ul className="space-y-1.5">
+                    {tagOrder.filter((k) => k in st.tagUsagePct).map((k) => (
+                      <li key={k} className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 items-center text-xs font-mono">
+                        <span className="text-slate-700">{tagLabel[k]}</span>
+                        <span className="font-bold text-slate-900">{fmtPct2(st.tagUsagePct[k])}</span>
+                        <span className="col-span-2 h-2 rounded-full bg-slate-100 overflow-hidden" aria-hidden="true">
+                          <span className="block h-full rounded-full bg-sky-600" style={{ width: `${st.tagUsagePct[k]}%` }} />
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block">{isEn ? 'DNSSEC signed' : 'Mit DNSSEC'}</span>
+                      <span className="text-lg font-bold font-mono text-slate-950">{fmtPct(st.dnssecPct)}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block">{isEn ? 'TTL above 3600 s' : 'TTL über 3600 s'}</span>
+                      <span className="text-lg font-bold font-mono text-amber-900">{fmtPct(st.ttlAbove3600Pct)}</span>
+                      <span className="block text-[10px] font-mono text-slate-500">{isEn ? 'RFC 10023 § 3.4 recommends ≤ 3600 s' : 'RFC 10023 § 3.4 empfiehlt ≤ 3600 s'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+      })()}
 
       {/* 3 Adoption Tiers Explanation (Requirement 6) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

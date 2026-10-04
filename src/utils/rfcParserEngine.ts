@@ -38,6 +38,7 @@ export interface RfcRecordAnalysis {
   hasVersionTag: boolean;
   hasDnsEscapes: boolean;
   isSingleLineMultiTag: boolean; // non-conformant deviation
+  characterStringCount: number; // RFC 10023 § 2.4: MUST be exactly 1
   tags: RfcTagItem[];
   warnings: string[];
   errors: string[];
@@ -108,6 +109,19 @@ export function mergeDnsTxtChunks(rawTxt: string): string {
     }
   }
   return trimmed;
+}
+
+/**
+ * Counts the RFC 1035 character-strings of a TXT RDATA in presentation format.
+ * '"a" "b"' -> 2, '"a"' -> 1, 'a' (unquoted) -> 1.
+ */
+export function countDnsTxtChunks(rawTxt: string): number {
+  const trimmed = rawTxt.trim();
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    const matches = [...trimmed.matchAll(/"((?:[^"\\]|\\.)*)"/g)];
+    return Math.max(matches.length, 1);
+  }
+  return 1;
 }
 
 /**
@@ -521,9 +535,13 @@ export function parseRfc10023Records(
   let hasVersionTagOverall = false;
   let totalBytes = 0;
   let hasSingleLineMultiTagDeviation = false;
+  let hasMultiStringDeviation = false;
+  let hasOversizeDeviation = false;
 
   rawTxtRecords.forEach((rawStr, recIdx) => {
-    // 1. Merge chunks if multiple quoted strings exist in single RR
+    // 1. Merge chunks if multiple quoted strings exist in single RR (for analysis only –
+    //    RFC 10023 § 2.4 requires exactly one character-string, see check below)
+    const characterStringCount = countDnsTxtChunks(rawStr);
     const mergedStr = mergeDnsTxtChunks(rawStr);
 
     // 2. Decode RFC 1035 Presentation Format (\DDD octets and \X escapes) into UTF-8
@@ -547,11 +565,21 @@ export function parseRfc10023Records(
       );
     }
 
-    if (exceeds255Bytes) {
+    if (characterStringCount > 1) {
+      hasMultiStringDeviation = true;
       recWarnings.push(
         isEn
-          ? `Record exceeds DNS single character-string limit of 255 octets (${byteLength} bytes).`
-          : `Eintrag überschreitet das DNS TXT-Limit von 255 Oktetten (${byteLength} Bytes).`
+          ? `Non-conformant: Record consists of ${characterStringCount} character-strings. RFC 10023 § 2.4 requires exactly one character-string (max. 255 octets) per _for-sale TXT record.`
+          : `Nicht konform: Eintrag besteht aus ${characterStringCount} Teil-Strings. RFC 10023 § 2.4 verlangt genau einen String (max. 255 Oktette) pro _for-sale TXT-Eintrag.`
+      );
+    }
+
+    if (exceeds255Bytes) {
+      hasOversizeDeviation = true;
+      recWarnings.push(
+        isEn
+          ? `Non-conformant: Record exceeds the 255-octet limit of RFC 10023 § 2.4 (${byteLength} bytes).`
+          : `Nicht konform: Eintrag überschreitet das 255-Oktett-Limit nach RFC 10023 § 2.4 (${byteLength} Bytes).`
       );
     }
 
@@ -655,6 +683,11 @@ export function parseRfc10023Records(
             validationMessage = isEn
               ? `Non-standard extension tag "${tagKey}". Standard processors will ignore this.`
               : `Nicht standardisiertes Erweiterungs-Tag "${tagKey}". Standard-Resolver ignorieren diesen Tag.`;
+            recWarnings.push(
+              isEn
+                ? `Note: Tag "${tagKey}" is not defined in RFC 10023 (only fcod, ftxt, furi, fval). Allowed as a future/extension tag (§ 2.2.5), but standard processors will ignore it.`
+                : `Hinweis: Tag "${tagKey}" ist nicht in RFC 10023 definiert (nur fcod, ftxt, furi, fval). Als Erweiterung zulässig (§ 2.2.5), wird von Standard-Parsern aber ignoriert.`
+            );
           }
 
           const tagItem: RfcTagItem = {
@@ -687,6 +720,7 @@ export function parseRfc10023Records(
       hasVersionTag,
       hasDnsEscapes,
       isSingleLineMultiTag: recWarnings.some((w) => w.includes('Multiple tag-value') || w.includes('mehrere Tags')),
+      characterStringCount,
       tags: recTags,
       warnings: recWarnings,
       errors: recErrors,
@@ -710,7 +744,13 @@ export function parseRfc10023Records(
         ? 'No valid RFC 10023 version tag ("v=FORSALE1;") found in RRset.'
         : 'Kein gültiger RFC 10023 Versions-Header ("v=FORSALE1;") im RRset gefunden.'
     );
-  } else if (hasSingleLineMultiTagDeviation || globalErrors.length > 0 || allTags.some((t) => !t.isValid)) {
+  } else if (
+    hasSingleLineMultiTagDeviation ||
+    hasMultiStringDeviation ||
+    hasOversizeDeviation ||
+    globalErrors.length > 0 ||
+    allTags.some((t) => !t.isValid)
+  ) {
     status = 'warning';
   }
 
@@ -726,6 +766,11 @@ export function parseRfc10023Records(
   } else if (allTags.length === 0) {
     architecture = 'empty_signal';
     architectureLabel = isEn ? 'Bare Signal (v=FORSALE1; only)' : 'Reines Verkaufssignal (nur v=FORSALE1;)';
+  } else if (hasMultiStringDeviation || hasOversizeDeviation) {
+    architecture = 'ietf_multi';
+    architectureLabel = isEn
+      ? `Multi-Record RRset (${rawTxtRecords.length} lines, string format non-conformant)`
+      : `Multi-Record RRset (${rawTxtRecords.length} Zeilen, String-Format nicht konform)`;
   } else {
     architecture = 'ietf_multi';
     architectureLabel = isEn
@@ -774,4 +819,90 @@ export function parseRfc10023Records(
     extensionTags,
     byteOverheadTotal: totalBytes,
   };
+}
+
+/** RFC 10023 § 3.4: a TTL of 3600 seconds or less is RECOMMENDED. */
+export const RECOMMENDED_MAX_TTL = 3600;
+
+/**
+ * Builds a random sibling label used to detect wildcard TXT records (RFC 10023 § 2.5).
+ * If "<random>.<domain>" returns the same TXT RRset as "_for-sale.<domain>", the
+ * _for-sale answer is most likely synthesized by a wildcard ("*.<domain>").
+ */
+export function buildWildcardProbeName(punyHost: string): string {
+  const rand = Math.random().toString(36).slice(2, 12);
+  return `rfc10023-probe-${rand}.${punyHost}`;
+}
+
+/** True if the probe answer equals the _for-sale answer (order-insensitive). */
+export function isWildcardAnswer(forSaleRecords: string[], probeRecords: string[]): boolean {
+  if (forSaleRecords.length === 0 || probeRecords.length === 0) return false;
+  const norm = (arr: string[]) => [...arr].map((r) => mergeDnsTxtChunks(r).trim()).sort().join('\n');
+  return norm(forSaleRecords) === norm(probeRecords);
+}
+
+/**
+ * Adds DNS-context findings that the record text alone cannot reveal:
+ * - TTL above the RECOMMENDED 3600 s (§ 3.4) → note (status unchanged)
+ * - wildcard-synthesized answer (§ 2.5) → warning (status "warning")
+ */
+export function applyDnsContextChecks(
+  report: RfcValidationReport,
+  ctx: { ttl?: number | null; wildcardDetected?: boolean },
+  lang: 'de' | 'en' = 'de'
+): RfcValidationReport {
+  if (!report.saleSignalFound) return report;
+  const isEn = lang === 'en';
+  const warnings = [...report.warnings];
+  let status = report.status;
+  let statusMessage = report.statusMessage;
+
+  if (typeof ctx.ttl === 'number' && ctx.ttl > RECOMMENDED_MAX_TTL) {
+    warnings.push(
+      isEn
+        ? `Note: TTL is ${ctx.ttl} s. RFC 10023 § 3.4 recommends 3600 s or less, so that removing the record after a sale propagates quickly.`
+        : `Hinweis: Die TTL beträgt ${ctx.ttl} s. RFC 10023 § 3.4 empfiehlt höchstens 3600 s, damit das Entfernen nach einem Verkauf schnell wirksam wird.`
+    );
+  }
+
+  if (ctx.wildcardDetected) {
+    warnings.push(
+      isEn
+        ? 'Warning: The _for-sale answer appears to come from a wildcard TXT record (a random sibling name returns the same data). This is likely not an intentional sale signal (RFC 10023 § 2.5).'
+        : 'Warnung: Die _for-sale-Antwort stammt vermutlich aus einem Wildcard-TXT-Eintrag (ein zufälliger Nachbarname liefert dieselben Daten). Das ist wahrscheinlich kein bewusst gesetztes Verkaufssignal (RFC 10023 § 2.5).'
+    );
+    status = 'warning';
+    statusMessage = isEn
+      ? 'Sale signal possibly synthesized by a wildcard record – verify the zone.'
+      : 'Verkaufssignal möglicherweise durch Wildcard-Eintrag erzeugt – Zone prüfen.';
+  }
+
+  return { ...report, warnings, status, statusMessage };
+}
+
+/**
+ * Queries a random sibling name via Cloudflare DoH and reports whether the _for-sale
+ * answer is identical, i.e. most likely synthesized by a wildcard (RFC 10023 § 2.5).
+ * Network errors are treated as "no wildcard detected".
+ */
+export async function probeWildcardTxt(
+  punyHost: string,
+  forSaleRecords: string[],
+  fetcher: typeof fetch = fetch
+): Promise<boolean> {
+  if (forSaleRecords.length === 0) return false;
+  try {
+    const probe = buildWildcardProbeName(punyHost);
+    const r = await fetcher(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(probe)}&type=TXT`, {
+      headers: { Accept: 'application/dns-json' },
+    });
+    if (!r.ok) return false;
+    const json = await r.json();
+    const answers: string[] = Array.isArray(json.Answer)
+      ? json.Answer.filter((a: { type: number }) => a.type === 16).map((a: { data: string }) => a.data)
+      : [];
+    return isWildcardAnswer(forSaleRecords, answers);
+  } catch {
+    return false;
+  }
 }

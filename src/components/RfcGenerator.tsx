@@ -416,7 +416,7 @@ export default function RfcGenerator({ embedded = false }: RfcGeneratorProps) {
             >
               <option value="300">{language === 'en' ? '300 s (5 min – recommended for sale records)' : '300 s (5 min – empfohlen für Verkaufs-Records)'}</option>
               <option value="3600">{language === 'en' ? '3600 s (1 h – standard hosting)' : '3600 s (1 h – Standard-Hosting)'}</option>
-              <option value="86400">86400 s (24 h)</option>
+              <option value="86400">{language === 'en' ? '86400 s (24 h – not recommended, RFC 10023 § 3.4: ≤ 3600 s)' : '86400 s (24 h – nicht empfohlen, RFC 10023 § 3.4: ≤ 3600 s)'}</option>
             </select>
           </div>
 

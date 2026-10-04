@@ -3,6 +3,7 @@ import rawCurrent from '../../data/adoption-current.json';
 import rawHistory from '../../data/adoption-history.json';
 import rawForSaleDnsHistory from '../../data/adoption-history-forsaledns.json';
 import rawTimeline from '../../data/timeline.json';
+import rawResearch from '../../data/research-snapshots.json';
 
 export type EcosystemCategory =
   | 'registry'
@@ -116,6 +117,20 @@ export const FORSALEDNS_META = (rawCurrent as AdoptionCurrentData).forSaleDns ||
 export const ADOPTION_HISTORY = rawHistory as AdoptionHistoryEntry[];
 export const ADOPTION_HISTORY_FORSALEDNS = rawForSaleDnsHistory as ForSaleDnsHistoryEntry[];
 export const TIMELINE_DATA = rawTimeline as TimelineEntry[];
+
+export interface ResearchSnapshot {
+  title: string;
+  publisher: string;
+  publishedAt: string;
+  sourceUrl: string;
+  totalDomains: number;
+  tldDistribution: { tld: string; domains: number }[];
+  tagUsagePct: Record<string, number>;
+  dnssecPct: number;
+  ttlAbove3600Pct: number;
+  mostCommonTtl: number;
+}
+export const FORSALEDNS_STATE_2026 = (rawResearch as { forSaleDnsState2026: ResearchSnapshot }).forSaleDnsState2026;
 
 /**
  * Determines the meta adoption tier (Native Integration vs Tool Support vs Documentation)

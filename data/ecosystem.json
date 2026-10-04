@@ -288,6 +288,18 @@
       "sourceUrl": "https://www.dnforum.com/sld",
       "firstObserved": "2026-10",
       "lastVerified": "2026-10-04"
+    },
+    {
+      "id": "dnsaudit",
+      "name": "DNSAudit.io",
+      "category": "domain-intelligence",
+      "supportType": "scanner",
+      "status": "production",
+      "description": "DNS-Sicherheits- und Audit-Plattform, die _for-sale Records automatisch erkennt, fehlerhafte Records und Wildcard-Antworten unterscheidet und Inhalte sicher (escaped, ohne Link-Verfolgung) anzeigt.",
+      "descriptionEn": "DNS security and audit platform that automatically detects _for-sale records, distinguishes malformed records and wildcard answers, and displays content safely (escaped, links not followed).",
+      "sourceUrl": "https://dnsaudit.io/blog/rfc-10023-for-sale-txt-record",
+      "firstObserved": "2026-10-03",
+      "lastVerified": "2026-10-04"
     }
   ]
 }

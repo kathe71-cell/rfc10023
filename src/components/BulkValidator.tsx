@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Layers, Play, CheckCircle2, AlertTriangle, XCircle, Download, RefreshCw, ShieldCheck, HelpCircle } from 'lucide-react';
 import { cleanDomainInput, detectHosterFromNameservers, sanitizeCsvCell, toPunycodeHostname } from '../utils/dnsIntelligence';
-import { parseRfc10023Records, type RfcValidationReport, type DnsQueryStatus } from '../utils/rfcParserEngine';
+import { parseRfc10023Records, applyDnsContextChecks, probeWildcardTxt, type RfcValidationReport, type DnsQueryStatus } from '../utils/rfcParserEngine';
 import { useLanguage } from '../context/LanguageContext';
 
 interface BulkItemResult {
@@ -154,17 +154,14 @@ export default function BulkValidator() {
 
             const rcode = cfData.Status ?? 0;
             let rawRecords: string[] = [];
+            let ttl: number | null = null;
 
             if (cfData.Answer && Array.isArray(cfData.Answer)) {
-              rawRecords = cfData.Answer
-                .filter((a: { type: number }) => a.type === 16)
-                .map((a: { data: string }) => {
-                  let str = a.data.trim();
-                  if (str.startsWith('"') && str.endsWith('"')) {
-                    str = str.slice(1, -1);
-                  }
-                  return str.replace(/\\"/g, '"');
-                });
+              const txtAnswers = cfData.Answer.filter((a: { type: number }) => a.type === 16);
+              if (txtAnswers.length > 0 && txtAnswers[0].TTL !== undefined) ttl = txtAnswers[0].TTL;
+              // Keep RFC 1035 presentation format – the parser handles quotes, escapes and
+              // detects records split into several character-strings (RFC 10023 § 2.4).
+              rawRecords = txtAnswers.map((a: { data: string }) => a.data);
             }
 
             let dnsQueryStatus: DnsQueryStatus = 'NOERROR';
@@ -172,7 +169,10 @@ export default function BulkValidator() {
             else if (rcode === 2) dnsQueryStatus = 'SERVFAIL';
             else if (rawRecords.length === 0) dnsQueryStatus = 'NODATA';
 
-            const parsed: RfcValidationReport = parseRfc10023Records(rawRecords, dnsQueryStatus, language === 'en' ? 'en' : 'de');
+            const lang = language === 'en' ? 'en' : 'de';
+            const baseParsed: RfcValidationReport = parseRfc10023Records(rawRecords, dnsQueryStatus, lang);
+            const wildcardDetected = baseParsed.saleSignalFound ? await probeWildcardTxt(punyHost, rawRecords) : false;
+            const parsed: RfcValidationReport = applyDnsContextChecks(baseParsed, { ttl, wildcardDetected }, lang);
 
             let displayStatus: BulkItemResult['status'] = 'not_found';
             if (parsed.dnsStatus === 'NXDOMAIN' || parsed.dnsStatus === 'NODATA') {

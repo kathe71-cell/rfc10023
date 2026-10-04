@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { parseRfc10023Records, type DnsQueryStatus } from '../src/utils/rfcParserEngine';
+import { parseRfc10023Records, applyDnsContextChecks, probeWildcardTxt, type DnsQueryStatus } from '../src/utils/rfcParserEngine';
 import { validateDomainHostname, detectHosterFromNameservers } from '../src/utils/dnsIntelligence';
 
 interface ParsedResult {
@@ -58,6 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let rawRecords: string[] = [];
   let isDnssec = false;
   let rcode = 0;
+  let ttl: number | null = null;
   const nameservers: string[] = [];
 
   try {
@@ -87,6 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (json.AD) isDnssec = true;
         if (json.Answer && Array.isArray(json.Answer)) {
           const txtAnswers = json.Answer.filter((a: { type: number }) => a.type === 16);
+          if (txtAnswers.length > 0 && txtAnswers[0].TTL !== undefined) ttl = txtAnswers[0].TTL;
           rawRecords = txtAnswers.map((a: { data: string }) => a.data);
         }
       }
@@ -103,7 +105,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     else if (rawRecords.length === 0) dnsStatus = 'NODATA';
 
     // Canonical Engine Analysis (with chunk merging, \DDD decoding, and IDN resolution)
-    const report = parseRfc10023Records(rawRecords, dnsStatus, 'de');
+    const baseReport = parseRfc10023Records(rawRecords, dnsStatus, 'de');
+    const wildcardDetected = baseReport.saleSignalFound ? await probeWildcardTxt(punyHost, rawRecords) : false;
+    const report = applyDnsContextChecks(baseReport, { ttl, wildcardDetected }, 'de');
 
     const cleanParsedMap: Record<string, string> = {};
     for (const [k, v] of Object.entries(report.parsedMap)) {

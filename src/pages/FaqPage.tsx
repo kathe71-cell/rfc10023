@@ -63,6 +63,22 @@ export default function FaqPage() {
       link: isEn ? '/en/ecosystem' : '/oekosystem',
       linkLabel: isEn ? 'RFC 10023 Ecosystem & Adoption Tracker' : 'RFC 10023 Ecosystem & Adoption Tracker',
     },
+    {
+      id: 'q18',
+      category: 'technical',
+      q: t('faq.q18'),
+      a: t('faq.a18'),
+      link: isEn ? '/en/validator' : '/validator',
+      linkLabel: isEn ? 'Check a domain with the validator' : 'Domain im Validator prüfen',
+    },
+    {
+      id: 'q19',
+      category: 'technical',
+      q: t('faq.q19'),
+      a: t('faq.a19'),
+      link: isEn ? '/en/validator' : '/validator',
+      linkLabel: isEn ? 'Check a domain with the validator' : 'Domain im Validator prüfen',
+    },
   ], [t, isEn]);
 
   const toggleFaq = (id: string) => {
