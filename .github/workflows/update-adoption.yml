@@ -2,11 +2,19 @@ name: Update RFC 10023 Adoption Data
 
 on:
   schedule:
+    # Primary daily run (07:17 CEST). GitHub may delay or drop scheduled runs
+    # under load, so a second run at 11:47 CEST acts as a safety net.
+    # Both are idempotent (one history entry per day and source).
     - cron: '17 5 * * *'
+    - cron: '47 9 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: update-adoption
+  cancel-in-progress: false
 
 jobs:
   update-adoption:
