@@ -835,7 +835,23 @@ export default function EcosystemPage() {
                   </div>
                   {(() => {
                     const dm = getDmDetails(displayDetails.date);
-                    if (!dm) return null;
+                    // Always render this row (placeholder when no DM value) so the inspector keeps a
+                    // constant height – otherwise the chart below shifts while hovering and flickers.
+                    if (!dm) {
+                      return (
+                        <div className="flex items-baseline gap-2 font-mono flex-wrap px-1 -mx-1">
+                          <span className="text-xs text-slate-500">
+                            {isEn ? 'Domains Monitor (full dataset):' : 'Domains Monitor (Gesamtdatensatz):'}
+                          </span>
+                          <span className="text-lg font-extrabold text-slate-600">–</span>
+                          <span className="text-xs text-slate-500">
+                            {isEn
+                              ? `series starts ${formatFullDate(DM_FULL_DATASET_START, true)}`
+                              : `Messreihe ab ${formatFullDate(DM_FULL_DATASET_START, false)}`}
+                          </span>
+                        </div>
+                      );
+                    }
                     return (
                       <div
                         className={`flex items-baseline gap-2 font-mono flex-wrap rounded px-1 -mx-1 ${
