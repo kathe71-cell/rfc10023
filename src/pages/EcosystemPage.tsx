@@ -740,7 +740,7 @@ export default function EcosystemPage() {
             {/* Interactive Telemetry Inspector Banner (Permanent, unclipped, 100% stable, zero layout shift) */}
             {displayDetails && (
               <div className="mb-4 p-3.5 sm:p-4 rounded-xl bg-slate-900 text-white border border-slate-800 shadow-sm select-none min-h-[112px]">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2.5 border-b border-slate-800 min-h-[44px]">
+                <div className="flex flex-col gap-1.5 pb-2.5 border-b border-slate-800">
                   <div className="flex items-center gap-2 flex-wrap">
                     {/* Stepper buttons for day-by-day telemetry navigation */}
                     <div className="flex items-center gap-1 bg-slate-800 p-0.5 rounded-lg border border-slate-700">
