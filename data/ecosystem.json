@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-09-28",
+  "lastUpdated": "2026-10-04",
   "integrations": [
     {
       "id": "sidn-labs",
@@ -228,6 +228,66 @@
       "sourceUrl": "https://dotweekly.com/domain-for-sale",
       "firstObserved": "2026-09",
       "lastVerified": "2026-09-28"
+    },
+    {
+      "id": "namegarage",
+      "name": "Namegarage",
+      "category": "aftermarket-search",
+      "supportType": "native-integration",
+      "status": "production",
+      "description": "Marktplatz, der in jeder eigenen Domain-Zone einen RFC-10023-Record veröffentlicht; der Record verweist direkt auf das jeweilige Listing mit Preis.",
+      "descriptionEn": "Marketplace publishing an RFC 10023 record in every zone it controls, pointing directly to the respective listing and price.",
+      "sourceUrl": "https://namegarage.com/blog/for-sale-dns-records",
+      "firstObserved": "2026-08-08",
+      "lastVerified": "2026-10-04"
+    },
+    {
+      "id": "elitedomains",
+      "name": "ELITEDOMAINS",
+      "category": "registrar",
+      "supportType": "native-integration",
+      "status": "production",
+      "description": "Deutscher Registrar und Marktplatz, der _for-sale Records automatisch für externe Domains und Nicht-.de-Endungen bereitstellt. Für .de-Domains noch nicht möglich (DENIC-NSENTRY erlaubt keine TXT-Records).",
+      "descriptionEn": "German registrar and marketplace automatically providing _for-sale records for external domains and non-.de TLDs. Not yet possible for .de (DENIC NSENTRY does not allow TXT records).",
+      "sourceUrl": "https://domainfragen.de/threads/rfc-10023.7958/",
+      "firstObserved": "2026-09-11",
+      "lastVerified": "2026-10-04"
+    },
+    {
+      "id": "nameshift",
+      "name": "NameShift",
+      "category": "aftermarket-search",
+      "supportType": "native-integration",
+      "status": "production",
+      "description": "Marktplatz, der für gelistete Domains RFC-10023-Records mit Listing-URL (furi), Preis (fval) und Mindestpreis (fmin) veröffentlicht. Auf rfc10023.nl als Unterstützer gelistet; per DNS-Abfrage verifiziert.",
+      "descriptionEn": "Marketplace publishing RFC 10023 records with listing URL (furi), price (fval) and minimum price (fmin) for listed domains. Listed as supporter on rfc10023.nl; verified via DNS lookup.",
+      "sourceUrl": "https://rfc10023.nl",
+      "firstObserved": "2026-10",
+      "lastVerified": "2026-10-04"
+    },
+    {
+      "id": "zycon",
+      "name": "Zycon Domains",
+      "category": "aftermarket-search",
+      "supportType": "native-integration",
+      "status": "production",
+      "description": "Britischer Domain-Händler, der für angebotene Domains _for-sale Records veröffentlicht. Auf rfc10023.nl als Unterstützer gelistet; per DNS-Abfrage verifiziert.",
+      "descriptionEn": "UK domain seller publishing _for-sale records for its listed domains. Listed as supporter on rfc10023.nl; verified via DNS lookup.",
+      "sourceUrl": "https://rfc10023.nl",
+      "firstObserved": "2026-10",
+      "lastVerified": "2026-10-04"
+    },
+    {
+      "id": "sld-checker",
+      "name": "SLD Checker (DNForum)",
+      "category": "domain-intelligence",
+      "supportType": "scanner",
+      "status": "experimental",
+      "description": "Kostenloses Cross-TLD-Recherchetool von DNForum (Beta) mit eigenem Bereich „For-sale signals (RFC 10023)“ für erkannte Verkaufssignale.",
+      "descriptionEn": "Free cross-TLD research tool by DNForum (beta) with a dedicated \"For-sale signals (RFC 10023)\" section for detected sale signals.",
+      "sourceUrl": "https://www.dnforum.com/sld",
+      "firstObserved": "2026-10",
+      "lastVerified": "2026-10-04"
     }
   ]
 }
