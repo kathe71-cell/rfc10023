@@ -88,21 +88,54 @@ export function recordHistoryEntry(history, dateString, sourceKey, value) {
 }
 
 /**
- * Parses RFC 10023 adoption data from JSON sources (ForSaleDNS API).
- * Primary source: ForSaleDNS adoption-history endpoint
- *
- * @param {object} json - Parsed JSON response
- * @returns {{ value: number, date: string } | null}
+ * Parses full dataset count and date from Domains Monitor HTML table.
+ * Specifically targets "Domains for sale with _for-sale DNS records (full dataset)".
+ * 
+ * @param {string} html 
+ * @returns {{ count: number, sourceDate: string } | null}
  */
-export function parseForSaleDnsJson(json) {
-  if (!json || typeof json !== 'object') return null;
+export function parseDomainsMonitorHtml(html) {
+  if (typeof html !== 'string' || !html.trim()) return null;
 
-  // Support common metrics fields
-  if (typeof json.value === 'number') return { value: json.value, date: json.date };
-  if (typeof json.count === 'number') return { value: json.count, date: json.date };
-  if (typeof json.total === 'number') return { value: json.total, date: json.date };
-  if (typeof json.activeListings === 'number') return { value: json.activeListings, date: json.date };
-  if (typeof json.detectedDomains === 'number') return { value: json.detectedDomains, date: json.date };
+  const toIsoDate = (raw) => {
+    const m = String(raw).trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+    return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : null;
+  };
+  const toCount = (raw) => {
+    const digits = String(raw)
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;|&#160;|&#xa0;|&thinsp;|&#8239;/gi, '')
+      .replace(/\D/g, '');
+    const n = parseInt(digits, 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+
+  // Strategy 1: <tr title="...full dataset..."> with cells [zone, date, count]
+  const rowMatch = html.match(/<tr[^>]*title=['"][^'"]*full dataset[^'"]*['"][^>]*>([\s\S]*?)<\/tr>/i);
+  if (rowMatch) {
+    const cells = rowMatch[1].match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
+    if (cells && cells.length >= 3) {
+      const count = toCount(cells[2]);
+      const sourceDate = toIsoDate(cells[1].replace(/<[^>]+>/g, ''));
+      if (count && sourceDate) return { count, sourceDate };
+    }
+  }
+
+  // Strategy 2 (markup-independent fallback): visible text
+  // "... (full dataset) 03.10.2026 569 405"
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;|&#160;|&#xa0;/gi, '\u00a0')
+    .replace(/&amp;/gi, '&');
+  const textMatch = text.match(
+    /full dataset\)?\s*(\d{1,2}\.\d{1,2}\.\d{4})\s*(\d{1,3}(?:[ \u00a0\u202f.,]\d{3})*)/i
+  );
+  if (textMatch) {
+    const count = toCount(textMatch[2]);
+    const sourceDate = toIsoDate(textMatch[1]);
+    if (count && sourceDate) return { count, sourceDate };
+  }
 
   return null;
 }
@@ -153,7 +186,7 @@ export async function processAdoptionUpdate(currentData, historyData, options = 
       const response = await fetcher(source.sourceUrl, {
         headers: {
           'Accept': 'text/html,application/xhtml+xml,application/json,text/plain,*/*;q=0.9',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          'User-Agent': 'Mozilla/5.0 (compatible; rfc10023-telemetry/1.0; +https://www.rfc10023.de)'
         },
         signal: controller.signal,
       });
@@ -168,7 +201,16 @@ export async function processAdoptionUpdate(currentData, historyData, options = 
       let extractedValue = null;
       let extractedDate = null;
 
-      // 1. Check JSON payload (ForSaleDNS API as primary source)
+      // 1. Check if source is Domains Monitor HTML page
+      if (sourceKey === 'domainsMonitor' || source.sourceUrl.includes('domains-monitor.com')) {
+        const dmParsed = parseDomainsMonitorHtml(rawText);
+        if (dmParsed) {
+          extractedValue = dmParsed.count;
+          extractedDate = dmParsed.sourceDate;
+        }
+      }
+
+      // 2. Check JSON payload if not extracted from HTML
       if (extractedValue === null) {
         try {
           const json = JSON.parse(rawText);
@@ -299,7 +341,7 @@ async function main() {
     }
 
     const updateOutcome = applyForSaleDnsUpdate(
-      currentAdoption.forSaleDnsMeta,
+      currentAdoption.forSaleDns,
       existingForSale,
       forSaleResult.data,
       new Date().toISOString()
@@ -310,18 +352,11 @@ async function main() {
         fs.writeFileSync(FORSALEDNS_FILE, JSON.stringify(updateOutcome.history, null, 2) + '\n', 'utf-8');
         console.log('✓ Successfully wrote updated ForSaleDNS history.');
       }
-      currentAdoption.forSaleDnsMeta = updateOutcome.meta;
+      currentAdoption.forSaleDns = updateOutcome.meta;
       fs.writeFileSync(CURRENT_FILE, JSON.stringify(currentAdoption, null, 2) + '\n', 'utf-8');
       console.log(`✓ Updated ForSaleDNS metadata (Snapshot: ${updateOutcome.meta.latestSnapshotDate}, Fetch: ${updateOutcome.meta.lastSuccessfulFetch}, Status: ${updateOutcome.status}).`);
     } else {
       console.warn('⚠ ForSaleDNS fetch failed. Retaining existing snapshot and fetch timestamp.');
-      // Log cache age if available
-      if (currentAdoption.forSaleDnsMeta?.latestSnapshotDate) {
-        const snapshotDate = new Date(currentAdoption.forSaleDnsMeta.latestSnapshotDate);
-        const daysOld = Math.floor((Date.now() - snapshotDate) / (1000 * 60 * 60 * 24));
-        console.log(`  Current snapshot age: ${daysOld} days (from ${currentAdoption.forSaleDnsMeta.latestSnapshotDate})`);
-        console.log(`  Last successful fetch: ${currentAdoption.forSaleDnsMeta.lastSuccessfulFetch || 'unknown'}`);
-      }
     }
   } catch (forSaleErr) {
     console.error('⚠ Error updating ForSaleDNS history (retaining existing data):', forSaleErr.message);
@@ -333,7 +368,7 @@ async function main() {
     const current = JSON.parse(fs.readFileSync(CURRENT_FILE, 'utf-8'));
     const dates = [
       current.sources?.domainsMonitor?.sourceDate,
-      current.forSaleDnsMeta?.latestSnapshotDate,
+      current.forSaleDns?.latestSnapshotDate,
     ].filter(Boolean).sort();
     const latest = dates[dates.length - 1];
     if (latest && fs.existsSync(sitemapPath)) {

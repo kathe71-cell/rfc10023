@@ -86,6 +86,18 @@
       "lastVerified": "2026-09-28"
     },
     {
+      "id": "domains-monitor",
+      "name": "Domains Monitor",
+      "category": "dataset-monitoring",
+      "supportType": "dataset",
+      "status": "production",
+      "description": "Monitoring-Projekt zur telemetrischen Erfassung aktiver _for-sale DNS Records über globale Domainzonen.",
+      "descriptionEn": "Monitoring project providing telemetry on active _for-sale DNS records across global domain zones.",
+      "sourceUrl": "https://domains-monitor.com/for-sale-domains/",
+      "firstObserved": "2026-08",
+      "lastVerified": "2026-09-28"
+    },
+    {
       "id": "domainkits-mcp",
       "name": "DomainKits MCP",
       "category": "developer-ai",

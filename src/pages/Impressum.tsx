@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Phone, MapPin, FileText } from 'lucide-react';
+import { Mail, MapPin, FileText } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Impressum() {
@@ -45,13 +45,6 @@ export default function Impressum() {
               {language === 'en' ? 'Email:' : 'E-Mail:'}{' '}
               <a href="mailto:jens@kathe.org" className="text-emerald-700 font-semibold hover:underline font-mono">
                 jens@kathe.org
-              </a>
-            </p>
-            <p className="flex items-center gap-2 text-slate-700">
-              <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-              {language === 'en' ? 'Phone:' : 'Telefon:'}{' '}
-              <a href="tel:+491786652623" className="text-slate-900 font-semibold hover:underline font-mono">
-                +49 178 6652623
               </a>
             </p>
           </div>

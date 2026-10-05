@@ -22,10 +22,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: 24
 
@@ -45,9 +45,8 @@ jobs:
             git push
           fi
 
-      # Logs a warning if Domains Monitor could not be fetched today.
-      # Does not fail the workflow, allowing stale data to be retained
-      # when external providers are unavailable.
+      # Fails the run (-> GitHub notification e-mail) if Domains Monitor
+      # could not be fetched today, instead of silently keeping stale data.
       - name: Verify Domains Monitor data is fresh
         run: |
           node -e "
@@ -56,6 +55,7 @@ jobs:
             const fetched = (s.lastSuccessfulFetch || '').slice(0, 10);
             console.log('Domains Monitor:', s.value, '| sourceDate:', s.sourceDate, '| lastSuccessfulFetch:', s.lastSuccessfulFetch);
             if (fetched !== today) {
-              console.warn('::warning::Adoption data not updated today — external providers may be unavailable');
+              console.error('::error::Domains Monitor fetch failed today (last success: ' + (s.lastSuccessfulFetch || 'never') + '). Check parser / source URL ' + s.sourceUrl);
+              process.exit(1);
             }
           "

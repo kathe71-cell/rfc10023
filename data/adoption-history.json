@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "date": "2026-09-24",
+    "source": "domainsMonitor",
+    "value": 392683
+  },
+  {
+    "date": "2026-10-03",
+    "source": "domainsMonitor",
+    "value": 569405
+  },
+  {
+    "date": "2026-10-04",
+    "source": "domainsMonitor",
+    "value": 570101
+  }
+]

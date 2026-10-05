@@ -260,9 +260,11 @@ export default function EcosystemPage() {
     ],
   };
 
-  // Legacy adoption history (deprecated – ForSaleDNS is now the sole source)
+  // Telemetry time series: Domains Monitor (Own baseline started 2026-09-24)
   const historyPoints = ADOPTION_HISTORY;
-  // Legacy constant – adoption-history.json is now empty (ForSaleDNS historical data in adoption-history-forsaledns.json)
+  // Domains Monitor "full dataset" metric (domains-monitor.com/for-sale-domains/) is available from
+  // 2026-10-03. The 2026-09-24 baseline stems from a different, since removed research page and is
+  // therefore listed in the table but not connected in the same trend line.
   const DM_FULL_DATASET_START = '2026-10-03';
   const dmFullPoints = useMemo(
     () => historyPoints.filter((p) => p.date >= DM_FULL_DATASET_START),
@@ -532,35 +534,54 @@ export default function EcosystemPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               
-              {/* Card 1: RFC 10023 Active Listings – ForSaleDNS as official source */}
+              {/* Card 1: Detected Domains – both independent sources side by side */}
               <div className="lg:col-span-2 p-5 rounded-2xl bg-slate-50 border border-slate-200/90 shadow-2xs flex flex-col">
                 <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 block mb-3">
-                  {isEn ? 'Active RFC 10023 Listings' : 'Aktive RFC 10023 Listings'}
+                  {isEn ? 'Detected _for-sale Records' : 'Erkannte _for-sale Records'}
                 </span>
-                <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:divide-x divide-slate-200/70">
+                  <div>
+                    <div className="flex items-center gap-2 text-3xl font-extrabold text-slate-950 font-mono tracking-tight">
+                      <span className="w-2.5 h-2.5 shrink-0 border-2 border-indigo-600 bg-white" aria-hidden="true"></span>
+                      {latestDmCount.toLocaleString(isEn ? 'en-US' : 'de-DE')}
+                    </div>
+                    <span className="block mt-1 text-[11px] font-mono text-slate-500">
+                      {isEn ? 'Domains Monitor · full dataset' : 'Domains Monitor · Gesamtdatensatz'}
+                    </span>
+                    <span className="block text-[11px] font-mono text-slate-400">{formatFullDate(latestDmDate, isEn)}</span>
+                  </div>
                   {latestForSale && (
-                    <div>
+                    <div className="sm:pl-4">
                       <div className="flex items-center gap-2 text-3xl font-extrabold text-slate-950 font-mono tracking-tight">
                         <span className="w-2.5 h-2.5 shrink-0 rounded-full border-2 border-emerald-700 bg-white" aria-hidden="true"></span>
                         {latestForSale.activeListings.toLocaleString(isEn ? 'en-US' : 'de-DE')}
                       </div>
                       <span className="block mt-1 text-[11px] font-mono text-slate-500">
-                        {isEn ? 'ForSaleDNS – Official Source' : 'ForSaleDNS – Offizielle Quelle'}
+                        {isEn ? 'ForSaleDNS · active listings' : 'ForSaleDNS · aktive Listings'}
                       </span>
                       <span className="block text-[11px] font-mono text-slate-400">{formatFullDate(latestForSale.date, isEn)}</span>
                     </div>
                   )}
                 </div>
                 <div className="mt-auto pt-3 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-mono text-slate-500 gap-2 mt-4">
-                  <span>{isEn ? 'ForSaleDNS is the official RFC 10023 adoption tracking source' : 'ForSaleDNS ist die offizielle RFC 10023 Adoptionstracking-Quelle'}</span>
+                  <span>{isEn ? 'Different methods – not directly comparable' : 'Unterschiedliche Methodik – nicht direkt vergleichbar'}</span>
                   <span className="flex items-center gap-2">
+                    <a
+                      href="https://domains-monitor.com/for-sale-domains/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-700 hover:underline flex items-center gap-0.5"
+                    >
+                      <span>DM</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                     <a
                       href="https://forsaledns.net/developers"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-emerald-700 hover:underline flex items-center gap-0.5"
                     >
-                      <span>API Docs</span>
+                      <span>ForSaleDNS</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </span>
@@ -715,6 +736,15 @@ export default function EcosystemPage() {
                   </span>
                 </div>
               )}
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 border-2 border-indigo-600 bg-white"></span>
+                <span className="w-4 h-0.5 bg-indigo-600 rounded -ml-1"></span>
+                <span className="text-indigo-900 font-semibold">
+                  {isEn
+                    ? `Domains Monitor – full dataset (since ${formatFullDate(DM_FULL_DATASET_START, true)})`
+                    : `Domains Monitor – Gesamtdatensatz (ab ${formatFullDate(DM_FULL_DATASET_START, false)})`}
+                </span>
+              </div>
             </div>
             {forSaleGrowth && (
               <div className="text-slate-600 font-semibold">
@@ -1716,33 +1746,38 @@ export default function EcosystemPage() {
             </div>
           )}
 
-          {/* Source Citation for ForSaleDNS (Official RFC 10023 Adoption Source) */}
+          {/* Source Citation for Domains Monitor (Requirement 10) */}
           <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 font-mono gap-3">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-700">{isEn ? 'Official Source: ' : 'Offizielle Quelle: '}</span>
+              <span className="font-semibold text-slate-700">{isEn ? 'Source: ' : 'Quelle: '}</span>
               <a
-                href="https://forsaledns.net/developers"
+                href="https://domains-monitor.com/for-sale-domains/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1 font-semibold"
-                title={isEn ? 'ForSaleDNS RFC 10023 Adoption API' : 'ForSaleDNS RFC 10023 Adoptions-API'}
-                aria-label={isEn ? 'ForSaleDNS API Documentation' : 'ForSaleDNS API-Dokumentation'}
+                title={isEn ? 'Open Domains Monitor dataset' : 'Domains Monitor Datensatz öffnen'}
+                aria-label={isEn ? 'Open Domains Monitor dataset' : 'Domains Monitor Datensatz öffnen'}
               >
-                <span>ForSaleDNS · RFC 10023 Adoption API</span>
+                <span>domains-monitor.com/for-sale-domains/</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>
             <div className="flex flex-col sm:items-end text-slate-600 gap-0.5">
               <span className="font-semibold text-slate-800">
                 {isEn
-                  ? `Latest observation: ${latestForSale ? formatFullDate(latestForSale.date, true) : '–'}`
-                  : `Letzter Messpunkt: ${latestForSale ? formatFullDate(latestForSale.date, false) : '–'}`}
+                  ? `Data snapshot: ${formatFullDate(latestDmDate, true)}`
+                  : `Datenstand: ${formatFullDate(latestDmDate, false)}`}
               </span>
-              {forSaleFetchTimestamp && (
+              {latestDmFetchTimestamp && (
                 <span className="text-[11px] text-slate-500 font-mono">
                   {isEn
-                    ? `Last successful fetch: ${formatFetchTimestamp(forSaleFetchTimestamp, true)}`
-                    : `Letzter erfolgreicher Abruf: ${formatFetchTimestamp(forSaleFetchTimestamp, false)}`}
+                    ? `Last successful fetch: ${formatFetchTimestamp(latestDmFetchTimestamp, true)}`
+                    : `Letzter erfolgreicher Abruf: ${formatFetchTimestamp(latestDmFetchTimestamp, false)}`}
+                </span>
+              )}
+              {latestDmFetchTimestamp && (new Date(latestDmFetchTimestamp.slice(0, 10)).getTime() - new Date(latestDmDate).getTime()) / 86400000 > 2 && (
+                <span className="text-[11px] font-mono font-bold text-amber-900 bg-amber-100 border border-amber-300 rounded px-1.5 py-0.5" data-stale-warning="true">
+                  {isEn ? 'Source data older than 2 days – value not current' : 'Quelldaten älter als 2 Tage – Wert nicht aktuell'}
                 </span>
               )}
             </div>
