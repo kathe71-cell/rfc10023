@@ -186,7 +186,7 @@ export async function processAdoptionUpdate(currentData, historyData, options = 
       const response = await fetcher(source.sourceUrl, {
         headers: {
           'Accept': 'text/html,application/xhtml+xml,application/json,text/plain,*/*;q=0.9',
-          'User-Agent': 'Mozilla/5.0 (compatible; rfc10023-telemetry/1.0; +https://www.rfc10023.de)'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         },
         signal: controller.signal,
       });
