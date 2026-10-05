@@ -299,7 +299,7 @@ async function main() {
     }
 
     const updateOutcome = applyForSaleDnsUpdate(
-      currentAdoption.forSaleDns,
+      currentAdoption.forSaleDnsMeta,
       existingForSale,
       forSaleResult.data,
       new Date().toISOString()
@@ -310,11 +310,18 @@ async function main() {
         fs.writeFileSync(FORSALEDNS_FILE, JSON.stringify(updateOutcome.history, null, 2) + '\n', 'utf-8');
         console.log('✓ Successfully wrote updated ForSaleDNS history.');
       }
-      currentAdoption.forSaleDns = updateOutcome.meta;
+      currentAdoption.forSaleDnsMeta = updateOutcome.meta;
       fs.writeFileSync(CURRENT_FILE, JSON.stringify(currentAdoption, null, 2) + '\n', 'utf-8');
       console.log(`✓ Updated ForSaleDNS metadata (Snapshot: ${updateOutcome.meta.latestSnapshotDate}, Fetch: ${updateOutcome.meta.lastSuccessfulFetch}, Status: ${updateOutcome.status}).`);
     } else {
       console.warn('⚠ ForSaleDNS fetch failed. Retaining existing snapshot and fetch timestamp.');
+      // Log cache age if available
+      if (currentAdoption.forSaleDnsMeta?.latestSnapshotDate) {
+        const snapshotDate = new Date(currentAdoption.forSaleDnsMeta.latestSnapshotDate);
+        const daysOld = Math.floor((Date.now() - snapshotDate) / (1000 * 60 * 60 * 24));
+        console.log(`  Current snapshot age: ${daysOld} days (from ${currentAdoption.forSaleDnsMeta.latestSnapshotDate})`);
+        console.log(`  Last successful fetch: ${currentAdoption.forSaleDnsMeta.lastSuccessfulFetch || 'unknown'}`);
+      }
     }
   } catch (forSaleErr) {
     console.error('⚠ Error updating ForSaleDNS history (retaining existing data):', forSaleErr.message);
@@ -326,7 +333,7 @@ async function main() {
     const current = JSON.parse(fs.readFileSync(CURRENT_FILE, 'utf-8'));
     const dates = [
       current.sources?.domainsMonitor?.sourceDate,
-      current.forSaleDns?.latestSnapshotDate,
+      current.forSaleDnsMeta?.latestSnapshotDate,
     ].filter(Boolean).sort();
     const latest = dates[dates.length - 1];
     if (latest && fs.existsSync(sitemapPath)) {

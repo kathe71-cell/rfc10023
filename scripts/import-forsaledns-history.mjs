@@ -153,13 +153,39 @@ export async function updateForSaleDnsHistory(options = {}) {
     });
   } catch (err) {
     clearTimeout(timeoutId);
-    logs.push(`✗ Network request failed: ${err.message}`);
+
+    // Distinguish between timeout and network errors
+    if (err.name === 'AbortError' || err.code === 'ABORT_ERR') {
+      logs.push(`✗ Request timeout after 12s (network/firewall may be blocking connection)`);
+    } else {
+      logs.push(`✗ Network request failed: ${err.message}`);
+    }
+
+    logs.push(`ℹ Note: Ensure forsaledns.net is whitelisted in your cloud environment's network settings`);
     return { data: null, changed: false, logs };
   }
   clearTimeout(timeoutId);
 
   if (!response.ok) {
+    const denyReason = response.headers.get('x-deny-reason');
+    const errorBody = await response.text().catch(() => '');
+
     logs.push(`✗ HTTP Error ${response.status} ${response.statusText}`);
+
+    if (denyReason) {
+      logs.push(`  Deny Reason: ${denyReason}`);
+      logs.push(`  Network Issue: forsaledns.net is not whitelisted in cloud environment`);
+      if (errorBody) {
+        logs.push(`  Details: ${errorBody.substring(0, 200)}`);
+      }
+    } else if (response.status === 403) {
+      logs.push(`  This is likely a network firewall issue`);
+      logs.push(`  Ensure forsaledns.net is in your cloud environment's network allowlist`);
+      if (errorBody) {
+        logs.push(`  Response: ${errorBody.substring(0, 200)}`);
+      }
+    }
+
     return { data: null, changed: false, logs };
   }
 
