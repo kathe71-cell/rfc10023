@@ -88,54 +88,21 @@ export function recordHistoryEntry(history, dateString, sourceKey, value) {
 }
 
 /**
- * Parses full dataset count and date from Domains Monitor HTML table.
- * Specifically targets "Domains for sale with _for-sale DNS records (full dataset)".
- * 
- * @param {string} html 
- * @returns {{ count: number, sourceDate: string } | null}
+ * Parses RFC 10023 adoption data from JSON sources (ForSaleDNS API).
+ * Primary source: ForSaleDNS adoption-history endpoint
+ *
+ * @param {object} json - Parsed JSON response
+ * @returns {{ value: number, date: string } | null}
  */
-export function parseDomainsMonitorHtml(html) {
-  if (typeof html !== 'string' || !html.trim()) return null;
+export function parseForSaleDnsJson(json) {
+  if (!json || typeof json !== 'object') return null;
 
-  const toIsoDate = (raw) => {
-    const m = String(raw).trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
-    return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : null;
-  };
-  const toCount = (raw) => {
-    const digits = String(raw)
-      .replace(/<[^>]+>/g, '')
-      .replace(/&nbsp;|&#160;|&#xa0;|&thinsp;|&#8239;/gi, '')
-      .replace(/\D/g, '');
-    const n = parseInt(digits, 10);
-    return Number.isFinite(n) && n > 0 ? n : null;
-  };
-
-  // Strategy 1: <tr title="...full dataset..."> with cells [zone, date, count]
-  const rowMatch = html.match(/<tr[^>]*title=['"][^'"]*full dataset[^'"]*['"][^>]*>([\s\S]*?)<\/tr>/i);
-  if (rowMatch) {
-    const cells = rowMatch[1].match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
-    if (cells && cells.length >= 3) {
-      const count = toCount(cells[2]);
-      const sourceDate = toIsoDate(cells[1].replace(/<[^>]+>/g, ''));
-      if (count && sourceDate) return { count, sourceDate };
-    }
-  }
-
-  // Strategy 2 (markup-independent fallback): visible text
-  // "... (full dataset) 03.10.2026 569 405"
-  const text = html
-    .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;|&#160;|&#xa0;/gi, '\u00a0')
-    .replace(/&amp;/gi, '&');
-  const textMatch = text.match(
-    /full dataset\)?\s*(\d{1,2}\.\d{1,2}\.\d{4})\s*(\d{1,3}(?:[ \u00a0\u202f.,]\d{3})*)/i
-  );
-  if (textMatch) {
-    const count = toCount(textMatch[2]);
-    const sourceDate = toIsoDate(textMatch[1]);
-    if (count && sourceDate) return { count, sourceDate };
-  }
+  // Support common metrics fields
+  if (typeof json.value === 'number') return { value: json.value, date: json.date };
+  if (typeof json.count === 'number') return { value: json.count, date: json.date };
+  if (typeof json.total === 'number') return { value: json.total, date: json.date };
+  if (typeof json.activeListings === 'number') return { value: json.activeListings, date: json.date };
+  if (typeof json.detectedDomains === 'number') return { value: json.detectedDomains, date: json.date };
 
   return null;
 }
@@ -201,16 +168,7 @@ export async function processAdoptionUpdate(currentData, historyData, options = 
       let extractedValue = null;
       let extractedDate = null;
 
-      // 1. Check if source is Domains Monitor HTML page
-      if (sourceKey === 'domainsMonitor' || source.sourceUrl.includes('domains-monitor.com')) {
-        const dmParsed = parseDomainsMonitorHtml(rawText);
-        if (dmParsed) {
-          extractedValue = dmParsed.count;
-          extractedDate = dmParsed.sourceDate;
-        }
-      }
-
-      // 2. Check JSON payload if not extracted from HTML
+      // 1. Check JSON payload (ForSaleDNS API as primary source)
       if (extractedValue === null) {
         try {
           const json = JSON.parse(rawText);

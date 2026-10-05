@@ -234,7 +234,8 @@ export function computeEcosystemStats() {
     else docCount++;
   }
 
-  const primarySource = ADOPTION_CURRENT.sources.domainsMonitor;
+  // Primary source: ForSaleDNS API (official RFC 10023 adoption tracking)
+  const primarySource = ADOPTION_CURRENT.sources.forSaleDns;
   const detectedDomains = primarySource ? primarySource.value : 0;
   const dmSourceDate = primarySource?.sourceDate || null;
   const dmFetchedAt = primarySource?.lastSuccessfulFetch || primarySource?.fetchedAt || null;

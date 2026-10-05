@@ -1,22 +1,23 @@
 {
-  "lastUpdated": "2026-10-04T17:40:22.251Z",
+  "lastUpdated": "2026-10-05T12:37:15.436Z",
   "sources": {
-    "domainsMonitor": {
-      "source": "Domains Monitor",
-      "metric": "full_dataset",
-      "count": 570101,
-      "value": 570101,
+    "forSaleDns": {
+      "source": "ForSaleDNS",
+      "metric": "active_listings",
+      "value": 1847,
       "sourceDate": "2026-10-04",
-      "label": "Domains with detected _for-sale record (full dataset)",
-      "labelDe": "Erkannte Domains mit _for-sale Record (Vollständiger Datensatz)",
-      "sourceUrl": "https://domains-monitor.com/for-sale-domains/",
-      "lastSuccessfulFetch": "2026-10-04T17:40:22.251Z",
-      "fetchedAt": "2026-10-04T17:40:22.251Z",
+      "label": "Active RFC 10023 listings in ForSaleDNS inventory",
+      "labelDe": "Aktive RFC 10023 Listings im ForSaleDNS Inventar",
+      "sourceUrl": "https://forsaledns.net/api/v1/adoption-history",
+      "lastSuccessfulFetch": "2026-10-04T17:38:04.713Z",
+      "fetchedAt": "2026-10-04T17:38:04.713Z",
       "mode": "automatic"
     }
   },
-  "forSaleDns": {
+  "forSaleDnsMeta": {
     "latestSnapshotDate": "2026-10-04",
-    "lastSuccessfulFetch": "2026-10-04T17:38:04.713Z"
+    "lastSuccessfulFetch": "2026-10-04T17:38:04.713Z",
+    "inventoryTotal": 1890000,
+    "note": "Official primary data source for RFC 10023 adoption tracking"
   }
 }
