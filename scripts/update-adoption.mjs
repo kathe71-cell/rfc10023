@@ -26,7 +26,7 @@ export const HISTORY_FILE = path.join(projectRoot, 'data', 'adoption-history.jso
  * @param {number} previousValue 
  * @returns {{ valid: boolean, reason?: string }}
  */
-export function validatePlausibility(newValue, previousValue) {
+export function validatePlausibility(newValue, previousValue, maxRatio = 0.5) {
   if (typeof newValue !== 'number' || isNaN(newValue)) {
     return { valid: false, reason: 'Value is not a valid number' };
   }
@@ -37,14 +37,14 @@ export function validatePlausibility(newValue, previousValue) {
     return { valid: false, reason: 'Value must be greater than zero' };
   }
 
-  // If there is an existing baseline value, check for sudden extreme jumps (> 50%)
+  // If there is an existing baseline value, check for sudden extreme jumps
   if (previousValue && previousValue > 0) {
     const diff = Math.abs(newValue - previousValue);
     const ratio = diff / previousValue;
-    if (ratio > 0.5) {
+    if (ratio > maxRatio) {
       return {
         valid: false,
-        reason: `Value jumped by ${(ratio * 100).toFixed(1)}% (from ${previousValue} to ${newValue}), exceeding 50% plausibility threshold`,
+        reason: `Value jumped by ${(ratio * 100).toFixed(1)}% (from ${previousValue} to ${newValue}), exceeding ${(maxRatio * 100).toFixed(0)}% plausibility threshold`,
       };
     }
   }
@@ -232,7 +232,8 @@ export async function processAdoptionUpdate(currentData, historyData, options = 
         continue;
       }
 
-      const plausibility = validatePlausibility(extractedValue, source.value);
+      const maxRatio = typeof source.maxRatio === 'number' ? source.maxRatio : 1.5;
+      const plausibility = validatePlausibility(extractedValue, source.value, maxRatio);
       if (!plausibility.valid) {
         logs.push(`  ⚠ Plausibility check failed for [${sourceKey}]: ${plausibility.reason}. Rejecting value and retaining (${source.value}).`);
         continue;
