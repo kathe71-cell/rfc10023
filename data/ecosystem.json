@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-10-04",
+  "lastUpdated": "2026-10-05",
   "integrations": [
     {
       "id": "sidn-labs",
@@ -300,6 +300,18 @@
       "sourceUrl": "https://dnsaudit.io/blog/rfc-10023-for-sale-txt-record",
       "firstObserved": "2026-10-03",
       "lastVerified": "2026-10-04"
+    },
+    {
+      "id": "namecheap-python",
+      "name": "namecheap-python CLI",
+      "category": "developer-tool",
+      "supportType": "documentation",
+      "status": "supported",
+      "description": "Open-Source-Python-SDK und CLI für die Namecheap-API, dessen offizielle CLI-Dokumentation beschreibt, wie man _for-sale TXT-Records nach RFC 10023 per Kommandozeile setzt und wieder entfernt.",
+      "descriptionEn": "Open-source Python SDK and CLI for the Namecheap API whose official CLI documentation explains how to add and remove RFC 10023 _for-sale TXT records from the command line.",
+      "sourceUrl": "https://github.com/adriangalilea/namecheap-python/blob/main/CLI.md",
+      "firstObserved": "2026-08-09",
+      "lastVerified": "2026-10-05"
     }
   ]
 }
