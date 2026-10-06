@@ -59,3 +59,20 @@ jobs:
               process.exit(1);
             }
           "
+
+      # Same check for ForSaleDNS. Runs even if the Domains Monitor check
+      # failed; data of the healthy source has already been committed above.
+      # Checks that the last successful fetch happened during this run (< 60 min
+      # old), not the snapshot date: a successful fetch without a new day is fine.
+      - name: Verify ForSaleDNS data is fresh
+        if: ${{ !cancelled() }}
+        run: |
+          node -e "
+            const f = require('./data/adoption-current.json').forSaleDns || {};
+            const ageMin = (Date.now() - Date.parse(f.lastSuccessfulFetch || '')) / 60000;
+            console.log('ForSaleDNS: latestSnapshotDate:', f.latestSnapshotDate, '| lastSuccessfulFetch:', f.lastSuccessfulFetch, '| age (min):', Math.round(ageMin));
+            if (!(ageMin >= 0 && ageMin <= 60)) {
+              console.error('::error::ForSaleDNS was not fetched successfully in this run (last success: ' + (f.lastSuccessfulFetch || 'never') + '). See the ForSaleDNS fetch warning above for HTTP status / cause.');
+              process.exit(1);
+            }
+          "

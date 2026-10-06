@@ -103,13 +103,20 @@ export function applyForSaleDnsUpdate(currentMeta, existingHistory, fetchedEntri
     };
   }
 
-  const latestEntry = fetchedEntries[fetchedEntries.length - 1];
-  const newSnapshotDate = latestEntry.date;
+  // Upsert per calendar day: keep days the API no longer returns (it serves at
+  // most 400 days), let the API's current value win for every day it returns
+  // (an intraday value is later replaced by the finalized one), never duplicate.
+  const byDay = new Map();
+  for (const item of existingHistory || []) {
+    if (item && typeof item.date === 'string') byDay.set(item.date, item);
+  }
+  for (const item of fetchedEntries) byDay.set(item.date, item);
+  const mergedHistory = Array.from(byDay.values()).sort((x, y) => x.date.localeCompare(y.date));
+
+  const newSnapshotDate = mergedHistory[mergedHistory.length - 1].date;
   const prevSnapshotDate = currentMeta?.latestSnapshotDate;
 
-  const historyJson = JSON.stringify(existingHistory || []);
-  const newHistoryJson = JSON.stringify(fetchedEntries);
-  const historyChanged = historyJson !== newHistoryJson;
+  const historyChanged = JSON.stringify(existingHistory || []) !== JSON.stringify(mergedHistory);
 
   const updatedMeta = {
     latestSnapshotDate: newSnapshotDate,
@@ -120,7 +127,7 @@ export function applyForSaleDnsUpdate(currentMeta, existingHistory, fetchedEntri
 
   return {
     meta: updatedMeta,
-    history: fetchedEntries,
+    history: mergedHistory,
     historyChanged,
     metaChanged: true,
     status: isNewSnapshot ? 'success-new-data' : 'success-no-new-data',
@@ -128,39 +135,104 @@ export function applyForSaleDnsUpdate(currentMeta, existingHistory, fetchedEntri
 }
 
 /**
+ * Parses a Retry-After header (delta-seconds or HTTP-date) into milliseconds.
+ * @param {string} value
+ * @returns {number|null}
+ */
+export function parseRetryAfter(value) {
+  if (!value) return null;
+  const trimmed = String(value).trim();
+  if (/^\d+$/.test(trimmed)) return Number(trimmed) * 1000;
+  const at = Date.parse(trimmed);
+  return Number.isNaN(at) ? null : Math.max(0, at - Date.now());
+}
+
+/**
  * Fetches and processes ForSaleDNS adoption history.
  * @param {object} [options]
  * @param {Function} [options.fetcher]
- * @returns {Promise<{ data: Array<object>, changed: boolean, logs: string[] }>}
+ * @param {number} [options.maxAttempts]
+ * @param {number} [options.retryDelayMs]
+ * @param {number} [options.timeoutMs]
+ * @returns {Promise<{ data: Array<object>|null, changed: boolean, logs: string[], error?: string }>}
  */
 export async function updateForSaleDnsHistory(options = {}) {
   const fetcher = options.fetcher || globalThis.fetch;
+  const maxAttempts = options.maxAttempts ?? 3;
+  const retryDelayMs = options.retryDelayMs ?? 5000;
+  const timeoutMs = options.timeoutMs ?? 20000;
   const logs = [];
 
   logs.push(`Connecting to ForSaleDNS API: ${FORSALEDNS_API_URL}...`);
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-  let response;
-  try {
-    response = await fetcher(FORSALEDNS_API_URL, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        'Accept': 'application/json',
-      },
-      signal: controller.signal,
-    });
-  } catch (err) {
-    clearTimeout(timeoutId);
-    logs.push(`✗ Network request failed: ${err.message}`);
-    return { data: null, changed: false, logs };
+  let response = null;
+  let lastError = '';
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    let retryable = true;
+    let retryAfterMs = null;
+    try {
+      const res = await fetcher(FORSALEDNS_API_URL, {
+        headers: {
+          'User-Agent': USER_AGENT,
+          'Accept': 'application/json',
+        },
+        signal: controller.signal,
+      });
+      if (res.ok) {
+        response = res;
+      } else {
+        // Record enough detail to tell a WAF/bot block (e.g. Cloudflare 403) from an outage.
+        const header = (name) => res.headers?.get?.(name) || '';
+        let snippet = '';
+        try {
+          snippet = (await res.text()).replace(/\s+/g, ' ').slice(0, 200);
+        } catch {
+          snippet = '';
+        }
+        lastError = `HTTP ${res.status} ${res.statusText || ''}`.trim() +
+          ` | url=${FORSALEDNS_API_URL}` +
+          (header('server') ? ` | server=${header('server')}` : '') +
+          (header('cf-ray') ? ` | cf-ray=${header('cf-ray')}` : '') +
+          (header('cf-mitigated') ? ` | cf-mitigated=${header('cf-mitigated')}` : '') +
+          (header('retry-after') ? ` | retry-after=${header('retry-after')}` : '') +
+          (snippet ? ` | body="${snippet}"` : '');
+        retryable = res.status === 429 || res.status >= 500;
+        if (res.status === 429) retryAfterMs = parseRetryAfter(header('retry-after'));
+      }
+    } catch (err) {
+      const cause = err?.cause?.code || err?.cause?.message;
+      lastError = `Network error: ${err?.name === 'AbortError' ? `timeout after ${timeoutMs} ms` : err?.message}` +
+        (cause ? ` (code: ${cause})` : '') +
+        ` | url=${FORSALEDNS_API_URL}`;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    if (response) {
+      if (attempt > 1) logs.push(`✓ Attempt ${attempt}/${maxAttempts} succeeded.`);
+      break;
+    }
+    const willRetry = retryable && attempt < maxAttempts;
+    const waitMs = willRetry ? Math.min(retryAfterMs ?? retryDelayMs * attempt, 60000) : 0;
+    logs.push(
+      `✗ Attempt ${attempt}/${maxAttempts}: ${lastError} → ` +
+        (willRetry
+          ? `retrying in ${waitMs} ms`
+          : retryable
+            ? 'no attempts left'
+            : 'not retrying (permanent client error)')
+    );
+    if (!willRetry) break;
+    if (waitMs > 0) await new Promise((r) => setTimeout(r, waitMs));
   }
-  clearTimeout(timeoutId);
 
-  if (!response.ok) {
-    logs.push(`✗ HTTP Error ${response.status} ${response.statusText}`);
-    return { data: null, changed: false, logs };
+  if (!response) {
+    // Surface as a GitHub Actions annotation so the cause is visible without opening raw logs.
+    if (process.env.GITHUB_ACTIONS === 'true') {
+      console.log(`::warning title=ForSaleDNS fetch failed::${lastError.replace(/[\r\n]+/g, ' ')}`);
+    }
+    return { data: null, changed: false, logs, error: lastError };
   }
 
   let rawJson;
