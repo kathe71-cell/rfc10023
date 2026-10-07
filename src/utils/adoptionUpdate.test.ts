@@ -3,7 +3,10 @@ import {
   processAdoptionUpdate,
   validatePlausibility,
   recordHistoryEntry,
+  detectAnomaly,
+  validateTelemetryBasic,
 } from '../../scripts/update-adoption.mjs';
+import { computeEcosystemStats, ECOSYSTEM_DATA } from '../data/ecosystem';
 
 describe('RFC 10023 Adoption Data Update Engine (Cases A - E)', () => {
   const baseCurrent = {
@@ -44,11 +47,12 @@ describe('RFC 10023 Adoption Data Update Engine (Cases A - E)', () => {
     expect(result.current.sources.testFeed.value).toBe(105000);
     expect(result.current.sources.testFeed.lastSuccessfulFetch).toBe('2026-09-24T12:00:00Z');
     expect(result.history).toHaveLength(2);
-    expect(result.history[1]).toEqual({
+    expect(result.history[1]).toMatchObject({
       date: '2026-09-24',
       source: 'testFeed',
       value: 105000,
     });
+    expect(result.history[1].verificationStatus).toBe('normal');
   });
 
   it('Fall B: Source unreachable / network failure -> Retains previous value completely', async () => {
@@ -173,4 +177,84 @@ describe('RFC 10023 Adoption Data Update Engine (Cases A - E)', () => {
     expect(stale.consistent).toBe(false);
     expect(stale.diffDays).toBeGreaterThan(3);
   });
+
+  describe('AUFGABE 15 – Telemetry Hardening & Anomaly Scenarios', () => {
+    it('1. Normaler Tagesverlauf: moderater Anstieg (570.101 -> 571.000) flags no anomaly', () => {
+      const res = detectAnomaly(571000, 570101, 'full_dataset', 'full_dataset');
+      expect(res.anomaly).toBe(false);
+      expect(res.verificationStatus).toBe('normal');
+      expect(res.changeAbsolute).toBe(899);
+      expect(res.changePercent).toBeCloseTo(0.16, 1);
+    });
+
+    it('2. Auffälliger Sprung > 20%: (570.101 -> 1.322.773, +132,0%) flags anomaly-unexplained without discarding', () => {
+      const res = detectAnomaly(1322773, 570101, 'full_dataset', 'full_dataset');
+      expect(res.anomaly).toBe(true);
+      expect(res.verificationStatus).toBe('anomaly-unexplained');
+      expect(res.changeAbsolute).toBe(752672);
+      expect(res.changePercent).toBeCloseTo(132.02, 1);
+      expect(res.anomalyReason).toContain('752.672');
+      expect(res.anomalyReasonEn).toContain('752,672');
+    });
+
+    it('3. Methodenwechsel / Metric Change: (392.683 -> 569.405) flags source-methodology-change with null percentage', () => {
+      const res = detectAnomaly(569405, 392683, 'full_dataset', 'research_snapshot');
+      expect(res.anomaly).toBe(false);
+      expect(res.verificationStatus).toBe('source-methodology-change');
+      expect(res.changeAbsolute).toBeNull();
+      expect(res.changePercent).toBeNull();
+    });
+
+    it('4. Fetch-Fehler: vorheriger Datenstand bleibt unverändert erhalten', async () => {
+      const mockFailingFetcher = async () => {
+        throw new Error('Connection refused / 503 Service Unavailable');
+      };
+      const res = await processAdoptionUpdate(baseCurrent, baseHistory, {
+        fetcher: mockFailingFetcher,
+        today: '2026-10-05',
+      });
+      expect(res.changed).toBe(false);
+      expect(res.current.sources.testFeed.value).toBe(100000);
+      expect(res.history).toHaveLength(1);
+    });
+
+    it('5. Null-Felder: Optionale Werte (conformant, priced, dnssec) tolerieren null ohne synthetischen Fallback', () => {
+      const sampleItem = {
+        date: '2026-09-24',
+        activeListings: 1000,
+        conformant: null,
+        priced: null,
+        dnssec: null,
+      };
+      expect(sampleItem.conformant).toBeNull();
+      expect(sampleItem.priced).toBeNull();
+      expect(sampleItem.dnssec).toBeNull();
+      expect(sampleItem.activeListings).toBe(1000);
+    });
+
+    it('6. Extremwertprüfung / Invalid Inputs: negative, NaN und 0 Werte werden rejected', () => {
+      const checkZero = validateTelemetryBasic(0, '2026-10-05', '2026-10-04');
+      expect(checkZero.valid).toBe(false);
+
+      const checkNegative = validateTelemetryBasic(-100, '2026-10-05', '2026-10-04');
+      expect(checkNegative.valid).toBe(false);
+
+      const checkNaN = validateTelemetryBasic(NaN, '2026-10-05', '2026-10-04');
+      expect(checkNaN.valid).toBe(false);
+
+      const checkOlderDate = validateTelemetryBasic(100000, '2026-10-01', '2026-10-04');
+      expect(checkOlderDate.valid).toBe(false);
+    });
+
+    it('7. Dynamische Integration-Counts: Summe der Kategorien entspricht exakt der Gesamtzahl (26 = 9 + 13 + 4)', () => {
+      const stats = computeEcosystemStats();
+      expect(stats.totalIntegrations).toBe(ECOSYSTEM_DATA.integrations.length);
+      expect(stats.totalIntegrations).toBe(26);
+      expect(stats.nativeCount).toBe(9);
+      expect(stats.toolCount).toBe(13);
+      expect(stats.docCount).toBe(4);
+      expect(stats.nativeCount + stats.toolCount + stats.docCount).toBe(stats.totalIntegrations);
+    });
+  });
 });
+

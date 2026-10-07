@@ -58,13 +58,14 @@ export function processForSaleDnsEntries(rawData) {
     mapByDay.set(item.day, {
       date: item.day,
       activeListings: item.active,
-      conformant: typeof item.conformant === 'number' ? item.conformant : item.active,
-      priced: typeof item.priced === 'number' ? item.priced : 0,
-      dnssec: typeof item.dnssec === 'number' ? item.dnssec : 0,
+      conformant: typeof item.conformant === 'number' ? item.conformant : null,
+      priced: typeof item.priced === 'number' ? item.priced : null,
+      dnssec: typeof item.dnssec === 'number' ? item.dnssec : null,
       inventoryCompleted: item.inventoryCompleted,
       inventoryTotal: item.inventoryTotal,
       baselineComplete: Boolean(item.baselineComplete),
       sweepComplete: item.inventoryCompleted === item.inventoryTotal,
+      conformanceSeriesBreak: item.day === '2026-09-29',
     });
   }
 

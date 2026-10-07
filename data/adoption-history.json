@@ -7,16 +7,29 @@
   {
     "date": "2026-10-03",
     "source": "domainsMonitor",
-    "value": 569405
+    "metric": "full_dataset",
+    "value": 569405,
+    "verificationStatus": "normal"
   },
   {
     "date": "2026-10-04",
     "source": "domainsMonitor",
-    "value": 570101
+    "metric": "full_dataset",
+    "value": 570101,
+    "changeAbsolute": 696,
+    "changePercent": 0.12,
+    "anomaly": false,
+    "verificationStatus": "normal"
   },
   {
     "date": "2026-10-05",
     "source": "domainsMonitor",
-    "value": 1322773
+    "metric": "full_dataset",
+    "value": 1322773,
+    "changeAbsolute": 752672,
+    "changePercent": 132.02,
+    "anomaly": true,
+    "anomalyReason": "Auffälliger Sprung von +132,0 % überschreitet 20%-Schwellenwert",
+    "verificationStatus": "anomaly-unexplained"
   }
 ]

@@ -58,9 +58,16 @@ export interface EcosystemData {
   integrations: EcosystemIntegration[];
 }
 
+export type TelemetryVerificationStatus =
+  | 'normal'
+  | 'anomaly-unexplained'
+  | 'source-methodology-change'
+  | 'externally-confirmed';
+
 export interface AdoptionSource {
   source?: string;
   metric?: string;
+  sourceMetric?: string;
   count?: number;
   value: number;
   sourceDate?: string;
@@ -70,6 +77,14 @@ export interface AdoptionSource {
   lastSuccessfulFetch: string;
   fetchedAt?: string;
   mode: 'automatic' | 'manual';
+  methodology?: string;
+  methodologyEn?: string;
+  anomaly?: boolean;
+  changeAbsolute?: number | null;
+  changePercent?: number | null;
+  anomalyReason?: string | null;
+  anomalyReasonEn?: string | null;
+  verificationStatus?: TelemetryVerificationStatus;
 }
 
 export interface ForSaleDnsMeta {
@@ -86,19 +101,28 @@ export interface AdoptionCurrentData {
 export interface AdoptionHistoryEntry {
   date: string;
   source: string;
+  metric?: string;
   value: number;
+  changeAbsolute?: number | null;
+  changePercent?: number | null;
+  anomaly?: boolean;
+  anomalyReason?: string | null;
+  verificationStatus?: TelemetryVerificationStatus;
 }
 
 export interface ForSaleDnsHistoryEntry {
   date: string;
   activeListings: number;
-  conformant: number;
-  priced: number;
-  dnssec: number;
+  conformant: number | null;
+  priced: number | null;
+  dnssec: number | null;
   inventoryCompleted: number;
   inventoryTotal: number;
   baselineComplete: boolean;
   sweepComplete: boolean;
+  conformanceSeriesBreak?: boolean;
+  conformanceNote?: string;
+  conformanceNoteEn?: string;
 }
 
 export interface TimelineEntry {

@@ -109,7 +109,7 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
       // Historical measurement point must be preserved unchanged
       expect(dmData[0]).toEqual({ date: '2026-09-24', source: 'domainsMonitor', value: 392683 });
       // New measurement point (full dataset) appended, never interpolated
-      expect(dmData[1]).toEqual({ date: '2026-10-03', source: 'domainsMonitor', value: 569405 });
+      expect(dmData[1]).toMatchObject({ date: '2026-10-03', source: 'domainsMonitor', value: 569405 });
       for (const e of dmData) expect(e.source).toBe('domainsMonitor');
     });
   });

@@ -503,7 +503,8 @@
     "inventoryCompleted": 343818996,
     "inventoryTotal": 343818996,
     "baselineComplete": false,
-    "sweepComplete": true
+    "sweepComplete": true,
+    "conformanceSeriesBreak": true
   },
   {
     "date": "2026-09-30",

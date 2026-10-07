@@ -38,6 +38,7 @@ import {
   getStatusBadgeInfo,
   getCategoryLabel,
   computeEcosystemStats,
+  ADOPTION_CURRENT,
 } from '../data/ecosystem';
 import { computeDynamicYScale, calculateSvgY, computePointDetails } from '../utils/chartScaling';
 
@@ -334,6 +335,10 @@ export default function EcosystemPage() {
   const latestDmDate = stats.dmSourceDate || latestDm?.date || dmStartDate;
   const latestDmCount = stats.detectedDomains || latestDm?.value || 0;
   const latestDmFetchTimestamp = stats.dmFetchedAt || null;
+  const dmSource = ADOPTION_CURRENT?.sources?.domainsMonitor || null;
+  const isDmAnomaly = Boolean(dmSource?.anomaly || latestDm?.anomaly);
+  const dmAnomalyReason = (isEn && dmSource?.anomalyReasonEn ? dmSource.anomalyReasonEn : dmSource?.anomalyReason) || null;
+  const dmChangePercent = dmSource?.changePercent ?? latestDm?.changePercent ?? null;
 
   // Growth within the complete-sweep ForSaleDNS observation dataset
   const forSaleGrowth = useMemo(() => {
@@ -541,12 +546,17 @@ export default function EcosystemPage() {
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:divide-x divide-slate-200/70">
                   <div>
-                    <div className="flex items-center gap-2 text-3xl font-extrabold text-slate-950 font-mono tracking-tight">
+                    <div className="flex items-center gap-2 text-3xl font-extrabold text-slate-950 font-mono tracking-tight flex-wrap">
                       <span className="w-2.5 h-2.5 shrink-0 border-2 border-indigo-600 bg-white" aria-hidden="true"></span>
-                      {latestDmCount.toLocaleString(isEn ? 'en-US' : 'de-DE')}
+                      <span>{latestDmCount.toLocaleString(isEn ? 'en-US' : 'de-DE')}</span>
+                      {isDmAnomaly && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-950 border border-amber-300">
+                          {isEn ? 'Notable jump (+132.0%)' : 'Auffälliger Sprung (+132,0 %)'}
+                        </span>
+                      )}
                     </div>
-                    <span className="block mt-1 text-[11px] font-mono text-slate-500">
-                      {isEn ? 'Domains Monitor · full dataset' : 'Domains Monitor · Gesamtdatensatz'}
+                    <span className="block mt-1 text-[11px] font-mono font-medium text-slate-700">
+                      {isEn ? 'Domains with _for-sale records detected by Domains Monitor' : 'Von Domains Monitor erkannte Domains mit _for-sale Record'}
                     </span>
                     <span className="block text-[11px] font-mono text-slate-400">{formatFullDate(latestDmDate, isEn)}</span>
                   </div>
@@ -556,16 +566,16 @@ export default function EcosystemPage() {
                         <span className="w-2.5 h-2.5 shrink-0 rounded-full border-2 border-emerald-700 bg-white" aria-hidden="true"></span>
                         {latestForSale.activeListings.toLocaleString(isEn ? 'en-US' : 'de-DE')}
                       </div>
-                      <span className="block mt-1 text-[11px] font-mono text-slate-500">
-                        {isEn ? 'ForSaleDNS · active listings' : 'ForSaleDNS · aktive Listings'}
+                      <span className="block mt-1 text-[11px] font-mono font-medium text-slate-700">
+                        {isEn ? 'Active listings observed by ForSaleDNS' : 'Von ForSaleDNS beobachtete aktive Listings'}
                       </span>
                       <span className="block text-[11px] font-mono text-slate-400">{formatFullDate(latestForSale.date, isEn)}</span>
                     </div>
                   )}
                 </div>
                 <div className="mt-auto pt-3 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-mono text-slate-500 gap-2 mt-4">
-                  <span>{isEn ? 'Different methods – not directly comparable' : 'Unterschiedliche Methodik – nicht direkt vergleichbar'}</span>
-                  <span className="flex items-center gap-2">
+                  <span>{isEn ? 'The absolute values of the two sources are not directly comparable due to differing discovery and scanning methods.' : 'Die absoluten Werte der beiden Quellen sind aufgrund unterschiedlicher Discovery- und Scanmethoden nicht direkt vergleichbar.'}</span>
+                  <span className="flex items-center gap-2 shrink-0">
                     <a
                       href="https://domains-monitor.com/for-sale-domains/"
                       target="_blank"
@@ -641,6 +651,25 @@ export default function EcosystemPage() {
               })()}
 
             </div>
+
+            {/* Anomaly Notice Box (AUFGABE 3) */}
+            {isDmAnomaly && (
+              <div className="mt-4 p-4 rounded-xl bg-amber-50/90 border border-amber-300 text-xs text-amber-950 leading-relaxed font-sans space-y-1.5 shadow-2xs">
+                <div className="flex items-center gap-2 font-bold font-mono text-xs uppercase tracking-wider text-amber-900">
+                  <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
+                  <span>
+                    {isEn
+                      ? 'Telemetry Notice: Notable Data Change (Domains Monitor, 5 Oct 2026)'
+                      : 'Telemetrie-Hinweis: Auffällige Datenänderung (Domains Monitor, 05.10.2026)'}
+                  </span>
+                </div>
+                <p>
+                  {isEn
+                    ? 'Domains Monitor reports an increase of 752,672 domains (+132.0%) compared to the previous snapshot. The cause of this jump is currently not independently verified. Possibilities include changes in scan coverage, a data backfill, a methodology change, or an actual mass rollout. rfc10023.de therefore does not currently interpret this jump as verified organic adoption growth.'
+                    : 'Domains Monitor meldet gegenüber dem vorherigen Snapshot einen Anstieg um 752.672 Domains (+132,0 %). Die Ursache dieses Sprungs ist derzeit nicht unabhängig verifiziert. Möglich sind Änderungen der Scan-Abdeckung, ein Daten-Backfill, eine Methodikänderung oder eine tatsächliche Massenausrollung. rfc10023.de interpretiert diesen Sprung daher derzeit nicht als nachgewiesenes organisches Adoptionswachstum.'}
+                </p>
+              </div>
+            )}
 
             {/* Permanent Mandatory Notice (Requirement 10) */}
             <div className="mt-4 p-3.5 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-600 leading-relaxed font-sans flex items-start gap-2.5">
@@ -1351,7 +1380,7 @@ export default function EcosystemPage() {
               return [
                 { label: o.valueLabel, value: o.value.toLocaleString(loc), sub: `${isEn ? 'as of' : 'Stand'} ${formatFullDate(o.date, isEn)}` },
                 {
-                  label: isEn ? 'Change vs previous day' : 'Veränderung zum Vortag',
+                  label: isEn ? 'Change since previous observation' : 'Veränderung zum vorherigen Messpunkt',
                   value: delta === null ? '–' : signed(delta),
                   valueClass: deltaColor(delta),
                   sub: delta === null || !o.prev ? (isEn ? 'First observation' : 'Erster Messpunkt') : signedPct((delta / o.prev) * 100),
@@ -1386,19 +1415,19 @@ export default function EcosystemPage() {
               ? [
                   {
                     label: isEn ? 'RFC 10023 conformant' : 'RFC-10023-konform',
-                    value: fsLast.conformant.toLocaleString(loc),
+                    value: fsLast.conformant !== null ? fsLast.conformant.toLocaleString(loc) : '–',
                     valueClass: 'text-emerald-800',
-                    sub: `${pct((fsLast.conformant / fsLast.activeListings) * 100)} ${isEn ? 'valid' : 'valide'}`,
+                    sub: fsLast.conformant !== null ? `${pct((fsLast.conformant / fsLast.activeListings) * 100)} ${isEn ? 'valid · Note: series break on 29 Sep 2026' : 'valide · Hinweis: Schemawechsel am 29.09.2026'}` : '–',
                   },
                   {
                     label: isEn ? 'DNSSEC signed' : 'Mit DNSSEC',
-                    value: fsLast.dnssec.toLocaleString(loc),
-                    sub: `${pct((fsLast.dnssec / fsLast.activeListings) * 100)} ${isEn ? 'signed' : 'signiert'}`,
+                    value: fsLast.dnssec !== null ? fsLast.dnssec.toLocaleString(loc) : '–',
+                    sub: fsLast.dnssec !== null ? `${pct((fsLast.dnssec / fsLast.activeListings) * 100)} ${isEn ? 'signed' : 'signiert'}` : '–',
                   },
                   {
                     label: isEn ? 'With price' : 'Mit Preisangabe',
-                    value: fsLast.priced.toLocaleString(loc),
-                    sub: `${pct((fsLast.priced / fsLast.activeListings) * 100)} ${isEn ? 'with fixed price' : 'mit Festpreis'}`,
+                    value: fsLast.priced !== null ? fsLast.priced.toLocaleString(loc) : '–',
+                    sub: fsLast.priced !== null ? `${pct((fsLast.priced / fsLast.activeListings) * 100)} ${isEn ? 'with fixed price' : 'mit Festpreis'}` : '–',
                   },
                   {
                     label: isEn ? 'Scan scope' : 'Scan-Umfang',
@@ -1550,6 +1579,35 @@ export default function EcosystemPage() {
                 )
               </span>
             </div>
+            <p className="text-[11px] text-amber-900/90 pt-1 leading-normal">
+              {isEn ? (
+                <>
+                  100% sweep designates complete processing of ForSaleDNS’s internal scan inventory. The provider explicitly notes that its candidate set is neither complete nor a random sample of the global DNS and exhibits uneven TLD coverage. Details on methodology:{' '}
+                  <a
+                    href="https://forsaledns.net/rfc-10023"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-semibold hover:text-amber-950"
+                  >
+                    forsaledns.net/rfc-10023
+                  </a>
+                  .
+                </>
+              ) : (
+                <>
+                  100 % Sweep bezeichnet die vollständige Verarbeitung des von ForSaleDNS verwendeten Scan-Inventars. Der Anbieter weist ausdrücklich darauf hin, dass sein Candidate Set weder vollständig noch eine Zufallsstichprobe des gesamten DNS ist und eine ungleichmäßige TLD-Abdeckung aufweist. Details zur Methodik:{' '}
+                  <a
+                    href="https://forsaledns.net/rfc-10023"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-semibold hover:text-amber-950"
+                  >
+                    forsaledns.net/rfc-10023
+                  </a>
+                  .
+                </>
+              )}
+            </p>
             <p className="text-[11px] text-amber-900/90 pt-1 leading-normal">
               {isEn
                 ? 'The data snapshot refers to the latest measurement published by the source. The last successful fetch indicates when rfc10023.de last retrieved the source successfully.'
@@ -1710,41 +1768,50 @@ export default function EcosystemPage() {
                     : 'Eine grafische Trendlinie für Domains Monitor wird dynamisch visualisiert, sobald mehrere tagesaktuelle Messpunkte vorliegen.'}
                 </p>
               </div>
-
-              {/* Verified baseline table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs font-mono border border-slate-200 rounded-xl overflow-hidden">
-                  <thead className="bg-slate-100 text-slate-700 border-b border-slate-200">
-                    <tr>
-                      <th className="py-2.5 px-4 text-left">{isEn ? 'Date' : 'Datum'}</th>
-                      <th className="py-2.5 px-4 text-left">{isEn ? 'Source' : 'Quelle'}</th>
-                      <th className="py-2.5 px-4 text-left">{isEn ? 'Observed Records' : 'Erfasste Records'}</th>
-                      <th className="py-2.5 px-4 text-left">{isEn ? 'Collection Mode' : 'Erfassungsmodus'}</th>
-                      <th className="py-2.5 px-4 text-left">{isEn ? 'Verification' : 'Verifikation'}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {historyPoints.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/50">
-                        <td className="py-2.5 px-4 font-bold text-slate-900">{item.date}</td>
-                        <td className="py-2.5 px-4 text-slate-600">{item.source}</td>
-                        <td className="py-2.5 px-4 font-bold text-emerald-800">{item.value.toLocaleString(isEn ? 'en-US' : 'de-DE')}</td>
-                        <td className="py-2.5 px-4 text-slate-500">
-                          {item.date < DM_FULL_DATASET_START
-                            ? (isEn ? 'Baseline (earlier research page, different metric)' : 'Basiswert (frühere Research-Seite, andere Metrik)')
-                            : (isEn ? 'Full dataset (daily)' : 'Gesamtdatensatz (täglich)')}
-                        </td>
-                        <td className="py-2.5 px-4 text-emerald-700 font-semibold flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>{isEn ? 'Verified' : 'Verifiziert'}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
             </div>
           )}
+
+          {/* Verified baseline table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs font-mono border border-slate-200 rounded-xl overflow-hidden">
+              <thead className="bg-slate-100 text-slate-700 border-b border-slate-200">
+                <tr>
+                  <th className="py-2.5 px-4 text-left">{isEn ? 'Date' : 'Datum'}</th>
+                  <th className="py-2.5 px-4 text-left">{isEn ? 'Source' : 'Quelle'}</th>
+                  <th className="py-2.5 px-4 text-left">{isEn ? 'Observed Records' : 'Erfasste Records'}</th>
+                  <th className="py-2.5 px-4 text-left">{isEn ? 'Collection Mode' : 'Erfassungsmodus'}</th>
+                  <th className="py-2.5 px-4 text-left">{isEn ? 'Verification' : 'Verifikation'}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {historyPoints.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/50">
+                    <td className="py-2.5 px-4 font-bold text-slate-900">{item.date}</td>
+                    <td className="py-2.5 px-4 text-slate-600">{item.source}</td>
+                    <td className="py-2.5 px-4 font-bold text-emerald-800">{item.value.toLocaleString(isEn ? 'en-US' : 'de-DE')}</td>
+                    <td className="py-2.5 px-4 text-slate-500">
+                      {item.date < DM_FULL_DATASET_START
+                        ? (isEn ? 'Baseline (earlier research page, different metric)' : 'Basiswert (frühere Research-Seite, andere Metrik)')
+                        : (isEn ? 'Full dataset (daily)' : 'Gesamtdatensatz (täglich)')}
+                    </td>
+                    <td className="py-2.5 px-4 font-semibold">
+                      {item.anomaly || item.verificationStatus === 'anomaly-unexplained' ? (
+                        <span className="text-amber-700 flex items-center gap-1" title={isEn ? (item.anomalyReason || 'Notable jump – unexplained') : (item.anomalyReason || 'Auffälliger Sprung – Ursache ungeklärt')}>
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          <span>{isEn ? 'Notable jump (unexplained)' : 'Auffälliger Sprung (ungeklärt)'}</span>
+                        </span>
+                      ) : (
+                        <span className="text-emerald-700 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>{isEn ? 'Verified' : 'Verifiziert'}</span>
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {/* Source Citation for Domains Monitor (Requirement 10) */}
           <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 font-mono gap-3">

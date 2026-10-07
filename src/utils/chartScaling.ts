@@ -114,9 +114,9 @@ export function calculateSvgY(
 export interface ForSaleDnsPointData {
   date: string;
   activeListings: number;
-  conformant: number;
-  priced: number;
-  dnssec: number;
+  conformant: number | null;
+  priced: number | null;
+  dnssec: number | null;
   inventoryCompleted: number;
   inventoryTotal: number;
   baselineComplete: boolean;
@@ -132,13 +132,13 @@ export interface PointDetailStats {
   deltaPct: number | null;
   deltaFormatted: string;
   deltaVsPreviousLabel: string;
-  conformant: number;
+  conformant: number | null;
   conformantFormatted: string;
   conformantPct: string;
-  dnssec: number;
+  dnssec: number | null;
   dnssecFormatted: string;
   dnssecPct: string;
-  priced: number;
+  priced: number | null;
   pricedFormatted: string;
   pricedPct: string;
   sweepComplete: boolean;
@@ -165,9 +165,9 @@ export function computePointDetails(
     : current.date;
 
   const formattedActiveListings = current.activeListings.toLocaleString(isEn ? 'en-US' : 'de-DE');
-  const conformantFormatted = current.conformant.toLocaleString(isEn ? 'en-US' : 'de-DE');
-  const dnssecFormatted = current.dnssec.toLocaleString(isEn ? 'en-US' : 'de-DE');
-  const pricedFormatted = current.priced.toLocaleString(isEn ? 'en-US' : 'de-DE');
+  const conformantFormatted = current.conformant !== null ? current.conformant.toLocaleString(isEn ? 'en-US' : 'de-DE') : '–';
+  const dnssecFormatted = current.dnssec !== null ? current.dnssec.toLocaleString(isEn ? 'en-US' : 'de-DE') : '–';
+  const pricedFormatted = current.priced !== null ? current.priced.toLocaleString(isEn ? 'en-US' : 'de-DE') : '–';
 
   let delta: number | null = null;
   let deltaPct: number | null = null;
@@ -201,17 +201,17 @@ export function computePointDetails(
     deltaVsPreviousLabel = isEn ? 'First observation in dataset' : 'Erster Messpunkt im Datensatz';
   }
 
-  const conformantPct = current.activeListings > 0
+  const conformantPct = current.conformant !== null && current.activeListings > 0
     ? `${((current.conformant / current.activeListings) * 100).toFixed(2).replace('.', isEn ? '.' : ',')}${isEn ? '%' : ' %'}`
-    : '100%';
+    : '–';
 
-  const dnssecPct = current.activeListings > 0
+  const dnssecPct = current.dnssec !== null && current.activeListings > 0
     ? `${((current.dnssec / current.activeListings) * 100).toFixed(1).replace('.', isEn ? '.' : ',')}${isEn ? '%' : ' %'}`
-    : '0%';
+    : '–';
 
-  const pricedPct = current.activeListings > 0
+  const pricedPct = current.priced !== null && current.activeListings > 0
     ? `${((current.priced / current.activeListings) * 100).toFixed(1).replace('.', isEn ? '.' : ',')}${isEn ? '%' : ' %'}`
-    : '0%';
+    : '–';
 
   const sweepPctNum = current.inventoryTotal > 0
     ? ((current.inventoryCompleted / current.inventoryTotal) * 100).toFixed(1)

@@ -12,7 +12,15 @@
       "sourceUrl": "https://domains-monitor.com/for-sale-domains/",
       "lastSuccessfulFetch": "2026-10-05T14:10:53.683Z",
       "fetchedAt": "2026-10-05T14:10:53.683Z",
-      "mode": "automatic"
+      "mode": "automatic",
+      "anomaly": true,
+      "changeAbsolute": 752672,
+      "changePercent": 132.02,
+      "anomalyReason": "Domains Monitor meldet gegenüber dem vorherigen Snapshot einen Anstieg um 752.672 Domains (+132,0 %). Die Ursache dieses Sprungs ist derzeit nicht unabhängig verifiziert. Möglich sind Änderungen der Scan-Abdeckung, ein Daten-Backfill, eine Methodikänderung oder eine tatsächliche Massenausrollung. rfc10023.de interpretiert diesen Sprung daher derzeit nicht als nachgewiesenes organisches Adoptionswachstum.",
+      "anomalyReasonEn": "Domains Monitor reports an increase of 752,672 domains (+132.0%) compared to the previous snapshot. The cause of this jump is currently not independently verified. Possibilities include changes in scan coverage, a data backfill, a methodology change, or an actual mass rollout. rfc10023.de therefore does not currently interpret this jump as verified organic adoption growth.",
+      "verificationStatus": "anomaly-unexplained",
+      "methodology": "Zonen-Scans auf DNS TXT-Records am _for-sale Hostnamen (Full Dataset)",
+      "methodologyEn": "Zone scans for DNS TXT records at the _for-sale hostname (Full Dataset)"
     }
   },
   "forSaleDns": {

@@ -53,33 +53,136 @@ export function validatePlausibility(newValue, previousValue, maxRatio = 0.5) {
 }
 
 /**
+ * Basic validity check for telemetry metrics.
+ * Rejects corrupt data (non-numeric, non-finite, zero/negative, invalid date, backwards date).
+ * 
+ * @param {any} value 
+ * @param {string} [date] 
+ * @param {string} [prevDate] 
+ * @returns {{ valid: boolean, reason?: string }}
+ */
+export function validateTelemetryBasic(value, date, prevDate) {
+  if (typeof value !== 'number' || isNaN(value)) {
+    return { valid: false, reason: 'Value is not a valid number' };
+  }
+  if (!isFinite(value)) {
+    return { valid: false, reason: 'Value is not finite' };
+  }
+  if (value <= 0) {
+    return { valid: false, reason: 'Value must be greater than zero' };
+  }
+  if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return { valid: false, reason: 'Date format is invalid (expected YYYY-MM-DD)' };
+  }
+  if (date && prevDate && date < prevDate) {
+    return { valid: false, reason: `New observation date (${date}) is older than previous (${prevDate})` };
+  }
+  return { valid: true };
+}
+
+/**
+ * Generic Anomaly Detector for new adoption snapshots.
+ * Flags points with relative change > 20% or unusual magnitude.
+ * The point is NEVER discarded or smoothed, but flagged with anomaly metadata.
+ * 
+ * @param {number} newValue 
+ * @param {number} [previousValue] 
+ * @param {string} [currentMetric] 
+ * @param {string} [previousMetric] 
+ * @returns {{
+ *   anomaly: boolean,
+ *   changeAbsolute: number | null,
+ *   changePercent: number | null,
+ *   anomalyReason: string | null,
+ *   anomalyReasonEn: string | null,
+ *   verificationStatus: 'normal' | 'anomaly-unexplained' | 'source-methodology-change' | 'externally-confirmed'
+ * }}
+ */
+export function detectAnomaly(newValue, previousValue, currentMetric = 'full_dataset', previousMetric = 'full_dataset') {
+  if (!previousValue || previousValue <= 0) {
+    return {
+      anomaly: false,
+      changeAbsolute: null,
+      changePercent: null,
+      anomalyReason: null,
+      anomalyReasonEn: null,
+      verificationStatus: 'normal',
+    };
+  }
+
+  // If source metric changed (e.g. earlier research baseline vs full dataset),
+  // do NOT calculate misleading percentage change across incompatible metrics.
+  if (currentMetric && previousMetric && currentMetric !== previousMetric) {
+    return {
+      anomaly: false,
+      changeAbsolute: null,
+      changePercent: null,
+      anomalyReason: `Quellmetrik geändert (${previousMetric} → ${currentMetric}) – kein longitudinaler Vergleich`,
+      anomalyReasonEn: `Source metric changed (${previousMetric} → ${currentMetric}) – no longitudinal comparison`,
+      verificationStatus: 'source-methodology-change',
+    };
+  }
+
+  const changeAbsolute = newValue - previousValue;
+  const changePercent = Number(((changeAbsolute / previousValue) * 100).toFixed(2));
+  const relRatio = Math.abs(changeAbsolute) / previousValue;
+
+  if (relRatio > 0.20) {
+    const sign = changePercent > 0 ? '+' : '';
+    const formattedPctDe = sign + changePercent.toFixed(1).replace('.', ',') + ' %';
+    const formattedPctEn = sign + changePercent.toFixed(1) + '%';
+    const formattedAbsDe = sign + changeAbsolute.toLocaleString('de-DE');
+    const formattedAbsEn = sign + changeAbsolute.toLocaleString('en-US');
+    const formattedPrevDe = previousValue.toLocaleString('de-DE');
+    const formattedPrevEn = previousValue.toLocaleString('en-US');
+    return {
+      anomaly: true,
+      changeAbsolute,
+      changePercent,
+      anomalyReason: `Auffälliger Sprung um ${formattedAbsDe} Domains (${formattedPctDe}) gegenüber dem vorherigen Snapshot (${formattedPrevDe}) überschreitet den 20%-Schwellenwert`,
+      anomalyReasonEn: `Notable jump of ${formattedAbsEn} domains (${formattedPctEn}) compared to previous snapshot (${formattedPrevEn}) exceeds 20% threshold`,
+      verificationStatus: 'anomaly-unexplained',
+    };
+  }
+
+  return {
+    anomaly: false,
+    changeAbsolute,
+    changePercent,
+    anomalyReason: null,
+    anomalyReasonEn: null,
+    verificationStatus: 'normal',
+  };
+}
+
+/**
  * Updates adoption history array ensuring max 1 entry per source per calendar day.
- * @param {Array<{date: string, source: string, value: number}>} history 
+ * Preserves anomaly and verification metadata.
+ * 
+ * @param {Array<any>} history 
  * @param {string} dateString YYYY-MM-DD
  * @param {string} sourceKey 
  * @param {number} value 
- * @returns {Array<{date: string, source: string, value: number}>}
+ * @param {object} [metadata]
+ * @returns {Array<any>}
  */
-export function recordHistoryEntry(history, dateString, sourceKey, value) {
+export function recordHistoryEntry(history, dateString, sourceKey, value, metadata = {}) {
   const cloned = [...history];
   const existingIndex = cloned.findIndex(
     (item) => item.date === dateString && item.source === sourceKey
   );
 
+  const entry = {
+    date: dateString,
+    source: sourceKey,
+    value,
+    ...metadata,
+  };
+
   if (existingIndex >= 0) {
-    // Update existing day record without duplicating
-    cloned[existingIndex] = {
-      date: dateString,
-      source: sourceKey,
-      value,
-    };
+    cloned[existingIndex] = entry;
   } else {
-    // Append new entry
-    cloned.push({
-      date: dateString,
-      source: sourceKey,
-      value,
-    });
+    cloned.push(entry);
   }
 
   // Sort chronologically
@@ -232,16 +335,24 @@ export async function processAdoptionUpdate(currentData, historyData, options = 
         continue;
       }
 
-      const maxRatio = typeof source.maxRatio === 'number' ? source.maxRatio : 1.5;
-      const plausibility = validatePlausibility(extractedValue, source.value, maxRatio);
-      if (!plausibility.valid) {
-        logs.push(`  ⚠ Plausibility check failed for [${sourceKey}]: ${plausibility.reason}. Rejecting value and retaining (${source.value}).`);
+      const effectiveDate = extractedDate || today;
+
+      // 1. Basic sanity & validity checks (non-numeric, <= 0, older date)
+      const basicCheck = validateTelemetryBasic(extractedValue, effectiveDate, source.sourceDate);
+      if (!basicCheck.valid) {
+        logs.push(`  ✗ Basic validity check failed for [${sourceKey}]: ${basicCheck.reason}. Retaining previous value (${source.value}).`);
         continue;
       }
 
-      const effectiveDate = extractedDate || today;
+      // 2. Anomaly detection (relative change > 20%, unexpected jumps)
+      const currentMetric = source.metric || 'full_dataset';
+      const anomalyCheck = detectAnomaly(extractedValue, source.value, currentMetric, currentMetric);
 
-      // Valid and plausible value received
+      if (anomalyCheck.anomaly) {
+        logs.push(`  ⚠ Anomaly detected for [${sourceKey}]: ${anomalyCheck.anomalyReason}. Storing with verificationStatus: ${anomalyCheck.verificationStatus}`);
+      }
+
+      // Valid value received - save without smoothing or synthetic tampering
       if (extractedValue !== source.value) {
         logs.push(`  ✓ New valid value for [${sourceKey}]: ${source.value} → ${extractedValue}`);
         source.value = extractedValue;
@@ -249,9 +360,22 @@ export async function processAdoptionUpdate(currentData, historyData, options = 
         if (extractedDate) source.sourceDate = extractedDate;
         source.lastSuccessfulFetch = nowIso;
         source.fetchedAt = nowIso;
+        source.anomaly = anomalyCheck.anomaly;
+        source.changeAbsolute = anomalyCheck.changeAbsolute;
+        source.changePercent = anomalyCheck.changePercent;
+        source.anomalyReason = anomalyCheck.anomalyReason;
+        source.anomalyReasonEn = anomalyCheck.anomalyReasonEn;
+        source.verificationStatus = anomalyCheck.verificationStatus;
         hasChanges = true;
 
-        updatedHistory = recordHistoryEntry(updatedHistory, effectiveDate, sourceKey, extractedValue);
+        updatedHistory = recordHistoryEntry(updatedHistory, effectiveDate, sourceKey, extractedValue, {
+          metric: currentMetric,
+          changeAbsolute: anomalyCheck.changeAbsolute,
+          changePercent: anomalyCheck.changePercent,
+          anomaly: anomalyCheck.anomaly,
+          anomalyReason: anomalyCheck.anomalyReason,
+          verificationStatus: anomalyCheck.verificationStatus,
+        });
       } else {
         logs.push(`  ℹ Value unchanged (${source.value}). Updating lastSuccessfulFetch timestamp.`);
         source.lastSuccessfulFetch = nowIso;
@@ -259,7 +383,13 @@ export async function processAdoptionUpdate(currentData, historyData, options = 
         if (extractedDate) source.sourceDate = extractedDate;
         hasChanges = true;
         // Ensure effectiveDate is registered in history if missing
-        updatedHistory = recordHistoryEntry(updatedHistory, effectiveDate, sourceKey, source.value);
+        updatedHistory = recordHistoryEntry(updatedHistory, effectiveDate, sourceKey, source.value, {
+          metric: currentMetric,
+          changeAbsolute: 0,
+          changePercent: 0,
+          anomaly: Boolean(source.anomaly),
+          verificationStatus: source.verificationStatus || 'normal',
+        });
       }
     } catch (err) {
       logs.push(`  ✗ Network/Parsing exception for [${sourceKey}]: ${err.message}. Retaining previous value (${source.value}).`);
