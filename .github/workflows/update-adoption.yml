@@ -30,7 +30,7 @@ jobs:
           node-version: 24
 
       - name: Execute adoption update script
-        run: node scripts/update-adoption.mjs
+        run: node --dns-result-order=ipv4first scripts/update-adoption.mjs
 
       - name: Commit and push changes if data updated
         run: |
