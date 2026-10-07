@@ -1069,23 +1069,28 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode; initialLang
   const getEffectiveLanguage = (): Language => {
     if (initialLanguage) return initialLanguage;
     if (routeLanguage) return routeLanguage;
-    if (typeof window !== 'undefined') {
-      const pathname = window.location.pathname;
-      if (pathname === '/en' || pathname.startsWith('/en/')) {
-        return 'en';
-      }
-      try {
-        const saved = localStorage.getItem('rfc10023_lang');
-        if (saved === 'de' || saved === 'en') return saved;
-        const browserLang = navigator.language || (navigator as any).userLanguage || '';
-        if (browserLang.startsWith('en')) return 'en';
-        if (!browserLang.startsWith('de')) return 'en';
-      } catch {}
-    }
     return 'de';
   };
 
   const [language, setLanguageState] = useState<Language>(getEffectiveLanguage);
+
+  // Apply browser preferences on mount if no explicit route/prop language was given
+  useEffect(() => {
+    if (initialLanguage || routeLanguage) return;
+    try {
+      const saved = localStorage.getItem('rfc10023_lang');
+      if (saved === 'de' || saved === 'en') {
+        setLanguageState(saved);
+        return;
+      }
+      const browserLang = navigator.language || (navigator as any).userLanguage || '';
+      if (browserLang.startsWith('en') || !browserLang.startsWith('de')) {
+        setLanguageState('en');
+      }
+    } catch {
+      // ignore
+    }
+  }, [initialLanguage, routeLanguage]);
 
   // Route URL is the ultimate single source of truth for language
   const activeLanguage: Language = routeLanguage || language;

@@ -71,15 +71,19 @@ export default function RfcValidator({ initialDomain = '', embedded = false, aut
   const [jsonCopied, setJsonCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [showWireEscapes, setShowWireEscapes] = useState(false);
-  const [recentHistory, setRecentHistory] = useState<HistoryEntry[]>(() => {
+  const [recentHistory, setRecentHistory] = useState<HistoryEntry[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
+      if (stored) {
+        setRecentHistory(JSON.parse(stored));
+      }
     } catch {
-      return [];
+      // ignore
     }
-  });
-  const inputRef = useRef<HTMLInputElement>(null);
+  }, []);
 
   const saveToHistory = (entry: HistoryEntry) => {
     try {
