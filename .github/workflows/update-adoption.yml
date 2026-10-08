@@ -62,17 +62,24 @@ jobs:
 
       # Same check for ForSaleDNS. Runs even if the Domains Monitor check
       # failed; data of the healthy source has already been committed above.
-      # Checks that the last successful fetch happened during this run (< 60 min
-      # old), not the snapshot date: a successful fetch without a new day is fine.
+      # If ForSaleDNS was not fetched during this run (< 60 min old) due to
+      # upstream Cloudflare challenges or temporary unavailability, warn
+      # prominently instead of failing the whole job when cached data is intact.
+      # Only fail if no valid snapshot exists at all or if data is severely stale (> 7 days).
       - name: Verify ForSaleDNS data is fresh
         if: ${{ !cancelled() }}
         run: |
           node -e "
             const f = require('./data/adoption-current.json').forSaleDns || {};
             const ageMin = (Date.now() - Date.parse(f.lastSuccessfulFetch || '')) / 60000;
+            const ageHours = ageMin / 60;
             console.log('ForSaleDNS: latestSnapshotDate:', f.latestSnapshotDate, '| lastSuccessfulFetch:', f.lastSuccessfulFetch, '| age (min):', Math.round(ageMin));
-            if (!(ageMin >= 0 && ageMin <= 60)) {
-              console.error('::error::ForSaleDNS was not fetched successfully in this run (last success: ' + (f.lastSuccessfulFetch || 'never') + '). See the ForSaleDNS fetch warning above for HTTP status / cause.');
+            if (ageMin >= 0 && ageMin <= 60) {
+              console.log('✓ ForSaleDNS data fetched fresh in this run.');
+            } else if (f.latestSnapshotDate && ageHours <= 168) {
+              console.warn('::warning title=ForSaleDNS fetch skipped (using cached data)::ForSaleDNS was not fetched successfully in this run (last success: ' + (f.lastSuccessfulFetch || 'never') + '). Retaining cached snapshot from ' + f.latestSnapshotDate + ' (' + Math.round(ageHours) + 'h old).');
+            } else {
+              console.error('::error::ForSaleDNS has no valid snapshot or cached data is older than 7 days (last success: ' + (f.lastSuccessfulFetch || 'never') + ').');
               process.exit(1);
             }
           "

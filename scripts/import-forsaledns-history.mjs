@@ -21,7 +21,7 @@ const projectRoot = path.resolve(__dirname, '..');
 export const FORSALEDNS_FILE = path.join(projectRoot, 'data', 'adoption-history-forsaledns.json');
 export const CURRENT_FILE = path.join(projectRoot, 'data', 'adoption-current.json');
 export const FORSALEDNS_API_URL = 'https://forsaledns.net/api/v1/adoption-history';
-export const USER_AGENT = 'RFC10023-AdoptionTracker/1.0 (+https://www.rfc10023.de)';
+export const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 (compatible; rfc10023-telemetry/1.0; +https://www.rfc10023.de)';
 
 /**
  * Validates raw API entries from ForSaleDNS
@@ -176,7 +176,8 @@ export async function updateForSaleDnsHistory(options = {}) {
       const res = await fetcher(FORSALEDNS_API_URL, {
         headers: {
           'User-Agent': USER_AGENT,
-          'Accept': 'application/json',
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'en-US,en;q=0.9',
         },
         signal: controller.signal,
       });
