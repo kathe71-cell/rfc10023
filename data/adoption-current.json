@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-10-10T10:56:52.961Z",
+  "lastUpdated": "2026-10-10T11:46:12.887Z",
   "sources": {
     "domainsMonitor": {
       "source": "Domains Monitor",
@@ -10,13 +10,13 @@
       "label": "Domains with detected _for-sale record (full dataset)",
       "labelDe": "Erkannte Domains mit _for-sale Record (Vollständiger Datensatz)",
       "sourceUrl": "https://domains-monitor.com/for-sale-domains/",
-      "lastSuccessfulFetch": "2026-10-10T10:56:52.961Z",
-      "fetchedAt": "2026-10-10T10:56:52.961Z",
+      "lastSuccessfulFetch": "2026-10-10T11:46:12.887Z",
+      "fetchedAt": "2026-10-10T11:46:12.887Z",
       "mode": "automatic"
     }
   },
   "forSaleDns": {
-    "latestSnapshotDate": "2026-10-09",
-    "lastSuccessfulFetch": "2026-10-09T12:24:44.101Z"
+    "latestSnapshotDate": "2026-10-10",
+    "lastSuccessfulFetch": "2026-10-10T11:46:13.376Z"
   }
 }
