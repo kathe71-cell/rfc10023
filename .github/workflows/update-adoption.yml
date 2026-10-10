@@ -2,10 +2,10 @@ name: Update RFC 10023 Adoption Data
 
 on:
   schedule:
-    # Täglicher Abruf jeden Morgen um 07:00 Uhr (05:00 UTC bei MESZ Sommerzeit / 06:00 UTC bei MEZ Winterzeit).
+    # Täglicher Abruf am Nachmittag/Abend, da ForSaleDNS seine Daten oft erst im Laufe des Tages veröffentlicht.
     # Beide Läufe sind idempotent (maximal 1 Eintrag pro Kalendertag und Quelle).
-    - cron: '0 5 * * *'
-    - cron: '0 6 * * *'
+    - cron: '0 15 * * *'
+    - cron: '0 20 * * *'
   workflow_dispatch:
 
 permissions:
