@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Globe,
@@ -424,6 +424,42 @@ export default function EcosystemPage() {
   // Interactive event marker state (hover & selection)
   const [hoveredEventDate, setHoveredEventDate] = useState<string | null>(null);
   const [selectedEventDate, setSelectedEventDate] = useState<string | null>(null);
+  const eventLeaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleEventMarkerMouseEnter = (date: string) => {
+    if (eventLeaveTimeoutRef.current) {
+      clearTimeout(eventLeaveTimeoutRef.current);
+      eventLeaveTimeoutRef.current = null;
+    }
+    setHoveredEventDate(date);
+  };
+
+  const handleEventMarkerMouseLeave = () => {
+    eventLeaveTimeoutRef.current = setTimeout(() => {
+      setHoveredEventDate(null);
+    }, 280);
+  };
+
+  const handleTooltipMouseEnter = () => {
+    if (eventLeaveTimeoutRef.current) {
+      clearTimeout(eventLeaveTimeoutRef.current);
+      eventLeaveTimeoutRef.current = null;
+    }
+  };
+
+  const handleTooltipMouseLeave = () => {
+    eventLeaveTimeoutRef.current = setTimeout(() => {
+      setHoveredEventDate(null);
+    }, 200);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (eventLeaveTimeoutRef.current) {
+        clearTimeout(eventLeaveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const activeEventDate = selectedEventDate !== null ? selectedEventDate : hoveredEventDate;
   const activeEvent = useMemo(
@@ -1315,8 +1351,8 @@ export default function EcosystemPage() {
                         aria-expanded={isEvtActive}
                         aria-haspopup="dialog"
                         aria-label={evtLabel}
-                        onMouseEnter={() => setHoveredEventDate(evt.date)}
-                        onMouseLeave={() => setHoveredEventDate(null)}
+                        onMouseEnter={() => handleEventMarkerMouseEnter(evt.date)}
+                        onMouseLeave={handleEventMarkerMouseLeave}
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedEventDate((prev) => (prev === evt.date ? null : evt.date));
@@ -1338,15 +1374,19 @@ export default function EcosystemPage() {
                 {/* Floating Event / Milestone Tooltip (Desktop hover/click & Mobile tap) */}
                 {activeEvent && (
                   <div
-                    className="absolute z-30 select-none transition-all duration-75"
+                    className="absolute z-30 transition-all duration-75 pt-2 -mt-2"
                     style={{
                       left: `${(activeEvent.x / fsSvgWidth) * 100}%`,
-                      top: '24px',
+                      top: '20px',
                       transform: getEventTooltipTransform(activeEvent.x, fsSvgWidth),
                     }}
+                    onMouseEnter={handleTooltipMouseEnter}
+                    onMouseLeave={handleTooltipMouseLeave}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="bg-slate-900/98 text-white rounded-xl shadow-2xl border border-slate-700/80 p-3.5 w-72 max-w-[calc(100vw-3rem)] text-xs backdrop-blur-md">
+                    {/* Invisible hover bridge connecting marker to tooltip card so cursor never loses hover */}
+                    <div className="absolute -top-3 left-0 right-0 h-4 pointer-events-auto" aria-hidden="true" />
+                    <div className="bg-slate-900/98 text-white rounded-xl shadow-2xl border border-slate-700/80 p-3.5 w-72 max-w-[calc(100vw-3rem)] text-xs backdrop-blur-md relative pointer-events-auto">
                       <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-800 text-[11px] font-mono">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="w-2 h-2 rotate-45 bg-amber-500 rounded-xs shrink-0" aria-hidden="true" />
