@@ -264,3 +264,139 @@ export function computePointDetails(
   };
 }
 
+export interface ChartForSalePoint extends ForSaleDnsPointData {
+  idx: number;
+  dateIdx: number;
+  x: number;
+  y: number;
+}
+
+export interface ChartDmPoint {
+  date: string;
+  source: string;
+  value: number;
+  x: number;
+  y: number;
+}
+
+export interface AdoptionChartDataResult {
+  chartDates: string[];
+  chartDateIndex: Map<string, number>;
+  fsAllPoints: ChartForSalePoint[];
+  dmOverlayPoints: ChartDmPoint[];
+  scale: DynamicYScaleResult;
+  fsCompletePointsString: string;
+  fsPartialPointsString: string;
+  dmOverlayLine: string;
+  isDmExtendingPastForSale: boolean;
+  latestChartDate: string;
+}
+
+export interface AdoptionChartOptions {
+  svgWidth?: number;
+  svgHeight?: number;
+  paddingX?: number;
+  paddingY?: number;
+}
+
+/**
+ * Prepares coordinated SVG chart data across two independent telemetry time series:
+ * 1. ForSaleDNS (daily active listings)
+ * 2. Domains Monitor (daily detected domains)
+ *
+ * Methodological invariants:
+ * - Common X-axis covers the union of all distinct calendar dates from both series.
+ * - Neither series is clipped or truncated to the other series' latest date.
+ * - Missing days in either series are never interpolated or filled with artificial zeros.
+ * - If one series updates earlier in the day, its new observation is rendered immediately.
+ */
+export function prepareAdoptionChartData(
+  forSalePoints: ForSaleDnsPointData[],
+  dmPoints: Array<{ date: string; source: string; value: number }>,
+  options: AdoptionChartOptions = {}
+): AdoptionChartDataResult {
+  const svgWidth = options.svgWidth ?? 720;
+  const svgHeight = options.svgHeight ?? 200;
+  const paddingX = options.paddingX ?? 55;
+  const paddingY = options.paddingY ?? 25;
+
+  // 1. Unified date axis: all unique dates sorted chronologically
+  const datesSet = new Set<string>();
+  for (const p of forSalePoints) datesSet.add(p.date);
+  for (const p of dmPoints) datesSet.add(p.date);
+  const chartDates = Array.from(datesSet).sort();
+
+  const chartDateIndex = new Map<string, number>();
+  chartDates.forEach((d, i) => chartDateIndex.set(d, i));
+
+  // 2. Scale covering all observed values from both sources
+  const allValues = [
+    ...forSalePoints.map((p) => p.activeListings),
+    ...dmPoints.map((p) => p.value),
+  ];
+  const scale = computeDynamicYScale(allValues, {
+    minPaddingRatio: 0.02,
+    rangePaddingRatio: 0.15,
+    gridLineCount: 3,
+  });
+
+  const totalDateSpan = Math.max(1, chartDates.length - 1);
+  const usableWidth = svgWidth - paddingX * 2;
+
+  // 3. ForSaleDNS points mapped to their exact calendar date position
+  const fsAllPoints: ChartForSalePoint[] = forSalePoints.map((pt, idx) => {
+    const dateIdx = chartDateIndex.get(pt.date) ?? idx;
+    const x = paddingX + (dateIdx / totalDateSpan) * usableWidth;
+    const y = calculateSvgY(pt.activeListings, scale, svgHeight, paddingY);
+    return {
+      ...pt,
+      idx,
+      dateIdx,
+      x: Number(x.toFixed(1)),
+      y: Number(y.toFixed(1)),
+    };
+  });
+
+  // 4. Domains Monitor points mapped to their exact calendar date position
+  const dmOverlayPoints: ChartDmPoint[] = [];
+  for (const p of dmPoints) {
+    const dateIdx = chartDateIndex.get(p.date);
+    if (dateIdx !== undefined) {
+      const x = paddingX + (dateIdx / totalDateSpan) * usableWidth;
+      const y = calculateSvgY(p.value, scale, svgHeight, paddingY);
+      dmOverlayPoints.push({
+        ...p,
+        x: Number(x.toFixed(1)),
+        y: Number(y.toFixed(1)),
+      });
+    }
+  }
+
+  // 5. SVG polylines
+  const sweepPts = fsAllPoints.filter((p) => p.sweepComplete);
+  const fsCompletePointsString = sweepPts.length >= 2 ? sweepPts.map((p) => `${p.x},${p.y}`).join(' ') : '';
+
+  const firstComplete = fsAllPoints.findIndex((p) => p.sweepComplete);
+  const fsPartialPointsString = firstComplete > 0 ? fsAllPoints.slice(0, firstComplete + 1).map((p) => `${p.x},${p.y}`).join(' ') : '';
+
+  const dmOverlayLine = dmOverlayPoints.length >= 2 ? dmOverlayPoints.map((p) => `${p.x},${p.y}`).join(' ') : '';
+
+  const latestFsDate = forSalePoints.length > 0 ? forSalePoints[forSalePoints.length - 1].date : '';
+  const latestDmDate = dmPoints.length > 0 ? dmPoints[dmPoints.length - 1].date : '';
+  const isDmExtendingPastForSale = latestDmDate > latestFsDate;
+  const latestChartDate = chartDates.length > 0 ? chartDates[chartDates.length - 1] : '';
+
+  return {
+    chartDates,
+    chartDateIndex,
+    fsAllPoints,
+    dmOverlayPoints,
+    scale,
+    fsCompletePointsString,
+    fsPartialPointsString,
+    dmOverlayLine,
+    isDmExtendingPastForSale,
+    latestChartDate,
+  };
+}
+

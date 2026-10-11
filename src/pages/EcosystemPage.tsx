@@ -39,7 +39,12 @@ import {
   getCategoryLabel,
   computeEcosystemStats,
 } from '../data/ecosystem';
-import { computeDynamicYScale, calculateSvgY, computePointDetails } from '../utils/chartScaling';
+import {
+  computeDynamicYScale,
+  calculateSvgY,
+  computePointDetails,
+  prepareAdoptionChartData,
+} from '../utils/chartScaling';
 
 function formatDisplayDate(dateStr: string, isEn: boolean): string {
   if (!dateStr) return '';
@@ -358,18 +363,29 @@ export default function EcosystemPage() {
   const fsPaddingX = 55;
   const fsPaddingY = 25;
 
-  // Unified date axis: includes all distinct observation dates from both sources
-  const chartDates = useMemo(() => {
-    const datesSet = new Set<string>();
-    forSalePoints.forEach((p) => datesSet.add(p.date));
-    dmFullPoints.forEach((p) => datesSet.add(p.date));
-    return Array.from(datesSet).sort();
-  }, [forSalePoints, dmFullPoints]);
-
-  const chartDateIndex = useMemo(
-    () => new Map(chartDates.map((d, i) => [d, i] as [string, number])),
-    [chartDates]
+  const chartData = useMemo(
+    () =>
+      prepareAdoptionChartData(forSalePoints, dmFullPoints, {
+        svgWidth: fsSvgWidth,
+        svgHeight: fsSvgHeight,
+        paddingX: fsPaddingX,
+        paddingY: fsPaddingY,
+      }),
+    [forSalePoints, dmFullPoints]
   );
+
+  const {
+    chartDates,
+    chartDateIndex,
+    fsAllPoints,
+    dmOverlayPoints,
+    scale: fsScale,
+    fsCompletePointsString,
+    fsPartialPointsString,
+    dmOverlayLine,
+    isDmExtendingPastForSale,
+  } = chartData;
+
   const dmValueByDate = useMemo(
     () => new Map(dmFullPoints.map((p) => [p.date, p.value] as [string, number])),
     [dmFullPoints]
@@ -387,69 +403,6 @@ export default function EcosystemPage() {
         : `${delta > 0 ? '+' : ''}${delta.toLocaleString(loc)} ${isEn ? 'vs previous' : 'zum Vortag'}`;
     return { value, formatted: value.toLocaleString(loc), delta, deltaLabel };
   };
-
-  // Dynamic Y-scale calculation for ForSaleDNS (+ Domains Monitor overlay)
-  const fsScale = useMemo(() => {
-    const values = [
-      ...forSalePoints.map((p) => p.activeListings),
-      ...dmFullPoints.map((p) => p.value),
-    ];
-    return computeDynamicYScale(values, {
-      minPaddingRatio: 0.02,
-      rangePaddingRatio: 0.15,
-      gridLineCount: 3,
-    });
-  }, [forSalePoints, dmFullPoints]);
-
-  const dmOverlayPoints = useMemo(() => {
-    if (chartDates.length < 2) return [];
-    const pts: Array<{ date: string; source: string; value: number; x: number; y: number }> = [];
-    for (const p of dmFullPoints) {
-      const idx = chartDateIndex.get(p.date);
-      if (idx !== undefined) {
-        const x = fsPaddingX + (idx / (chartDates.length - 1)) * (fsSvgWidth - fsPaddingX * 2);
-        const y = calculateSvgY(p.value, fsScale, fsSvgHeight, fsPaddingY);
-        pts.push({ ...p, x: Number(x.toFixed(1)), y: Number(y.toFixed(1)) });
-      }
-    }
-    return pts;
-  }, [dmFullPoints, chartDateIndex, chartDates.length, fsScale]);
-
-  const dmOverlayLine = useMemo(
-    () => (dmOverlayPoints.length >= 2 ? dmOverlayPoints.map((p) => `${p.x},${p.y}`).join(' ') : ''),
-    [dmOverlayPoints]
-  );
-
-  // Full polyline points with safe dynamic coordinates
-  const fsAllPoints = useMemo(() => {
-    if (!forSalePoints || forSalePoints.length === 0 || chartDates.length < 2) return [];
-    return forSalePoints.map((pt, idx) => {
-      const dateIdx = chartDateIndex.get(pt.date) ?? idx;
-      const x = fsPaddingX + (dateIdx / (chartDates.length - 1)) * (fsSvgWidth - fsPaddingX * 2);
-      const y = calculateSvgY(pt.activeListings, fsScale, fsSvgHeight, fsPaddingY);
-      return {
-        ...pt,
-        idx,
-        dateIdx,
-        x: Number(x.toFixed(1)),
-        y: Number(y.toFixed(1)),
-      };
-    });
-  }, [forSalePoints, chartDateIndex, chartDates.length, fsScale]);
-
-  // Polyline for complete sweeps (indices where sweepComplete is true)
-  const fsCompletePointsString = useMemo(() => {
-    const sweepPts = fsAllPoints.filter((p) => p.sweepComplete);
-    if (sweepPts.length < 2) return '';
-    return sweepPts.map((p) => `${p.x},${p.y}`).join(' ');
-  }, [fsAllPoints]);
-
-  // Polyline for partial sweeps bridge (indices 0, 1, 2)
-  const fsPartialPointsString = useMemo(() => {
-    const firstComplete = fsAllPoints.findIndex((p) => p.sweepComplete);
-    if (firstComplete <= 0) return '';
-    return fsAllPoints.slice(0, firstComplete + 1).map((p) => `${p.x},${p.y}`).join(' ');
-  }, [fsAllPoints]);
 
   // Interactive point state (hover & selection)
   const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
@@ -1125,7 +1078,10 @@ export default function EcosystemPage() {
                     const isPartial = !pt.sweepComplete;
                     const isLastPoint = pt.idx === fsAllPoints.length - 1;
                     const isWeeklyInterval = pt.idx > 0 && pt.idx % 7 === 2;
-                    const isKeyPoint = pt.idx === 0 || isLastPoint || (isWeeklyInterval && (fsAllPoints.length - 1 - pt.idx) >= 3);
+                    const isKeyPoint =
+                      pt.idx === 0 ||
+                      (!isDmExtendingPastForSale && isLastPoint) ||
+                      (isWeeklyInterval && (chartDates.length - 1 - pt.dateIdx) >= 3);
                     const isActive = activePointIndex === pt.idx;
 
                     return (
