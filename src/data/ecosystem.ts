@@ -109,6 +109,7 @@ export interface TimelineEntry {
   description: string;
   descriptionEn: string;
   sourceUrl: string;
+  showOnAdoptionChart?: boolean;
 }
 
 export const ECOSYSTEM_DATA = rawEcosystem as EcosystemData;

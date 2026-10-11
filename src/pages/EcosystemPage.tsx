@@ -154,6 +154,15 @@ function getCompactTooltipTransform(x: number, y: number, totalWidth: number): s
   return `translate(${tx}, ${ty})`;
 }
 
+function getEventTooltipTransform(x: number, totalWidth: number): string {
+  if (x > totalWidth - 160) {
+    return 'translateX(calc(-100% + 16px))';
+  } else if (x < 160) {
+    return 'translateX(-16px)';
+  }
+  return 'translateX(-50%)';
+}
+
 export default function EcosystemPage() {
   const location = useLocation();
   const { language } = useLanguage();
@@ -370,6 +379,7 @@ export default function EcosystemPage() {
         svgHeight: fsSvgHeight,
         paddingX: fsPaddingX,
         paddingY: fsPaddingY,
+        timelineEvents: TIMELINE_DATA,
       }),
     [forSalePoints, dmFullPoints]
   );
@@ -379,6 +389,7 @@ export default function EcosystemPage() {
     chartDateIndex,
     fsAllPoints,
     dmOverlayPoints,
+    chartEvents,
     scale: fsScale,
     fsCompletePointsString,
     fsPartialPointsString,
@@ -409,6 +420,16 @@ export default function EcosystemPage() {
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);
   const [hoveredDm, setHoveredDm] = useState(false);
   const [hoveredDmDate, setHoveredDmDate] = useState<string | null>(null);
+
+  // Interactive event marker state (hover & selection)
+  const [hoveredEventDate, setHoveredEventDate] = useState<string | null>(null);
+  const [selectedEventDate, setSelectedEventDate] = useState<string | null>(null);
+
+  const activeEventDate = selectedEventDate !== null ? selectedEventDate : hoveredEventDate;
+  const activeEvent = useMemo(
+    () => (activeEventDate ? chartEvents.find((e) => e.date === activeEventDate) || null : null),
+    [chartEvents, activeEventDate]
+  );
 
   const activePointIndex = selectedPointIndex !== null ? selectedPointIndex : hoveredPointIndex;
   const activePoint = activePointIndex !== null && fsAllPoints[activePointIndex] ? fsAllPoints[activePointIndex] : null;
@@ -708,6 +729,12 @@ export default function EcosystemPage() {
                     : `Domains Monitor – Gesamtdatensatz (ab ${formatFullDate(DM_FULL_DATASET_START, false)})`}
                 </span>
               </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rotate-45 bg-slate-600 rounded-xs"></span>
+                <span className="text-slate-700 font-semibold">
+                  {isEn ? 'Curated milestones' : 'Kuratierte Meilensteine'}
+                </span>
+              </div>
             </div>
             {forSaleGrowth && (
               <div className="text-slate-600 font-semibold">
@@ -723,6 +750,7 @@ export default function EcosystemPage() {
             className="w-full bg-slate-50/70 p-4 sm:p-6 rounded-xl border border-slate-200"
             onClick={() => {
               if (selectedPointIndex !== null) setSelectedPointIndex(null);
+              if (selectedEventDate !== null) setSelectedEventDate(null);
             }}
           >
             {/* Interactive Telemetry Inspector Banner (Permanent, unclipped, 100% stable, zero layout shift) */}
@@ -1033,6 +1061,49 @@ export default function EcosystemPage() {
                     );
                   })}
 
+                  {/* Curated event / milestone vertical guidelines */}
+                  {chartEvents.map((evt) => {
+                    const isEvtActive = activeEventDate === evt.date;
+                    return (
+                      <line
+                        key={`evt-line-${evt.date}`}
+                        x1={evt.x}
+                        y1={16}
+                        x2={evt.x}
+                        y2={fsSvgHeight - fsPaddingY}
+                        stroke={isEvtActive ? '#f59e0b' : '#94a3b8'}
+                        strokeWidth={isEvtActive ? 1.5 : 1}
+                        strokeDasharray="2 3"
+                        className="pointer-events-none transition-colors opacity-70"
+                      />
+                    );
+                  })}
+
+                  {/* Curated event / milestone top marker icons */}
+                  {chartEvents.map((evt) => {
+                    const isEvtActive = activeEventDate === evt.date;
+                    return (
+                      <g key={`evt-marker-${evt.date}`} className="pointer-events-none">
+                        {isEvtActive && (
+                          <circle
+                            cx={evt.x}
+                            cy={10}
+                            r={7.5}
+                            className="fill-none stroke-amber-500/40 stroke-[2.5px]"
+                          />
+                        )}
+                        <path
+                          d={`M ${evt.x} 5.5 L ${evt.x + 4.5} 10 L ${evt.x} 14.5 L ${evt.x - 4.5} 10 Z`}
+                          className={
+                            isEvtActive
+                              ? 'fill-amber-500 stroke-slate-950 stroke-[1.5px]'
+                              : 'fill-slate-700 stroke-white stroke-1'
+                          }
+                        />
+                      </g>
+                    );
+                  })}
+
                   {/* Active Point Vertical Guide Line to X-Axis */}
                   {activePoint && (
                     <line
@@ -1160,9 +1231,9 @@ export default function EcosystemPage() {
                       <rect
                         key={`hitbox-${pt.date}`}
                         x={x}
-                        y={0}
+                        y={22}
                         width={width}
-                        height={fsSvgHeight}
+                        height={fsSvgHeight - 22}
                         fill="transparent"
                         className="cursor-pointer focus:outline-none"
                         tabIndex={0}
@@ -1222,7 +1293,114 @@ export default function EcosystemPage() {
                       />
                     );
                   })}
+
+                  {/* Interactive hit areas for event markers along top edge (y=0..22) */}
+                  {chartEvents.map((evt) => {
+                    const isEvtSelected = selectedEventDate === evt.date;
+                    const isEvtActive = activeEventDate === evt.date;
+                    const evtLabel = `${formatFullDate(evt.date, isEn)}: ${isEn ? evt.titleEn : evt.title}`;
+
+                    return (
+                      <rect
+                        key={`evt-hit-${evt.date}`}
+                        x={evt.x - 12}
+                        y={0}
+                        width={24}
+                        height={22}
+                        fill="transparent"
+                        className="cursor-pointer focus:outline-none"
+                        tabIndex={0}
+                        role="button"
+                        aria-pressed={isEvtSelected}
+                        aria-expanded={isEvtActive}
+                        aria-haspopup="dialog"
+                        aria-label={evtLabel}
+                        onMouseEnter={() => setHoveredEventDate(evt.date)}
+                        onMouseLeave={() => setHoveredEventDate(null)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedEventDate((prev) => (prev === evt.date ? null : evt.date));
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedEventDate((prev) => (prev === evt.date ? null : evt.date));
+                          } else if (e.key === 'Escape') {
+                            setSelectedEventDate(null);
+                            setHoveredEventDate(null);
+                          }
+                        }}
+                      />
+                    );
+                  })}
                 </svg>
+
+                {/* Floating Event / Milestone Tooltip (Desktop hover/click & Mobile tap) */}
+                {activeEvent && (
+                  <div
+                    className="absolute z-30 select-none transition-all duration-75"
+                    style={{
+                      left: `${(activeEvent.x / fsSvgWidth) * 100}%`,
+                      top: '24px',
+                      transform: getEventTooltipTransform(activeEvent.x, fsSvgWidth),
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="bg-slate-900/98 text-white rounded-xl shadow-2xl border border-slate-700/80 p-3.5 w-72 max-w-[calc(100vw-3rem)] text-xs backdrop-blur-md">
+                      <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-800 text-[11px] font-mono">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="w-2 h-2 rotate-45 bg-amber-500 rounded-xs shrink-0" aria-hidden="true" />
+                          <span className="font-bold text-slate-200">
+                            {formatFullDate(activeEvent.date, isEn)}
+                          </span>
+                          <span className="text-slate-500">·</span>
+                          <span className="text-amber-400 font-semibold uppercase text-[10px] tracking-wider">
+                            {activeEvent.category}
+                          </span>
+                        </div>
+                        {selectedEventDate !== null && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedEventDate(null);
+                            }}
+                            className="text-slate-400 hover:text-white p-0.5 rounded transition-colors"
+                            title={isEn ? 'Close' : 'Schließen'}
+                            aria-label={isEn ? 'Close' : 'Schließen'}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="mt-2 font-bold text-slate-100 text-xs leading-snug">
+                        {isEn ? activeEvent.titleEn : activeEvent.title}
+                      </div>
+
+                      <p className="mt-1.5 text-[11px] text-slate-300 leading-relaxed font-sans">
+                        {isEn ? activeEvent.descriptionEn : activeEvent.description}
+                      </p>
+
+                      {activeEvent.sourceUrl && (
+                        <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                          <span className="text-[10px] font-mono text-slate-400">
+                            {isEn ? 'Source:' : 'Quelle:'}
+                          </span>
+                          <a
+                            href={activeEvent.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-emerald-400 hover:text-emerald-300 hover:underline"
+                          >
+                            <span>{isEn ? 'Verified source' : 'Verifizierte Quelle'}</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Floating indicator for a hovered Domains Monitor point */}
                 {hoveredDmDate && (() => {

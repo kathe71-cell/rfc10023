@@ -279,11 +279,27 @@ export interface ChartDmPoint {
   y: number;
 }
 
+export interface ChartTimelineEvent {
+  date: string;
+  title: string;
+  titleEn: string;
+  category: string;
+  description: string;
+  descriptionEn: string;
+  sourceUrl?: string;
+  showOnAdoptionChart?: boolean;
+}
+
+export interface ChartEventMarker extends ChartTimelineEvent {
+  x: number;
+}
+
 export interface AdoptionChartDataResult {
   chartDates: string[];
   chartDateIndex: Map<string, number>;
   fsAllPoints: ChartForSalePoint[];
   dmOverlayPoints: ChartDmPoint[];
+  chartEvents: ChartEventMarker[];
   scale: DynamicYScaleResult;
   fsCompletePointsString: string;
   fsPartialPointsString: string;
@@ -297,6 +313,7 @@ export interface AdoptionChartOptions {
   svgHeight?: number;
   paddingX?: number;
   paddingY?: number;
+  timelineEvents?: ChartTimelineEvent[];
 }
 
 /**
@@ -386,11 +403,45 @@ export function prepareAdoptionChartData(
   const isDmExtendingPastForSale = latestDmDate > latestFsDate;
   const latestChartDate = chartDates.length > 0 ? chartDates[chartDates.length - 1] : '';
 
+  // 6. Curated milestone & event markers along the X-axis
+  // Methodological invariants (Section 8):
+  // Event markers are strictly annotations along the X-axis.
+  // They do NOT alter any data series, generate Y-values, extend curves, or affect Y-scaling.
+  const chartEvents: ChartEventMarker[] = [];
+  if (options.timelineEvents && chartDates.length > 0) {
+    const minDate = chartDates[0];
+    const maxDate = chartDates[chartDates.length - 1];
+
+    for (const event of options.timelineEvents) {
+      if (!event.showOnAdoptionChart) continue;
+      // Only include markers within the visible timeframe of the chart
+      if (event.date < minDate || event.date > maxDate) continue;
+
+      let x: number;
+      const dateIdx = chartDateIndex.get(event.date);
+      if (dateIdx !== undefined) {
+        x = paddingX + (dateIdx / totalDateSpan) * usableWidth;
+      } else {
+        const minTime = new Date(minDate).getTime();
+        const maxTime = new Date(maxDate).getTime();
+        const eventTime = new Date(event.date).getTime();
+        const ratio = maxTime > minTime ? (eventTime - minTime) / (maxTime - minTime) : 0;
+        x = paddingX + Math.max(0, Math.min(1, ratio)) * usableWidth;
+      }
+
+      chartEvents.push({
+        ...event,
+        x: Number(x.toFixed(1)),
+      });
+    }
+  }
+
   return {
     chartDates,
     chartDateIndex,
     fsAllPoints,
     dmOverlayPoints,
+    chartEvents,
     scale,
     fsCompletePointsString,
     fsPartialPointsString,

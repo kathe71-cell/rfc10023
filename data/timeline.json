@@ -6,7 +6,8 @@
     "category": "RFC",
     "description": "Der RFC Editor veröffentlicht RFC 10023 als IETF-Publikation (Kategorie: Informational, Autor: Marco Davids, SIDN Labs). RFC 10023 beschreibt die betriebliche Konvention für _for-sale TXT-Records.",
     "descriptionEn": "The RFC Editor publishes RFC 10023 as an IETF publication (Category: Informational, author: Marco Davids, SIDN Labs), describing an operational convention for _for-sale TXT records.",
-    "sourceUrl": "https://www.rfc-editor.org/info/rfc10023"
+    "sourceUrl": "https://www.rfc-editor.org/info/rfc10023",
+    "showOnAdoptionChart": true
   },
   {
     "date": "2026-08",
@@ -78,7 +79,8 @@
     "category": "Registrar",
     "description": "Der deutsche Registrar und Marktplatz ELITEDOMAINS stellt RFC-10023-Records automatisch für externe Domains und Nicht-.de-Endungen bereit. Für .de-Domains noch nicht möglich, da DENIC-NSENTRY-Delegationen keine TXT-Records zulassen.",
     "descriptionEn": "German registrar and marketplace ELITEDOMAINS automatically provides RFC 10023 records for external domains and non-.de TLDs. Not yet possible for .de, as DENIC NSENTRY delegations do not allow TXT records.",
-    "sourceUrl": "https://domainfragen.de/threads/rfc-10023.7958/"
+    "sourceUrl": "https://domainfragen.de/threads/rfc-10023.7958/",
+    "showOnAdoptionChart": true
   },
   {
     "date": "2026-09-24",
@@ -96,6 +98,17 @@
     "category": "Aftermarket",
     "description": "Atom kündigt die automatische Bereitstellung von RFC 10023 Records für alle auf Atom-Nameservern gehosteten Listings an. Die DNS-Signale enthalten Listing-Links, Festpreise sowie Angebotshinweise und werden mit dem Status synchron gehalten.",
     "descriptionEn": "Atom announces automated deployment of RFC 10023 records for all listings hosted on Atom nameservers, providing machine-readable listing URLs, Buy Now pricing, and status notes synchronized with marketplace inventory.",
-    "sourceUrl": "https://www.atom.com/blog/atom-adopts-rfc-10023-every-eligible-listing-is-getting-a-machine-readable-for-sale-signal/"
+    "sourceUrl": "https://www.atom.com/blog/atom-adopts-rfc-10023-every-eligible-listing-is-getting-a-machine-readable-for-sale-signal/",
+    "showOnAdoptionChart": true
+  },
+  {
+    "date": "2026-10-10",
+    "title": "Außergewöhnlicher Anstieg im Domains-Monitor-Datensatz",
+    "titleEn": "Unusual increase in the Domains Monitor dataset",
+    "category": "Telemetry",
+    "description": "+87.633 erkannte Domains gegenüber dem vorherigen Messpunkt. Die Ursache ist derzeit nicht eindeutig belegt.",
+    "descriptionEn": "+87,633 detected domains versus the previous observation. The cause has not been conclusively established.",
+    "sourceUrl": "https://domains-monitor.com/for-sale-domains/",
+    "showOnAdoptionChart": true
   }
 ]
