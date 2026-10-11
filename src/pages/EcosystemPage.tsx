@@ -358,14 +358,17 @@ export default function EcosystemPage() {
   const fsPaddingX = 55;
   const fsPaddingY = 25;
 
-  // Domains Monitor overlay: plotted on the ForSaleDNS date axis (same calendar days only)
-  const fsDateIndex = useMemo(
-    () => new Map(forSalePoints.map((p, i) => [p.date, i] as [string, number])),
-    [forSalePoints]
-  );
-  const dmOverlaySource = useMemo(
-    () => dmFullPoints.filter((p) => fsDateIndex.has(p.date)),
-    [dmFullPoints, fsDateIndex]
+  // Unified date axis: includes all distinct observation dates from both sources
+  const chartDates = useMemo(() => {
+    const datesSet = new Set<string>();
+    forSalePoints.forEach((p) => datesSet.add(p.date));
+    dmFullPoints.forEach((p) => datesSet.add(p.date));
+    return Array.from(datesSet).sort();
+  }, [forSalePoints, dmFullPoints]);
+
+  const chartDateIndex = useMemo(
+    () => new Map(chartDates.map((d, i) => [d, i] as [string, number])),
+    [chartDates]
   );
   const dmValueByDate = useMemo(
     () => new Map(dmFullPoints.map((p) => [p.date, p.value] as [string, number])),
@@ -389,24 +392,28 @@ export default function EcosystemPage() {
   const fsScale = useMemo(() => {
     const values = [
       ...forSalePoints.map((p) => p.activeListings),
-      ...dmOverlaySource.map((p) => p.value),
+      ...dmFullPoints.map((p) => p.value),
     ];
     return computeDynamicYScale(values, {
       minPaddingRatio: 0.02,
       rangePaddingRatio: 0.15,
       gridLineCount: 3,
     });
-  }, [forSalePoints, dmOverlaySource]);
+  }, [forSalePoints, dmFullPoints]);
 
   const dmOverlayPoints = useMemo(() => {
-    if (forSalePoints.length < 2) return [];
-    return dmOverlaySource.map((p) => {
-      const idx = fsDateIndex.get(p.date) as number;
-      const x = fsPaddingX + (idx / (forSalePoints.length - 1)) * (fsSvgWidth - fsPaddingX * 2);
-      const y = calculateSvgY(p.value, fsScale, fsSvgHeight, fsPaddingY);
-      return { ...p, x: Number(x.toFixed(1)), y: Number(y.toFixed(1)) };
-    });
-  }, [dmOverlaySource, fsDateIndex, forSalePoints.length, fsScale]);
+    if (chartDates.length < 2) return [];
+    const pts: Array<{ date: string; source: string; value: number; x: number; y: number }> = [];
+    for (const p of dmFullPoints) {
+      const idx = chartDateIndex.get(p.date);
+      if (idx !== undefined) {
+        const x = fsPaddingX + (idx / (chartDates.length - 1)) * (fsSvgWidth - fsPaddingX * 2);
+        const y = calculateSvgY(p.value, fsScale, fsSvgHeight, fsPaddingY);
+        pts.push({ ...p, x: Number(x.toFixed(1)), y: Number(y.toFixed(1)) });
+      }
+    }
+    return pts;
+  }, [dmFullPoints, chartDateIndex, chartDates.length, fsScale]);
 
   const dmOverlayLine = useMemo(
     () => (dmOverlayPoints.length >= 2 ? dmOverlayPoints.map((p) => `${p.x},${p.y}`).join(' ') : ''),
@@ -415,18 +422,20 @@ export default function EcosystemPage() {
 
   // Full polyline points with safe dynamic coordinates
   const fsAllPoints = useMemo(() => {
-    if (!forSalePoints || forSalePoints.length === 0) return [];
+    if (!forSalePoints || forSalePoints.length === 0 || chartDates.length < 2) return [];
     return forSalePoints.map((pt, idx) => {
-      const x = fsPaddingX + (idx / (forSalePoints.length - 1)) * (fsSvgWidth - fsPaddingX * 2);
+      const dateIdx = chartDateIndex.get(pt.date) ?? idx;
+      const x = fsPaddingX + (dateIdx / (chartDates.length - 1)) * (fsSvgWidth - fsPaddingX * 2);
       const y = calculateSvgY(pt.activeListings, fsScale, fsSvgHeight, fsPaddingY);
       return {
         ...pt,
         idx,
+        dateIdx,
         x: Number(x.toFixed(1)),
         y: Number(y.toFixed(1)),
       };
     });
-  }, [forSalePoints, fsScale]);
+  }, [forSalePoints, chartDateIndex, chartDates.length, fsScale]);
 
   // Polyline for complete sweeps (indices where sweepComplete is true)
   const fsCompletePointsString = useMemo(() => {
@@ -446,6 +455,7 @@ export default function EcosystemPage() {
   const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);
   const [hoveredDm, setHoveredDm] = useState(false);
+  const [hoveredDmDate, setHoveredDmDate] = useState<string | null>(null);
 
   const activePointIndex = selectedPointIndex !== null ? selectedPointIndex : hoveredPointIndex;
   const activePoint = activePointIndex !== null && fsAllPoints[activePointIndex] ? fsAllPoints[activePointIndex] : null;
@@ -1165,9 +1175,21 @@ export default function EcosystemPage() {
                     );
                   })}
 
+                  {/* If Domains Monitor extends past ForSaleDNS, show date label at the end */}
+                  {fsAllPoints.length > 0 && dmOverlayPoints.length > 0 && dmOverlayPoints[dmOverlayPoints.length - 1].date > fsAllPoints[fsAllPoints.length - 1].date && (
+                    <text
+                      x={dmOverlayPoints[dmOverlayPoints.length - 1].x}
+                      y={fsSvgHeight - fsPaddingY + 14}
+                      textAnchor="middle"
+                      className="text-[9px] font-mono fill-indigo-700 font-bold"
+                    >
+                      {formatChartAxisDate(dmOverlayPoints[dmOverlayPoints.length - 1].date, isEn)}
+                    </text>
+                  )}
+
                   {/* Full-height contiguous vertical slices for 100% gap-free, zero-jitter tracking */}
                   {fsAllPoints.map((pt, idx) => {
-                    const sliceWidth = (fsSvgWidth - fsPaddingX * 2) / (fsAllPoints.length - 1);
+                    const sliceWidth = (fsSvgWidth - fsPaddingX * 2) / (chartDates.length - 1);
                     const isFirst = idx === 0;
                     const isLast = idx === fsAllPoints.length - 1;
                     const x = isFirst
@@ -1217,7 +1239,7 @@ export default function EcosystemPage() {
 
                   {/* Hover targets for Domains Monitor points (on top of the slices) */}
                   {dmOverlayPoints.map((pt) => {
-                    const fsIdx = fsDateIndex.get(pt.date) as number;
+                    const fsIdx = forSalePoints.findIndex((p) => p.date === pt.date);
                     return (
                       <rect
                         key={`dm-hit-${pt.date}`}
@@ -1229,13 +1251,17 @@ export default function EcosystemPage() {
                         className="cursor-pointer"
                         aria-label={`Domains Monitor ${pt.date}: ${pt.value}`}
                         onMouseEnter={() => {
-                          setHoveredPointIndex(fsIdx);
+                          if (fsIdx >= 0) setHoveredPointIndex(fsIdx);
                           setHoveredDm(true);
+                          setHoveredDmDate(pt.date);
                         }}
-                        onMouseLeave={() => setHoveredDm(false)}
+                        onMouseLeave={() => {
+                          setHoveredDm(false);
+                          setHoveredDmDate(null);
+                        }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedPointIndex((prev) => (prev === fsIdx ? null : fsIdx));
+                          if (fsIdx >= 0) setSelectedPointIndex((prev) => (prev === fsIdx ? null : fsIdx));
                         }}
                       />
                     );
@@ -1243,8 +1269,8 @@ export default function EcosystemPage() {
                 </svg>
 
                 {/* Floating indicator for a hovered Domains Monitor point */}
-                {hoveredDm && activePoint && (() => {
-                  const dmPt = dmOverlayPoints.find((p) => p.date === activePoint.date);
+                {hoveredDmDate && (() => {
+                  const dmPt = dmOverlayPoints.find((p) => p.date === hoveredDmDate);
                   const dm = dmPt ? getDmDetails(dmPt.date) : null;
                   if (!dmPt || !dm) return null;
                   return (
