@@ -163,8 +163,9 @@ describe('Adoption Chart Dual Time Series Regression Tests', () => {
     const html = fs.readFileSync(htmlPath, 'utf-8');
     // Chart SVG must contain the unified X-axis date label for 11.10.
     expect(html).toContain('11.10.');
-    // Must contain both KPI counts
-    expect(html).toContain('1.413.797');
+    // Must contain current KPI count
+    const currentDm = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'data/adoption-current.json'), 'utf-8')).sources.domainsMonitor;
+    expect(html).toContain(currentDm.value.toLocaleString('de-DE'));
   });
 });
 
