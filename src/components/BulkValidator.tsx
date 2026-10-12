@@ -33,11 +33,11 @@ function isValidDomainFormat(raw: string): { isValid: boolean; cleaned: string }
   return { isValid: true, cleaned };
 }
 
+const DEFAULT_SAMPLE_DOMAINS = 'forsaledns.net\nbeispiel-investor.de\ndomain-portfolio.de';
+
 export default function BulkValidator() {
   const { t, language } = useLanguage();
-  const [inputText, setInputText] = useState(
-    'forsaledns.net\nbeispiel-investor.de\ndomain-portfolio.de'
-  );
+  const [inputText, setInputText] = useState(DEFAULT_SAMPLE_DOMAINS);
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<BulkItemResult[]>([]);
   const [progress, setProgress] = useState(0);
@@ -301,6 +301,16 @@ export default function BulkValidator() {
             rows={4}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
+            onFocus={() => {
+              if (inputText.trim() === DEFAULT_SAMPLE_DOMAINS.trim()) {
+                setInputText('');
+              }
+            }}
+            onClick={() => {
+              if (inputText.trim() === DEFAULT_SAMPLE_DOMAINS.trim()) {
+                setInputText('');
+              }
+            }}
             disabled={isRunning}
             placeholder={t('bulk.placeholder')}
             className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-mono focus:bg-white focus:outline-none focus:border-slate-900 leading-relaxed"
