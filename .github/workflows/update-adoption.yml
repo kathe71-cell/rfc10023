@@ -18,8 +18,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  update-adoption:
-    runs-on: ubuntu-24.04
+  domains-monitor:
+    name: Update Domains Monitor (GitHub-hosted)
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
@@ -30,19 +31,19 @@ jobs:
         with:
           node-version: 24
 
-      - name: Execute adoption update script
-        run: node --dns-result-order=ipv4first scripts/update-adoption.mjs
+      - name: Execute Domains Monitor update script
+        run: node --dns-result-order=ipv4first scripts/update-adoption.mjs --source domains-monitor
 
       - name: Commit and push changes if data updated
         run: |
-          if git diff --quiet data/adoption-current.json data/adoption-history.json data/adoption-history-forsaledns.json public/sitemap.xml; then
-            echo "No changes in adoption data. Skipping commit."
+          if git diff --quiet data/adoption-current.json data/adoption-history.json public/sitemap.xml; then
+            echo "No changes in Domains Monitor data. Skipping commit."
           else
-            echo "Adoption data changes detected. Committing..."
+            echo "Domains Monitor changes detected. Committing..."
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add data/adoption-current.json data/adoption-history.json data/adoption-history-forsaledns.json public/sitemap.xml
-            git commit -m "chore: update RFC 10023 adoption data"
+            git add data/adoption-current.json data/adoption-history.json public/sitemap.xml
+            git commit -m "chore(adoption): update Domains Monitor data"
             git push
           fi
 
@@ -61,26 +62,56 @@ jobs:
             }
           "
 
-      # Same check for ForSaleDNS. Runs even if the Domains Monitor check
-      # failed; data of the healthy source has already been committed above.
-      # If ForSaleDNS was not fetched during this run (< 60 min old) due to
-      # upstream Cloudflare challenges or temporary unavailability, warn
-      # prominently instead of failing the whole job when cached data is intact.
-      # Only fail if no valid snapshot exists at all or if data is severely stale (> 7 days).
+  forsaledns:
+    name: Update ForSaleDNS (Self-hosted macOS Runner)
+    needs: domains-monitor
+    # Sequentially executes after domains-monitor to prevent git push race conditions.
+    # Runs even if domains-monitor failed, ensuring independent source resilience.
+    if: ${{ !cancelled() }}
+    runs-on: [self-hosted, macOS, rfc10023]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Pull latest main branch
+        run: |
+          git pull origin main --ff-only || true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Execute ForSaleDNS update script
+        run: node scripts/update-adoption.mjs --source forsaledns
+
+      - name: Commit and push changes if data updated
+        run: |
+          if git diff --quiet data/adoption-current.json data/adoption-history-forsaledns.json public/sitemap.xml; then
+            echo "No changes in ForSaleDNS data. Skipping commit."
+          else
+            echo "ForSaleDNS changes detected. Committing..."
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/adoption-current.json data/adoption-history-forsaledns.json public/sitemap.xml
+            git commit -m "chore(adoption): update ForSaleDNS data"
+            git push
+          fi
+
       - name: Verify ForSaleDNS data is fresh
-        if: ${{ !cancelled() }}
         run: |
           node -e "
             const f = require('./data/adoption-current.json').forSaleDns || {};
             const ageMin = (Date.now() - Date.parse(f.lastSuccessfulFetch || '')) / 60000;
-            const ageHours = ageMin / 60;
-            console.log('ForSaleDNS: latestSnapshotDate:', f.latestSnapshotDate, '| lastSuccessfulFetch:', f.lastSuccessfulFetch, '| age (min):', Math.round(ageMin));
-            if (ageMin >= 0 && ageMin <= 60) {
+            console.log('ForSaleDNS: snapshot:', f.latestSnapshotDate, '| lastSuccessfulFetch:', f.lastSuccessfulFetch, '| age (min):', Math.round(ageMin));
+            if (ageMin >= 0 && ageMin <= 120) {
               console.log('✓ ForSaleDNS data fetched fresh in this run.');
-            } else if (f.latestSnapshotDate && ageHours <= 168) {
-              console.warn('::warning title=ForSaleDNS fetch skipped (using cached data)::ForSaleDNS was not fetched successfully in this run (last success: ' + (f.lastSuccessfulFetch || 'never') + '). Retaining cached snapshot from ' + f.latestSnapshotDate + ' (' + Math.round(ageHours) + 'h old).');
             } else {
-              console.error('::error::ForSaleDNS has no valid snapshot or cached data is older than 7 days (last success: ' + (f.lastSuccessfulFetch || 'never') + ').');
+              console.error('::error::ForSaleDNS fetch was not updated in this run (last success: ' + (f.lastSuccessfulFetch || 'never') + ').');
               process.exit(1);
             }
           "

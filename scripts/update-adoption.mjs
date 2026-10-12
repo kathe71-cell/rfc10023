@@ -295,83 +295,138 @@ export function updateSitemapLastmod(xml, locs, date) {
 }
 
 /**
- * Main CLI entrypoint
+ * Normalizes source CLI argument string.
+ * @param {string} val
+ * @returns {'all' | 'domains-monitor' | 'forsaledns'}
  */
-async function main() {
+export function normalizeSourceArg(val) {
+  const clean = String(val || '').trim().toLowerCase();
+  if (['domains-monitor', 'domainsmonitor', 'domains_monitor'].includes(clean)) {
+    return 'domains-monitor';
+  }
+  if (['forsaledns', 'for-sale-dns', 'forsale-dns'].includes(clean)) {
+    return 'forsaledns';
+  }
+  return 'all';
+}
+
+/**
+ * Parses the --source argument from process.argv.
+ * Supports:
+ *   --source domains-monitor
+ *   --source forsaledns
+ *   --source all
+ *   --source=domains-monitor, etc.
+ * @param {string[]} [argv]
+ * @returns {'all' | 'domains-monitor' | 'forsaledns'}
+ */
+export function parseSourceArg(argv = process.argv) {
+  for (let i = 2; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === '--source' && argv[i + 1]) {
+      return normalizeSourceArg(argv[i + 1]);
+    }
+    if (arg.startsWith('--source=')) {
+      return normalizeSourceArg(arg.slice(9));
+    }
+  }
+  return 'all';
+}
+
+/**
+ * Main CLI entrypoint
+ * @param {string[]} [argv]
+ */
+export async function main(argv = process.argv) {
+  const sourceMode = parseSourceArg(argv);
   console.log('=== RFC 10023 Adoption Data Update Script ===');
   console.log(`Time: ${new Date().toISOString()}`);
+  console.log(`Source mode: [${sourceMode}]`);
 
   if (!fs.existsSync(CURRENT_FILE) || !fs.existsSync(HISTORY_FILE)) {
     console.error('Error: Required data files not found in /data directory.');
     process.exit(1);
   }
 
-  const currentRaw = fs.readFileSync(CURRENT_FILE, 'utf-8');
-  const historyRaw = fs.readFileSync(HISTORY_FILE, 'utf-8');
+  // 1. Domains Monitor processing (if 'all' or 'domains-monitor')
+  if (sourceMode === 'all' || sourceMode === 'domains-monitor') {
+    const currentRaw = fs.readFileSync(CURRENT_FILE, 'utf-8');
+    const historyRaw = fs.readFileSync(HISTORY_FILE, 'utf-8');
 
-  const current = JSON.parse(currentRaw);
-  const history = JSON.parse(historyRaw);
+    const current = JSON.parse(currentRaw);
+    const history = JSON.parse(historyRaw);
 
-  const result = await processAdoptionUpdate(current, history);
+    const result = await processAdoptionUpdate(current, history);
 
-  result.logs.forEach((log) => console.log(log));
+    result.logs.forEach((log) => console.log(log));
 
-  if (result.changed) {
-    fs.writeFileSync(CURRENT_FILE, JSON.stringify(result.current, null, 2) + '\n', 'utf-8');
-    fs.writeFileSync(HISTORY_FILE, JSON.stringify(result.history, null, 2) + '\n', 'utf-8');
-    console.log('✓ Successfully wrote updated adoption files.');
-  } else {
-    console.log('ℹ No data changes recorded for Domains Monitor. Files left intact.');
-  }
-
-  // Also update ForSaleDNS adoption history as a separate data source
-  console.log('\n--- Checking ForSaleDNS Adoption History ---');
-  try {
-    const { updateForSaleDnsHistory, applyForSaleDnsUpdate, FORSALEDNS_FILE } = await import('./import-forsaledns-history.mjs');
-    const forSaleResult = await updateForSaleDnsHistory();
-    forSaleResult.logs.forEach((log) => console.log(log));
-
-    const currentAdoption = JSON.parse(fs.readFileSync(CURRENT_FILE, 'utf-8'));
-    let existingForSale = [];
-    if (fs.existsSync(FORSALEDNS_FILE)) {
-      try {
-        existingForSale = JSON.parse(fs.readFileSync(FORSALEDNS_FILE, 'utf-8'));
-      } catch {
-        existingForSale = [];
-      }
-    }
-
-    const updateOutcome = applyForSaleDnsUpdate(
-      currentAdoption.forSaleDns,
-      existingForSale,
-      forSaleResult.data,
-      new Date().toISOString()
-    );
-
-    if (updateOutcome.status !== 'fetch-failed') {
-      if (updateOutcome.historyChanged) {
-        fs.writeFileSync(FORSALEDNS_FILE, JSON.stringify(updateOutcome.history, null, 2) + '\n', 'utf-8');
-        console.log('✓ Successfully wrote updated ForSaleDNS history.');
-      }
-      currentAdoption.forSaleDns = updateOutcome.meta;
-      fs.writeFileSync(CURRENT_FILE, JSON.stringify(currentAdoption, null, 2) + '\n', 'utf-8');
-      console.log(`✓ Updated ForSaleDNS metadata (Snapshot: ${updateOutcome.meta.latestSnapshotDate}, Fetch: ${updateOutcome.meta.lastSuccessfulFetch}, Status: ${updateOutcome.status}).`);
+    if (result.changed) {
+      fs.writeFileSync(CURRENT_FILE, JSON.stringify(result.current, null, 2) + '\n', 'utf-8');
+      fs.writeFileSync(HISTORY_FILE, JSON.stringify(result.history, null, 2) + '\n', 'utf-8');
+      console.log('✓ Successfully wrote updated adoption files.');
     } else {
-      console.warn('⚠ ForSaleDNS fetch failed. Retaining existing snapshot and fetch timestamp.');
+      console.log('ℹ No data changes recorded for Domains Monitor. Files left intact.');
     }
-  } catch (forSaleErr) {
-    console.error('⚠ Error updating ForSaleDNS history (retaining existing data):', forSaleErr.message);
   }
 
-  // Keep sitemap lastmod of the data-driven pages in sync with each successful data update
+  // 2. ForSaleDNS processing (if 'all' or 'forsaledns')
+  if (sourceMode === 'all' || sourceMode === 'forsaledns') {
+    console.log('\n--- Checking ForSaleDNS Adoption History ---');
+    try {
+      const { updateForSaleDnsHistory, applyForSaleDnsUpdate, FORSALEDNS_FILE } = await import('./import-forsaledns-history.mjs');
+      const forSaleResult = await updateForSaleDnsHistory();
+      forSaleResult.logs.forEach((log) => console.log(log));
+
+      const currentAdoption = JSON.parse(fs.readFileSync(CURRENT_FILE, 'utf-8'));
+      let existingForSale = [];
+      if (fs.existsSync(FORSALEDNS_FILE)) {
+        try {
+          existingForSale = JSON.parse(fs.readFileSync(FORSALEDNS_FILE, 'utf-8'));
+        } catch {
+          existingForSale = [];
+        }
+      }
+
+      const updateOutcome = applyForSaleDnsUpdate(
+        currentAdoption.forSaleDns,
+        existingForSale,
+        forSaleResult.data,
+        new Date().toISOString()
+      );
+
+      if (updateOutcome.status !== 'fetch-failed') {
+        if (updateOutcome.historyChanged) {
+          fs.writeFileSync(FORSALEDNS_FILE, JSON.stringify(updateOutcome.history, null, 2) + '\n', 'utf-8');
+          console.log('✓ Successfully wrote updated ForSaleDNS history.');
+        }
+        currentAdoption.forSaleDns = updateOutcome.meta;
+        fs.writeFileSync(CURRENT_FILE, JSON.stringify(currentAdoption, null, 2) + '\n', 'utf-8');
+        console.log(`✓ Updated ForSaleDNS metadata (Snapshot: ${updateOutcome.meta.latestSnapshotDate}, Fetch: ${updateOutcome.meta.lastSuccessfulFetch}, Status: ${updateOutcome.status}).`);
+      } else {
+        console.warn('⚠ ForSaleDNS fetch failed. Retaining existing snapshot and fetch timestamp.');
+      }
+    } catch (forSaleErr) {
+      console.error('⚠ Error updating ForSaleDNS history (retaining existing data):', forSaleErr.message);
+    }
+  }
+
+  // 3. Sitemap lastmod sync (scoped to active sources)
   try {
     const sitemapPath = path.join(projectRoot, 'public', 'sitemap.xml');
     const current = JSON.parse(fs.readFileSync(CURRENT_FILE, 'utf-8'));
-    const dates = [
-      current.sources?.domainsMonitor?.sourceDate,
-      current.forSaleDns?.latestSnapshotDate,
-    ].filter(Boolean).sort();
-    const latest = dates[dates.length - 1];
+    const candidateDates = [];
+    if (sourceMode === 'all' || sourceMode === 'domains-monitor') {
+      if (current.sources?.domainsMonitor?.sourceDate) {
+        candidateDates.push(current.sources.domainsMonitor.sourceDate);
+      }
+    }
+    if (sourceMode === 'all' || sourceMode === 'forsaledns') {
+      if (current.forSaleDns?.latestSnapshotDate) {
+        candidateDates.push(current.forSaleDns.latestSnapshotDate);
+      }
+    }
+    candidateDates.sort();
+    const latest = candidateDates[candidateDates.length - 1];
     if (latest && fs.existsSync(sitemapPath)) {
       const xml = fs.readFileSync(sitemapPath, 'utf-8');
       const updated = updateSitemapLastmod(xml, [
