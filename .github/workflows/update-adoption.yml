@@ -2,13 +2,21 @@ name: Update RFC 10023 Adoption Data
 
 on:
   schedule:
-    # 1. Täglicher Abruf morgens 07:00 Uhr deutscher Zeit (05:00 UTC bei MESZ / 06:00 UTC bei MEZ)
+    # 1. Domains Monitor Frühlauf: 05:00 UTC (07:00 MESZ / 06:00 MEZ)
     - cron: '0 5 * * *'
-    # 2. Täglicher Abruf nachmittags (13:00 UTC = 15:00 MESZ) zur Erfassung neuer ForSaleDNS-Tagesdaten
-    - cron: '0 13 * * *'
-    # 3. Sicherheitsabruf abends (18:00 UTC = 20:00 MESZ)
-    - cron: '0 18 * * *'
+    # 2. ForSaleDNS Nachmittagslauf: 13:30 UTC (15:30 MESZ / 14:30 MEZ)
+    - cron: '30 13 * * *'
   workflow_dispatch:
+    inputs:
+      source:
+        description: 'Welche Adoption-Quelle soll aktualisiert werden?'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - domains-monitor
+          - forsaledns
 
 permissions:
   contents: write
@@ -20,6 +28,10 @@ concurrency:
 jobs:
   domains-monitor:
     name: Update Domains Monitor (GitHub-hosted)
+    # Läuft morgens (05:00 UTC) ODER wenn manuell 'all' bzw. 'domains-monitor' gewählt wird
+    if: >-
+      (github.event_name == 'schedule' && github.event.schedule == '0 5 * * *') ||
+      (github.event_name == 'workflow_dispatch' && (inputs.source == 'all' || inputs.source == 'domains-monitor'))
     runs-on: ubuntu-latest
 
     steps:
@@ -65,9 +77,13 @@ jobs:
   forsaledns:
     name: Update ForSaleDNS (Self-hosted macOS Runner)
     needs: domains-monitor
-    # Sequentially executes after domains-monitor to prevent git push race conditions.
-    # Runs even if domains-monitor failed, ensuring independent source resilience.
-    if: ${{ !cancelled() }}
+    # Sequentiell nach domains-monitor (falls dieser lief), läuft auch wenn domains-monitor fehlschlug oder geskippt wurde.
+    # Läuft nachmittags (13:30 UTC = 15:30 MESZ / 14:30 MEZ) ODER wenn manuell 'all' bzw. 'forsaledns' gewählt wird.
+    if: >-
+      !cancelled() && (
+        (github.event_name == 'schedule' && github.event.schedule == '30 13 * * *') ||
+        (github.event_name == 'workflow_dispatch' && (inputs.source == 'all' || inputs.source == 'forsaledns'))
+      )
     runs-on: [self-hosted, macOS, rfc10023]
 
     steps:

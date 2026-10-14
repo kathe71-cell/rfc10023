@@ -113,4 +113,28 @@ describe('GitHub Actions Adoption Workflow Architecture', () => {
     expect(content).toContain('forSaleDns');
     expect(content).toContain('f.lastSuccessfulFetch');
   });
+
+  it('verifies decoupled schedules and conditional job execution', () => {
+    const content = fs.readFileSync(workflowPath, 'utf-8');
+
+    // Schedules
+    expect(content).toContain("'0 5 * * *'"); // 05:00 UTC (morning)
+    expect(content).toContain("'30 13 * * *'"); // 13:30 UTC (afternoon)
+
+    // Manual dispatch inputs
+    expect(content).toContain('workflow_dispatch:');
+    expect(content).toContain('inputs:');
+    expect(content).toContain('source:');
+    expect(content).toContain('- all');
+    expect(content).toContain('- domains-monitor');
+    expect(content).toContain('- forsaledns');
+
+    // Domains monitor condition
+    expect(content).toContain("github.event.schedule == '0 5 * * *'");
+    expect(content).toContain("inputs.source == 'domains-monitor'");
+
+    // ForSaleDNS condition
+    expect(content).toContain("github.event.schedule == '30 13 * * *'");
+    expect(content).toContain("inputs.source == 'forsaledns'");
+  });
 });
