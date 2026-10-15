@@ -658,5 +658,16 @@
     "inventoryTotal": 343818996,
     "baselineComplete": false,
     "sweepComplete": true
+  },
+  {
+    "date": "2026-10-15",
+    "activeListings": 527554,
+    "conformant": 341347,
+    "priced": 246853,
+    "dnssec": 163831,
+    "inventoryCompleted": 343818996,
+    "inventoryTotal": 343818996,
+    "baselineComplete": false,
+    "sweepComplete": true
   }
 ]
