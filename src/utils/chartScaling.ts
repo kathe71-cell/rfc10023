@@ -294,6 +294,18 @@ export interface ChartEventMarker extends ChartTimelineEvent {
   x: number;
 }
 
+
+export type ChartSeriesKey = 'forSale' | 'domainsMonitor' | 'conformant' | 'priced';
+
+export interface AdoptionChartOptions {
+  svgWidth?: number;
+  svgHeight?: number;
+  paddingX?: number;
+  paddingY?: number;
+  timelineEvents?: ChartTimelineEvent[];
+  activeSeries?: Set<ChartSeriesKey> | ChartSeriesKey[];
+}
+
 export interface AdoptionChartDataResult {
   chartDates: string[];
   chartDateIndex: Map<string, number>;
@@ -303,22 +315,37 @@ export interface AdoptionChartDataResult {
   scale: DynamicYScaleResult;
   fsCompletePointsString: string;
   fsPartialPointsString: string;
+  fsConformantPointsString: string;
+  fsPricedPointsString: string;
   dmOverlayLine: string;
   isDmExtendingPastForSale: boolean;
   latestChartDate: string;
 }
 
-export interface AdoptionChartOptions {
-  svgWidth?: number;
-  svgHeight?: number;
-  paddingX?: number;
-  paddingY?: number;
-  timelineEvents?: ChartTimelineEvent[];
+/**
+ * Formats Y-axis numeric values in a compact, localized format (e.g. 250k, 500k, 1,0 Mio. / 1.0M)
+ */
+export function formatYAxisCompact(val: number, isEn: boolean): string {
+  if (val >= 1_000_000) {
+    const millions = val / 1_000_000;
+    if (isEn) {
+      return `${millions.toFixed(1)}M`;
+    }
+    return `${millions.toFixed(1).replace('.', ',')} Mio.`;
+  }
+  if (val >= 1_000) {
+    const thousands = val / 1_000;
+    if (isEn) {
+      return `${thousands.toFixed(0)}k`;
+    }
+    return `${thousands.toFixed(0)}k`;
+  }
+  return val.toLocaleString(isEn ? 'en-US' : 'de-DE');
 }
 
 /**
- * Prepares coordinated SVG chart data across two independent telemetry time series:
- * 1. ForSaleDNS (daily active listings)
+ * Prepares coordinated SVG chart data across independent telemetry time series:
+ * 1. ForSaleDNS (daily active listings, conformant, priced)
  * 2. Domains Monitor (daily detected domains)
  *
  * Methodological invariants:
@@ -326,6 +353,7 @@ export interface AdoptionChartOptions {
  * - Neither series is clipped or truncated to the other series' latest date.
  * - Missing days in either series are never interpolated or filled with artificial zeros.
  * - If one series updates earlier in the day, its new observation is rendered immediately.
+ * - Y-scaling adapts dynamically strictly to the currently active series.
  */
 export function prepareAdoptionChartData(
   forSalePoints: ForSaleDnsPointData[],
@@ -337,6 +365,10 @@ export function prepareAdoptionChartData(
   const paddingX = options.paddingX ?? 55;
   const paddingY = options.paddingY ?? 25;
 
+  const activeSeriesSet = options.activeSeries
+    ? new Set(options.activeSeries)
+    : new Set<ChartSeriesKey>(['forSale', 'domainsMonitor']);
+
   // 1. Unified date axis: all unique dates sorted chronologically
   const datesSet = new Set<string>();
   for (const p of forSalePoints) datesSet.add(p.date);
@@ -346,11 +378,27 @@ export function prepareAdoptionChartData(
   const chartDateIndex = new Map<string, number>();
   chartDates.forEach((d, i) => chartDateIndex.set(d, i));
 
-  // 2. Scale covering all observed values from both sources
-  const allValues = [
-    ...forSalePoints.map((p) => p.activeListings),
-    ...dmPoints.map((p) => p.value),
-  ];
+  // 2. Scale covering ONLY observed values from currently active series
+  const allValues: number[] = [];
+  if (activeSeriesSet.has('forSale')) {
+    allValues.push(...forSalePoints.map((p) => p.activeListings));
+  }
+  if (activeSeriesSet.has('conformant')) {
+    allValues.push(...forSalePoints.map((p) => p.conformant));
+  }
+  if (activeSeriesSet.has('priced')) {
+    allValues.push(...forSalePoints.map((p) => p.priced));
+  }
+  if (activeSeriesSet.has('domainsMonitor')) {
+    allValues.push(...dmPoints.map((p) => p.value));
+  }
+
+  // Fallback to all values if no series active (safeguard)
+  if (allValues.length === 0) {
+    allValues.push(...forSalePoints.map((p) => p.activeListings));
+    if (dmPoints.length > 0) allValues.push(...dmPoints.map((p) => p.value));
+  }
+
   const scale = computeDynamicYScale(allValues, {
     minPaddingRatio: 0.02,
     rangePaddingRatio: 0.15,
@@ -395,6 +443,14 @@ export function prepareAdoptionChartData(
 
   const firstComplete = fsAllPoints.findIndex((p) => p.sweepComplete);
   const fsPartialPointsString = firstComplete > 0 ? fsAllPoints.slice(0, firstComplete + 1).map((p) => `${p.x},${p.y}`).join(' ') : '';
+
+  const fsConformantPointsString = fsAllPoints.length >= 2
+    ? fsAllPoints.map((p) => `${p.x},${calculateSvgY(p.conformant, scale, svgHeight, paddingY).toFixed(1)}`).join(' ')
+    : '';
+
+  const fsPricedPointsString = fsAllPoints.length >= 2
+    ? fsAllPoints.map((p) => `${p.x},${calculateSvgY(p.priced, scale, svgHeight, paddingY).toFixed(1)}`).join(' ')
+    : '';
 
   const dmOverlayLine = dmOverlayPoints.length >= 2 ? dmOverlayPoints.map((p) => `${p.x},${p.y}`).join(' ') : '';
 
@@ -445,6 +501,8 @@ export function prepareAdoptionChartData(
     scale,
     fsCompletePointsString,
     fsPartialPointsString,
+    fsConformantPointsString,
+    fsPricedPointsString,
     dmOverlayLine,
     isDmExtendingPastForSale,
     latestChartDate,

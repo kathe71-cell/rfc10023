@@ -44,6 +44,8 @@ import {
   calculateSvgY,
   computePointDetails,
   prepareAdoptionChartData,
+  formatYAxisCompact,
+  ChartSeriesKey,
 } from '../utils/chartScaling';
 
 function formatDisplayDate(dateStr: string, isEn: boolean): string {
@@ -366,22 +368,63 @@ export default function EcosystemPage() {
     };
   }, [completeSweepPoints]);
 
+  // Chart Interactive Controls State (GSC-inspired)
+  type ChartTimeRange = '7d' | '28d' | 'all';
+  const [timeRange, setTimeRange] = useState<ChartTimeRange>('all');
+  const [activeSeries, setActiveSeries] = useState<Set<ChartSeriesKey>>(
+    new Set<ChartSeriesKey>(['forSale', 'domainsMonitor'])
+  );
+
+  const toggleSeries = (key: ChartSeriesKey) => {
+    setActiveSeries((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        // Enforce that at least one series remains selected so the chart is never completely empty
+        if (next.size > 1) {
+          next.delete(key);
+        }
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  // Filter observation points according to selected time range without altering raw data
+  const filteredForSalePoints = useMemo(() => {
+    if (timeRange === 'all') return forSalePoints;
+    const days = timeRange === '7d' ? 7 : 28;
+    return forSalePoints.slice(-days);
+  }, [forSalePoints, timeRange]);
+
+  const filteredDmFullPoints = useMemo(() => {
+    if (timeRange === 'all') return dmFullPoints;
+    // Determine the cutoff date from the filtered ForSale series or latest available calendar date
+    const anchorDates = [
+      ...filteredForSalePoints.map((p) => p.date),
+      ...dmFullPoints.map((p) => p.date),
+    ].sort();
+    const minDate = filteredForSalePoints.length > 0 ? filteredForSalePoints[0].date : anchorDates[0];
+    return dmFullPoints.filter((p) => p.date >= minDate);
+  }, [dmFullPoints, filteredForSalePoints, timeRange]);
+
   // ForSaleDNS SVG Chart coordinates
   const fsSvgWidth = 720;
-  const fsSvgHeight = 200;
+  const fsSvgHeight = 220;
   const fsPaddingX = 55;
   const fsPaddingY = 25;
 
   const chartData = useMemo(
     () =>
-      prepareAdoptionChartData(forSalePoints, dmFullPoints, {
+      prepareAdoptionChartData(filteredForSalePoints, filteredDmFullPoints, {
         svgWidth: fsSvgWidth,
         svgHeight: fsSvgHeight,
         paddingX: fsPaddingX,
         paddingY: fsPaddingY,
         timelineEvents: TIMELINE_DATA,
+        activeSeries,
       }),
-    [forSalePoints, dmFullPoints]
+    [filteredForSalePoints, filteredDmFullPoints, activeSeries]
   );
 
   const {
@@ -393,6 +436,8 @@ export default function EcosystemPage() {
     scale: fsScale,
     fsCompletePointsString,
     fsPartialPointsString,
+    fsConformantPointsString,
+    fsPricedPointsString,
     dmOverlayLine,
     isDmExtendingPastForSale,
   } = chartData;
@@ -472,19 +517,19 @@ export default function EcosystemPage() {
 
   const activePointDetails = useMemo(() => {
     if (!activePoint) return null;
-    const prev = activePoint.idx > 0 ? forSalePoints[activePoint.idx - 1] : null;
+    const prev = activePoint.idx > 0 ? filteredForSalePoints[activePoint.idx - 1] : null;
     return computePointDetails(activePoint, prev, isEn);
-  }, [activePoint, forSalePoints, isEn]);
+  }, [activePoint, filteredForSalePoints, isEn]);
 
   const displayDetails = useMemo(() => {
     if (activePointDetails) return activePointDetails;
-    if (forSalePoints.length > 0) {
-      const last = forSalePoints[forSalePoints.length - 1];
-      const prev = forSalePoints.length > 1 ? forSalePoints[forSalePoints.length - 2] : null;
+    if (filteredForSalePoints.length > 0) {
+      const last = filteredForSalePoints[filteredForSalePoints.length - 1];
+      const prev = filteredForSalePoints.length > 1 ? filteredForSalePoints[filteredForSalePoints.length - 2] : null;
       return computePointDetails(last, prev, isEn);
     }
     return null;
-  }, [activePointDetails, forSalePoints, isEn]);
+  }, [activePointDetails, filteredForSalePoints, isEn]);
 
   return (
     <div className="space-y-16 pb-16">
@@ -735,50 +780,202 @@ export default function EcosystemPage() {
             </div>
           </div>
 
-          {/* Legend and completeness indicators */}
-          <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-1.5">
-                <span className="w-5 h-0.5 bg-emerald-600 rounded"></span>
-                <span className="text-slate-700 font-semibold">
-                  {isEn
-                    ? `Full sweep (100% of ${fsInventoryLabel(true)} inventory, ${fullSweepDays} days)`
-                    : `Vollständiger Scan (100 % von ${fsInventoryLabel(false)} Inventar, ${fullSweepDays} Tage)`}
-                </span>
-              </div>
-              {fsPartialPoints.length > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <span className="w-5 h-0.5 border-b-2 border-dashed border-amber-600"></span>
-                  <span className="text-amber-900 font-semibold">
-                    {isEn
-                      ? `Preliminary partial sweeps (${fsPartialDatesLabel(true)})`
-                      : `Vorläufige Teil-Scans (${fsPartialDatesLabel(false)})`}
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 border-2 border-indigo-600 bg-white"></span>
-                <span className="w-4 h-0.5 bg-indigo-600 rounded -ml-1"></span>
-                <span className="text-indigo-900 font-semibold">
-                  {isEn
-                    ? `Domains Monitor – full dataset (since ${formatFullDate(DM_FULL_DATASET_START, true)})`
-                    : `Domains Monitor – Gesamtdatensatz (ab ${formatFullDate(DM_FULL_DATASET_START, false)})`}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rotate-45 bg-slate-600 rounded-xs"></span>
-                <span className="text-slate-700 font-semibold">
-                  {isEn ? 'Curated milestones' : 'Kuratierte Meilensteine'}
-                </span>
+          {/* GSC-Style Interactive Metric Cards (Series Toggles) */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500">
+                {isEn ? 'Metric Series (Click to toggle)' : 'Messreihen (Klick zum Ein-/Ausblenden)'}
+              </span>
+
+              {/* Time Range Selector */}
+              <div
+                className="inline-flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200 self-start sm:self-auto"
+                role="group"
+                aria-label={isEn ? 'Select time range' : 'Zeitraum auswählen'}
+              >
+                {(
+                  [
+                    { id: '7d', label: isEn ? '7 days' : '7 Tage' },
+                    { id: '28d', label: isEn ? '28 days' : '28 Tage' },
+                    { id: 'all', label: isEn ? 'All' : 'Gesamt' },
+                  ] as const
+                ).map((range) => {
+                  const isSelected = timeRange === range.id;
+                  return (
+                    <button
+                      key={range.id}
+                      type="button"
+                      onClick={() => setTimeRange(range.id)}
+                      aria-pressed={isSelected}
+                      className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all focus:outline-none focus:ring-2 focus:ring-slate-900 ${
+                        isSelected
+                          ? 'bg-white text-slate-950 shadow-xs border border-slate-200'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      {range.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-            {forSaleGrowth && (
-              <div className="text-slate-600 font-semibold">
-                {isEn
-                  ? `Change within dataset: ${forSaleGrowth.pct}% (${forSaleGrowth.diff.toLocaleString('en-US')} listings)`
-                  : `Veränderung im Datensatz: ${forSaleGrowth.pct.replace('.', ',')} % (${forSaleGrowth.diff.toLocaleString('de-DE')} Listings)`}
-              </div>
-            )}
+
+            {/* 4 Interactive Metric Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Card 1: ForSaleDNS */}
+              {(() => {
+                const isActive = activeSeries.has('forSale');
+                return (
+                  <button
+                    type="button"
+                    role="button"
+                    aria-pressed={isActive}
+                    onClick={() => toggleSeries('forSale')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleSeries('forSale');
+                      }
+                    }}
+                    className={`p-4 rounded-xl border text-left transition-all focus:outline-none focus:ring-2 focus:ring-emerald-600 ${
+                      isActive
+                        ? 'bg-white border-emerald-500 shadow-sm border-t-4 border-t-emerald-600'
+                        : 'bg-slate-50/80 border-slate-200 opacity-60 hover:opacity-85'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 mb-1">
+                      <span className="font-semibold uppercase tracking-wider text-emerald-800">
+                        ForSaleDNS
+                      </span>
+                      <span className="w-2.5 h-2.5 rounded-full border-2 border-emerald-700 bg-emerald-600" aria-hidden="true" />
+                    </div>
+                    <div className="text-2xl font-extrabold font-mono text-slate-950 tracking-tight">
+                      {latestForSale ? latestForSale.activeListings.toLocaleString(isEn ? 'en-US' : 'de-DE') : '–'}
+                    </div>
+                    <div className="text-[11px] font-mono text-slate-500 mt-1">
+                      {isEn ? 'Active Listings' : 'Aktive Listings'}
+                    </div>
+                  </button>
+                );
+              })()}
+
+              {/* Card 2: RFC-10023-konform */}
+              {(() => {
+                const isActive = activeSeries.has('conformant');
+                const conformantCount = latestForSale?.conformant ?? 0;
+                const totalListings = latestForSale?.activeListings ?? 1;
+                const conformantPct = ((conformantCount / totalListings) * 100).toFixed(1);
+                return (
+                  <button
+                    type="button"
+                    role="button"
+                    aria-pressed={isActive}
+                    onClick={() => toggleSeries('conformant')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleSeries('conformant');
+                      }
+                    }}
+                    className={`p-4 rounded-xl border text-left transition-all focus:outline-none focus:ring-2 focus:ring-teal-600 ${
+                      isActive
+                        ? 'bg-white border-teal-500 shadow-sm border-t-4 border-t-teal-600'
+                        : 'bg-slate-50/80 border-slate-200 opacity-60 hover:opacity-85'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 mb-1">
+                      <span className="font-semibold uppercase tracking-wider text-teal-800">
+                        {isEn ? 'RFC 10023 conformant' : 'RFC-10023-konform'}
+                      </span>
+                      <span className="w-2.5 h-2.5 rounded-xs border-2 border-teal-700 bg-teal-600" aria-hidden="true" />
+                    </div>
+                    <div className="text-2xl font-extrabold font-mono text-slate-950 tracking-tight">
+                      {conformantCount.toLocaleString(isEn ? 'en-US' : 'de-DE')}
+                    </div>
+                    <div className="text-[11px] font-mono text-slate-500 mt-1">
+                      {isEn ? `${conformantPct}% valid` : `${conformantPct.replace('.', ',')} % valide`}
+                    </div>
+                  </button>
+                );
+              })()}
+
+              {/* Card 3: Mit Preisangabe */}
+              {(() => {
+                const isActive = activeSeries.has('priced');
+                const pricedCount = latestForSale?.priced ?? 0;
+                const totalListings = latestForSale?.activeListings ?? 1;
+                const pricedPct = ((pricedCount / totalListings) * 100).toFixed(1);
+                return (
+                  <button
+                    type="button"
+                    role="button"
+                    aria-pressed={isActive}
+                    onClick={() => toggleSeries('priced')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleSeries('priced');
+                      }
+                    }}
+                    className={`p-4 rounded-xl border text-left transition-all focus:outline-none focus:ring-2 focus:ring-amber-600 ${
+                      isActive
+                        ? 'bg-white border-amber-500 shadow-sm border-t-4 border-t-amber-600'
+                        : 'bg-slate-50/80 border-slate-200 opacity-60 hover:opacity-85'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 mb-1">
+                      <span className="font-semibold uppercase tracking-wider text-amber-900">
+                        {isEn ? 'With price' : 'Mit Preisangabe'}
+                      </span>
+                      <span className="w-2.5 h-2.5 rounded-xs border-2 border-amber-700 bg-amber-600" aria-hidden="true" />
+                    </div>
+                    <div className="text-2xl font-extrabold font-mono text-slate-950 tracking-tight">
+                      {pricedCount.toLocaleString(isEn ? 'en-US' : 'de-DE')}
+                    </div>
+                    <div className="text-[11px] font-mono text-slate-500 mt-1">
+                      {isEn ? `${pricedPct}% with fixed price` : `${pricedPct.replace('.', ',')} % mit Festpreis`}
+                    </div>
+                  </button>
+                );
+              })()}
+
+              {/* Card 4: Domains Monitor */}
+              {(() => {
+                const isActive = activeSeries.has('domainsMonitor');
+                return (
+                  <button
+                    type="button"
+                    role="button"
+                    aria-pressed={isActive}
+                    onClick={() => toggleSeries('domainsMonitor')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleSeries('domainsMonitor');
+                      }
+                    }}
+                    className={`p-4 rounded-xl border text-left transition-all focus:outline-none focus:ring-2 focus:ring-indigo-600 ${
+                      isActive
+                        ? 'bg-white border-indigo-500 shadow-sm border-t-4 border-t-indigo-600'
+                        : 'bg-slate-50/80 border-slate-200 opacity-60 hover:opacity-85'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 mb-1">
+                      <span className="font-semibold uppercase tracking-wider text-indigo-900">
+                        Domains Monitor
+                      </span>
+                      <span className="w-2.5 h-2.5 border-2 border-indigo-600 bg-indigo-600" aria-hidden="true" />
+                    </div>
+                    <div className="text-2xl font-extrabold font-mono text-slate-950 tracking-tight">
+                      {latestDmCount.toLocaleString(isEn ? 'en-US' : 'de-DE')}
+                    </div>
+                    <div className="text-[11px] font-mono text-slate-500 mt-1">
+                      {isEn ? 'Detected Domains' : 'Erkannte Domains'}
+                    </div>
+                  </button>
+                );
+              })()}
+            </div>
           </div>
 
           {/* SVG Chart for ForSaleDNS with Interactive Observation Points */}
@@ -981,14 +1178,7 @@ export default function EcosystemPage() {
                     setHoveredDm(false);
                   }}
                 >
-                  <defs>
-                    <linearGradient id="fsGradientAdoption" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#10b981" stopOpacity="0.20" />
-                      <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Dynamic horizontal grid lines & Y-axis labels */}
+                  {/* Dynamic horizontal grid lines & compact Y-axis labels */}
                   {fsScale.gridLines.map((val) => {
                     const y = calculateSvgY(val, fsScale, fsSvgHeight, fsPaddingY);
                     return (
@@ -998,8 +1188,8 @@ export default function EcosystemPage() {
                           y1={y}
                           x2={fsSvgWidth - fsPaddingX}
                           y2={y}
-                          stroke="#cbd5e1"
-                          strokeDasharray="4 4"
+                          stroke="#e2e8f0"
+                          strokeDasharray="3 3"
                         />
                         <text
                           x={fsPaddingX - 10}
@@ -1007,7 +1197,7 @@ export default function EcosystemPage() {
                           textAnchor="end"
                           className="text-[10px] font-mono fill-slate-500 font-medium"
                         >
-                          {(val / 1000).toFixed(0)}k
+                          {formatYAxisCompact(val, isEn)}
                         </text>
                       </g>
                     );
@@ -1022,8 +1212,8 @@ export default function EcosystemPage() {
                     stroke="#cbd5e1"
                   />
 
-                  {/* Partial sweep line segment (index 0, 1, 2) */}
-                  {fsPartialPointsString && (
+                  {/* ForSaleDNS: Partial sweep segment */}
+                  {activeSeries.has('forSale') && fsPartialPointsString && (
                     <polyline
                       fill="none"
                       stroke="#d97706"
@@ -1035,8 +1225,8 @@ export default function EcosystemPage() {
                     />
                   )}
 
-                  {/* Complete sweep line segment (index 2 to 41) */}
-                  {fsCompletePointsString && (
+                  {/* ForSaleDNS: Complete sweep segment */}
+                  {activeSeries.has('forSale') && fsCompletePointsString && (
                     <polyline
                       fill="none"
                       stroke="#059669"
@@ -1047,8 +1237,32 @@ export default function EcosystemPage() {
                     />
                   )}
 
+                  {/* ForSaleDNS secondary series: Conformant */}
+                  {activeSeries.has('conformant') && fsConformantPointsString && (
+                    <polyline
+                      fill="none"
+                      stroke="#0d9488"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      points={fsConformantPointsString}
+                    />
+                  )}
+
+                  {/* ForSaleDNS secondary series: Priced */}
+                  {activeSeries.has('priced') && fsPricedPointsString && (
+                    <polyline
+                      fill="none"
+                      stroke="#d97706"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      points={fsPricedPointsString}
+                    />
+                  )}
+
                   {/* Domains Monitor overlay (full dataset) */}
-                  {dmOverlayLine && (
+                  {activeSeries.has('domainsMonitor') && dmOverlayLine && (
                     <polyline
                       fill="none"
                       stroke="#4f46e5"
@@ -1059,43 +1273,211 @@ export default function EcosystemPage() {
                       className="pointer-events-none"
                     />
                   )}
-                  {dmOverlayPoints.map((pt, i) => {
-                    const isLast = i === dmOverlayPoints.length - 1;
-                    return (
-                      <g key={`dm-${pt.date}`} className="pointer-events-none">
-                        {activePoint?.date === pt.date && (
+                  {activeSeries.has('domainsMonitor') &&
+                    dmOverlayPoints.map((pt, i) => {
+                      const isLast = i === dmOverlayPoints.length - 1;
+                      return (
+                        <g key={`dm-${pt.date}`} className="pointer-events-none">
+                          {activePoint?.date === pt.date && (
+                            <rect
+                              x={pt.x - 7}
+                              y={pt.y - 7}
+                              width={14}
+                              height={14}
+                              className="fill-none stroke-indigo-400/60 stroke-[3px]"
+                            />
+                          )}
                           <rect
-                            x={pt.x - 7}
-                            y={pt.y - 7}
-                            width={14}
-                            height={14}
-                            className="fill-none stroke-indigo-400/60 stroke-[3px]"
+                            x={pt.x - 3.5}
+                            y={pt.y - 3.5}
+                            width={7}
+                            height={7}
+                            className={
+                              activePoint?.date === pt.date
+                                ? 'fill-indigo-600 stroke-white stroke-2'
+                                : 'fill-white stroke-indigo-600 stroke-2'
+                            }
+                          />
+                          {isLast && (
+                            <text
+                              x={pt.x}
+                              y={pt.y - 9}
+                              textAnchor="middle"
+                              className="text-[9px] font-mono font-bold fill-indigo-800"
+                            >
+                              {formatYAxisCompact(pt.value, isEn)}
+                            </text>
+                          )}
+                        </g>
+                      );
+                    })}
+
+                  {/* Curated event / milestone vertical guidelines */}
+                  {chartEvents.map((evt) => {
+                    const isEvtActive = activeEventDate === evt.date;
+                    return (
+                      <line
+                        key={`evt-line-${evt.date}`}
+                        x1={evt.x}
+                        y1={16}
+                        x2={evt.x}
+                        y2={fsSvgHeight - fsPaddingY}
+                        stroke={isEvtActive ? '#f59e0b' : '#94a3b8'}
+                        strokeWidth={isEvtActive ? 1.5 : 1}
+                        strokeDasharray="2 3"
+                        className="pointer-events-none transition-colors opacity-70"
+                      />
+                    );
+                  })}
+
+                  {/* Curated event / milestone top marker icons */}
+                  {chartEvents.map((evt) => {
+                    const isEvtActive = activeEventDate === evt.date;
+                    return (
+                      <g key={`evt-marker-${evt.date}`} className="pointer-events-none">
+                        {isEvtActive && (
+                          <circle
+                            cx={evt.x}
+                            cy={10}
+                            r={7.5}
+                            className="fill-none stroke-amber-500/40 stroke-[2.5px]"
                           />
                         )}
-                        <rect
-                          x={pt.x - 3.5}
-                          y={pt.y - 3.5}
-                          width={7}
-                          height={7}
+                        <path
+                          d={`M ${evt.x} 5.5 L ${evt.x + 4.5} 10 L ${evt.x} 14.5 L ${evt.x - 4.5} 10 Z`}
                           className={
-                            activePoint?.date === pt.date
-                              ? 'fill-indigo-600 stroke-white stroke-2'
-                              : 'fill-white stroke-indigo-600 stroke-2'
+                            isEvtActive
+                              ? 'fill-amber-500 stroke-slate-950 stroke-[1.5px]'
+                              : 'fill-slate-700 stroke-white stroke-1'
                           }
                         />
-                        {isLast && (
+                      </g>
+                    );
+                  })}
+
+                  {/* Active Point Vertical Guide Line to X-Axis */}
+                  {activePoint && (
+                    <line
+                      x1={activePoint.x}
+                      y1={activePoint.y}
+                      x2={activePoint.x}
+                      y2={fsSvgHeight - fsPaddingY}
+                      stroke="#94a3b8"
+                      strokeWidth="1.5"
+                      strokeDasharray="3 3"
+                      className="pointer-events-none"
+                    />
+                  )}
+
+                  {/* Active Point Halo / Ring */}
+                  {activePoint && activeSeries.has('forSale') && (
+                    <g className="pointer-events-none">
+                      <circle
+                        cx={activePoint.x}
+                        cy={activePoint.y}
+                        r={7.5}
+                        className={
+                          !activePoint.sweepComplete
+                            ? 'fill-none stroke-amber-500/50 stroke-[3px]'
+                            : 'fill-none stroke-emerald-500/50 stroke-[3px]'
+                        }
+                      />
+                      <circle
+                        cx={activePoint.x}
+                        cy={activePoint.y}
+                        r={4.5}
+                        className={
+                          !activePoint.sweepComplete
+                            ? 'fill-amber-500 stroke-white stroke-2'
+                            : 'fill-emerald-600 stroke-white stroke-2'
+                        }
+                      />
+                    </g>
+                  )}
+
+                  {/* Individual observation points visible elements (calm GSC appearance) */}
+                  {fsAllPoints.map((pt) => {
+                    const isPartial = !pt.sweepComplete;
+                    const isLastPoint = pt.idx === fsAllPoints.length - 1;
+                    const isActive = activePointIndex === pt.idx;
+                    
+                    // Dynamic X-axis tick display logic based on time range to prevent overlap
+                    const totalDates = chartDates.length;
+                    const dateIdx = pt.dateIdx;
+                    let showDateLabel = false;
+                    if (timeRange === '7d') {
+                      // All 7 dates
+                      showDateLabel = true;
+                    } else if (timeRange === '28d') {
+                      // Every ~5-6 days plus first and last
+                      showDateLabel = dateIdx === 0 || dateIdx === totalDates - 1 || dateIdx % 6 === 0;
+                    } else {
+                      // All range (~60 days): Every ~10-12 days plus first and last
+                      const step = Math.max(7, Math.floor(totalDates / 6));
+                      showDateLabel = dateIdx === 0 || dateIdx === totalDates - 1 || dateIdx % step === 0;
+                    }
+
+                    return (
+                      <g key={`pt-${pt.date}`} className="pointer-events-none">
+                        {/* Visible circle on line only if active, endpoint, or hovered */}
+                        {activeSeries.has('forSale') && (
+                          <circle
+                            cx={pt.x}
+                            cy={pt.y}
+                            r={isActive ? 5 : isLastPoint ? 4 : 2}
+                            className={
+                              isActive
+                                ? (isPartial ? 'fill-amber-500 stroke-white stroke-2' : 'fill-emerald-600 stroke-white stroke-2')
+                                : (isPartial
+                                    ? 'fill-white stroke-amber-600 stroke-1.5'
+                                    : 'fill-white stroke-emerald-700 stroke-1.5')
+                            }
+                          />
+                        )}
+
+                        {/* Value callout on final point if active */}
+                        {activeSeries.has('forSale') && isLastPoint && !isActive && (
                           <text
                             x={pt.x}
-                            y={pt.y - 9}
+                            y={pt.y - 8}
                             textAnchor="middle"
-                            className="text-[9px] font-mono font-bold fill-indigo-800"
+                            className="text-[9px] font-mono font-bold fill-slate-800"
                           >
-                            {(pt.value / 1000).toFixed(0)}k
+                            {formatYAxisCompact(pt.activeListings, isEn)}
+                          </text>
+                        )}
+
+                        {/* De-cluttered, non-overlapping X-axis date labels */}
+                        {showDateLabel && (
+                          <text
+                            x={pt.x}
+                            y={fsSvgHeight - fsPaddingY + 14}
+                            textAnchor="middle"
+                            className={`text-[9px] font-mono ${
+                              isActive ? 'fill-slate-900 font-bold' : 'fill-slate-500 font-medium'
+                            }`}
+                          >
+                            {formatChartAxisDate(pt.date, isEn)}
                           </text>
                         )}
                       </g>
                     );
                   })}
+
+                  {/* If Domains Monitor extends past ForSaleDNS, show date label at the end */}
+                  {activeSeries.has('domainsMonitor') &&
+                    fsAllPoints.length > 0 &&
+                    dmOverlayPoints.length > 0 &&
+                    dmOverlayPoints[dmOverlayPoints.length - 1].date > fsAllPoints[fsAllPoints.length - 1].date && (
+                      <text
+                        x={dmOverlayPoints[dmOverlayPoints.length - 1].x}
+                        y={fsSvgHeight - fsPaddingY + 14}
+                        textAnchor="middle"
+                        className="text-[9px] font-mono fill-indigo-700 font-bold"
+                      >
+                        {formatChartAxisDate(dmOverlayPoints[dmOverlayPoints.length - 1].date, isEn)}
+                      </text>
+                    )}
 
                   {/* Curated event / milestone vertical guidelines */}
                   {chartEvents.map((evt) => {
