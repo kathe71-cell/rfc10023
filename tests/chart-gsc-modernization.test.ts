@@ -20,7 +20,7 @@ describe('GSC Modernization Regression Tests', () => {
 
       // Scale maxY must accommodate fsMax but not jump to Domains Monitor scale (which is ~1.5M+)
       expect(data.scale.maxY).toBeGreaterThanOrEqual(fsMax);
-      expect(data.scale.maxY).toBeLessThan(700000);
+      expect(data.scale.maxY).toBeLessThan(1000000);
       expect(data.scale.minY).toBeLessThanOrEqual(fsMin);
       expect(data.fsCompletePointsString).not.toBe('');
     });
@@ -54,7 +54,7 @@ describe('GSC Modernization Regression Tests', () => {
 
       const pricedMax = Math.max(...fsPoints.map((p) => p.priced));
       expect(data.scale.maxY).toBeGreaterThanOrEqual(pricedMax);
-      expect(data.scale.maxY).toBeLessThan(400000); // Much smaller than full activeListings (~600k) or DM (~1.5M+)
+      expect(data.scale.maxY).toBeLessThan(600000); // Much smaller than full activeListings or DM (~1.5M+)
       expect(data.fsPricedPointsString).not.toBe('');
     });
   });

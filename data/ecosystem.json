@@ -312,6 +312,18 @@
       "sourceUrl": "https://github.com/adriangalilea/namecheap-python/blob/main/CLI.md",
       "firstObserved": "2026-08-09",
       "lastVerified": "2026-10-05"
+    },
+    {
+      "id": "dnscontrol",
+      "name": "DNSControl",
+      "category": "developer-tool",
+      "supportType": "parser",
+      "status": "supported",
+      "description": "DNSControl unterstützt RFC 10023 seit Version v5.6.0 offiziell. Mit FORSALE_BUILDER() lassen sich entsprechende _for-sale-TXT-Records deklarativ in DNS-Konfigurationen verwalten. Die Implementierung wurde am 20. Oktober 2026 in den Hauptentwicklungszweig übernommen und anschließend mit v5.6.0 veröffentlicht.",
+      "descriptionEn": "DNSControl officially supports RFC 10023 since version v5.6.0. FORSALE_BUILDER() enables declarative management of corresponding _for-sale TXT records in DNS configurations. The implementation was merged into the main development branch on October 20, 2026, and subsequently released with v5.6.0.",
+      "sourceUrl": "https://github.com/DNSControl/dnscontrol/releases/tag/v5.6.0",
+      "firstObserved": "2026-10-20",
+      "lastVerified": "2026-10-21"
     }
   ]
 }

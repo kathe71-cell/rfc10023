@@ -110,5 +110,23 @@
     "descriptionEn": "+87,633 detected domains versus the previous observation. The cause has not been conclusively established.",
     "sourceUrl": "https://domains-monitor.com/for-sale-domains/",
     "showOnAdoptionChart": true
+  },
+  {
+    "date": "2026-10-20",
+    "title": "DNSControl integriert RFC-10023-Builder in Hauptentwicklungszweig",
+    "titleEn": "DNSControl merges RFC 10023 builder into main branch",
+    "category": "Tool",
+    "description": "Pull Request #5014 führt FORSALE_BUILDER() in DNSControl ein und ermöglicht die deklarative Konfiguration standardkonformer _for-sale-TXT-Records.",
+    "descriptionEn": "Pull Request #5014 introduces FORSALE_BUILDER() to DNSControl, enabling declarative configuration of standard-compliant _for-sale TXT records.",
+    "sourceUrl": "https://github.com/DNSControl/dnscontrol/pull/5014"
+  },
+  {
+    "date": "2026-10-21",
+    "title": "DNSControl veröffentlicht RFC-10023-Unterstützung mit v5.6.0",
+    "titleEn": "DNSControl releases RFC 10023 support with v5.6.0",
+    "category": "Tool",
+    "description": "Mit DNSControl v5.6.0 wurde die zuvor in den Hauptentwicklungszweig integrierte RFC-10023-Unterstützung offiziell veröffentlicht. FORSALE_BUILDER() ermöglicht die deklarative Verwaltung entsprechender _for-sale-TXT-Records.",
+    "descriptionEn": "With DNSControl v5.6.0, RFC 10023 support previously merged into the main development branch is officially released. FORSALE_BUILDER() enables declarative management of corresponding _for-sale TXT records.",
+    "sourceUrl": "https://github.com/DNSControl/dnscontrol/releases/tag/v5.6.0"
   }
 ]

@@ -103,4 +103,31 @@ describe('RFC 10023 Ecosystem Integration Tests', () => {
     expect(ecoItem?.keywordsEn).toContain('atom');
     expect(ecoItem?.keywordsEn).toContain('atom.com');
   });
+
+  it('includes DNSControl as a verified tool support integration in ECOSYSTEM_DATA', async () => {
+    const { ECOSYSTEM_DATA, getMetaAdoptionTier } = await import('../src/data/ecosystem');
+    const dnscontrol = ECOSYSTEM_DATA.integrations.find(item => item.id === 'dnscontrol');
+
+    expect(dnscontrol).toBeDefined();
+    expect(dnscontrol?.name).toBe('DNSControl');
+    expect(dnscontrol?.category).toBe('developer-tool');
+    expect(dnscontrol?.status).toBe('supported');
+    expect(getMetaAdoptionTier(dnscontrol!.supportType)).toBe('tool');
+    expect(dnscontrol?.sourceUrl).toBe('https://github.com/DNSControl/dnscontrol/releases/tag/v5.6.0');
+    expect(dnscontrol?.description).toContain('FORSALE_BUILDER()');
+    expect(dnscontrol?.description).toContain('v5.6.0');
+    expect(dnscontrol?.descriptionEn).toContain('FORSALE_BUILDER()');
+    expect(dnscontrol?.descriptionEn).toContain('v5.6.0');
+  });
+
+  it('includes DNSControl release milestone in TIMELINE_DATA', async () => {
+    const { TIMELINE_DATA } = await import('../src/data/ecosystem');
+    const releaseMilestone = TIMELINE_DATA.find(entry => entry.date === '2026-10-21' && entry.title.includes('DNSControl'));
+
+    expect(releaseMilestone).toBeDefined();
+    expect(releaseMilestone?.title).toContain('DNSControl veröffentlicht RFC-10023-Unterstützung mit v5.6.0');
+    expect(releaseMilestone?.titleEn).toContain('DNSControl releases RFC 10023 support with v5.6.0');
+    expect(releaseMilestone?.sourceUrl).toBe('https://github.com/DNSControl/dnscontrol/releases/tag/v5.6.0');
+    expect(releaseMilestone?.description).toContain('FORSALE_BUILDER()');
+  });
 });

@@ -2357,7 +2357,7 @@ export default function EcosystemPage() {
                     : `Letzter erfolgreicher Abruf: ${formatFetchTimestamp(latestDmFetchTimestamp, false)}`}
                 </span>
               )}
-              {latestDmFetchTimestamp && (new Date(latestDmFetchTimestamp.slice(0, 10)).getTime() - new Date(latestDmDate).getTime()) / 86400000 > 2 && (
+              {latestDmFetchTimestamp && ((Date.now() - new Date(latestDmDate).getTime()) / 86400000 > 2 || (new Date(latestDmFetchTimestamp.slice(0, 10)).getTime() - new Date(latestDmDate).getTime()) / 86400000 > 2) && (
                 <span className="text-[11px] font-mono font-bold text-amber-900 bg-amber-100 border border-amber-300 rounded px-1.5 py-0.5" data-stale-warning="true">
                   {isEn ? 'Source data older than 2 days – value not current' : 'Quelldaten älter als 2 Tage – Wert nicht aktuell'}
                 </span>
