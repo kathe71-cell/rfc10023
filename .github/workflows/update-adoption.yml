@@ -75,7 +75,7 @@ jobs:
           "
 
   forsaledns:
-    name: Update ForSaleDNS (Self-hosted macOS Runner)
+    name: Update ForSaleDNS (GitHub-hosted)
     needs: domains-monitor
     # Sequentiell nach domains-monitor (falls dieser lief), läuft auch wenn domains-monitor fehlschlug oder geskippt wurde.
     # Läuft nachmittags (13:30 UTC = 15:30 MESZ / 14:30 MEZ) ODER wenn manuell 'all' bzw. 'forsaledns' gewählt wird.
@@ -84,7 +84,7 @@ jobs:
         (github.event_name == 'schedule' && github.event.schedule == '30 13 * * *') ||
         (github.event_name == 'workflow_dispatch' && (inputs.source == 'all' || inputs.source == 'forsaledns'))
       )
-    runs-on: [self-hosted, macOS, rfc10023]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
