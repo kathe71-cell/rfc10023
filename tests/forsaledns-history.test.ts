@@ -231,12 +231,12 @@ describe('ForSaleDNS RFC 10023 Adoption History Integration Tests', () => {
       // German distinct labels
       expect(deHtml).toContain('Datenstand:');
       expect(deHtml).toContain('Letzter erfolgreicher Abruf:');
-      expect(deHtml).toContain('MESZ');
+      expect(deHtml).toMatch(/MESZ|MEZ/);
 
       // English distinct labels
       expect(enHtml).toContain('Data snapshot:');
       expect(enHtml).toContain('Last successful fetch:');
-      expect(enHtml).toContain('CEST');
+      expect(enHtml).toMatch(/CEST|CET/);
 
       // Methodology explains the separation
       expect(deHtml).toContain('Der Datenstand bezeichnet den jüngsten von der Quelle veröffentlichten Messpunkt');
