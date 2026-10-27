@@ -123,5 +123,10 @@
     "date": "2026-10-26",
     "source": "domainsMonitor",
     "value": 1669551
+  },
+  {
+    "date": "2026-10-27",
+    "source": "domainsMonitor",
+    "value": 1670234
   }
 ]
