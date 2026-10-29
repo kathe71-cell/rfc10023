@@ -54,7 +54,7 @@ describe('GSC Modernization Regression Tests', () => {
 
       const pricedMax = Math.max(...fsPoints.map((p) => p.priced));
       expect(data.scale.maxY).toBeGreaterThanOrEqual(pricedMax);
-      expect(data.scale.maxY).toBeLessThan(600000); // Much smaller than full activeListings or DM (~1.5M+)
+      expect(data.scale.maxY).toBeLessThan(700000); // Much smaller than full activeListings (~873k) or DM (~1.6M+)
       expect(data.fsPricedPointsString).not.toBe('');
     });
   });

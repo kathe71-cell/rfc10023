@@ -89,9 +89,9 @@ describe('GitHub Actions Adoption Workflow Architecture', () => {
     expect(content).toContain('--source domains-monitor');
     expect(content).toContain('chore(adoption): update Domains Monitor data');
 
-    // Job B: ForSaleDNS on ubuntu-latest (cloud-hosted for 100% reliable autonomous daily execution)
+    // Job B: ForSaleDNS on self-hosted macOS runner (residential IP required to bypass Cloudflare bot challenge)
     expect(content).toContain('forsaledns:');
-    expect(content).toMatch(/runs-on:\s*ubuntu-latest/);
+    expect(content).toMatch(/runs-on:\s*\[self-hosted,\s*macOS,\s*rfc10023\]/);
     expect(content).toContain('needs: domains-monitor');
     expect(content).toContain('--source forsaledns');
     expect(content).toContain('chore(adoption): update ForSaleDNS data');
