@@ -1,17 +1,17 @@
 {
-  "lastUpdated": "2026-11-10T13:05:45.426Z",
+  "lastUpdated": "2026-11-11T12:15:22.597Z",
   "sources": {
     "domainsMonitor": {
       "source": "Domains Monitor",
       "metric": "full_dataset",
-      "count": 1760997,
-      "value": 1760997,
-      "sourceDate": "2026-11-10",
+      "count": 1761408,
+      "value": 1761408,
+      "sourceDate": "2026-11-11",
       "label": "Domains with detected _for-sale record (full dataset)",
       "labelDe": "Erkannte Domains mit _for-sale Record (Vollständiger Datensatz)",
       "sourceUrl": "https://domains-monitor.com/for-sale-domains/",
-      "lastSuccessfulFetch": "2026-11-10T13:05:45.426Z",
-      "fetchedAt": "2026-11-10T13:05:45.426Z",
+      "lastSuccessfulFetch": "2026-11-11T12:15:22.597Z",
+      "fetchedAt": "2026-11-11T12:15:22.597Z",
       "mode": "automatic"
     }
   },
